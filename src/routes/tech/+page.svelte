@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import SvgDivider from '$lib/components/ui/SvgDivider.svelte';
+	import { PUBLIC_SITE_URL } from '$env/static/public';
 
 	let scrollY = $state(0);
 	let heroRef = $state();
@@ -29,7 +30,7 @@
 			description: 'Modern responsive website built with SvelteKit 5, featuring smooth animations and optimized performance.',
 			image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=600',
 			github: 'https://github.com/keyjay/portfolio-v2',
-			demo: 'https://keyjayonline.com',
+			demo: PUBLIC_SITE_URL,
 			status: 'Live'
 		},
 		{

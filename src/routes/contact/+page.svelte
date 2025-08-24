@@ -2,6 +2,11 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import SvgDivider from '$lib/components/ui/SvgDivider.svelte';
+	import { PUBLIC_HELLO_EMAIL } from '$env/static/public';
+
+	let {
+		data
+	} = $props();
 
 	let scrollY = $state(0);
 	let heroRef = $state();
@@ -62,7 +67,7 @@
 	const contactMethods = [
 		{
 			title: 'Email',
-			value: 'hello@keyjayonline.com',
+			value: PUBLIC_HELLO_EMAIL,
 			icon: 'mdi:email',
 			description: 'Best for detailed project inquiries'
 		},
@@ -415,18 +420,11 @@
 					<div class="bg-gray-800/50 rounded-xl p-6">
 						<h3 class="text-white font-semibold mb-4">Connect on Social Media</h3>
 						<div class="flex gap-4">
-							<a href="https://youtube.com/keyjayhd" target="_blank" class="w-12 h-12 bg-red-600/20 hover:bg-red-600/30 rounded-full flex items-center justify-center transition-colors duration-300">
-								<iconify-icon icon="mdi:youtube" class="text-red-400 text-xl"></iconify-icon>
-							</a>
-							<a href="https://twitter.com/keyjayhd" target="_blank" class="w-12 h-12 bg-blue-600/20 hover:bg-blue-600/30 rounded-full flex items-center justify-center transition-colors duration-300">
-								<iconify-icon icon="mdi:twitter" class="text-blue-400 text-xl"></iconify-icon>
-							</a>
-							<a href="https://instagram.com/keyjayhd" target="_blank" class="w-12 h-12 bg-pink-600/20 hover:bg-pink-600/30 rounded-full flex items-center justify-center transition-colors duration-300">
-								<iconify-icon icon="mdi:instagram" class="text-pink-400 text-xl"></iconify-icon>
-							</a>
-							<a href="https://github.com/keyjay" target="_blank" class="w-12 h-12 bg-gray-600/20 hover:bg-gray-600/30 rounded-full flex items-center justify-center transition-colors duration-300">
-								<iconify-icon icon="mdi:github" class="text-gray-400 text-xl"></iconify-icon>
-							</a>
+							{#each data.socialLinks as social}
+								<a href={social.url} target="_blank" class="w-12 h-12 bg-gray-600/20 hover:bg-gray-600/30 rounded-full flex items-center justify-center transition-colors duration-300 {social.color}">
+									<iconify-icon icon={social.icon} class="text-xl"></iconify-icon>
+								</a>
+							{/each}
 						</div>
 					</div>
 				</div>

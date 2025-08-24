@@ -20,6 +20,7 @@
 		previousTrack
 	} from '$lib/stores/musicPlayer.js';
 	import { extractCoverArt } from '$lib/utils/coverArtExtractor.js';
+	import { formatTime } from '$lib/utils/time.js';
 	import PlaylistBrowser from '$lib/components/music/PlaylistBrowser.svelte';
 	
 	let container = $state();
@@ -35,11 +36,6 @@
 	let wavesurferReady = $state(false);
 	let thumbnailError = $state(false);
 	
-	function formatTime(seconds) {
-		const minutes = Math.floor(seconds / 60);
-		const secs = Math.floor(seconds % 60);
-		return `${minutes}:${secs.toString().padStart(2, '0')}`;
-	}
 	
 	// Initialize wavesurfer when container becomes available
 	$effect(() => {

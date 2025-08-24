@@ -4,16 +4,24 @@ This document describes the implementation and usage of the Key Jay Online music
 
 ## Overview
 
-The music player system consists of several interconnected components that provide a seamless audio experience across the website.
+The music player system consists of several interconnected components that provide a seamless audio experience across the website. The system has been refactored to eliminate code duplication and use shared utilities.
 
 ## Architecture
 
 ### Core Components
 
-1. **PersistentMusicPlayer.svelte** - Main player component
-2. **SpinningPlayButton.svelte** - Interactive play button trigger
-3. **musicPlayer.js** - Svelte store for state management
-4. **audioPlaylists.js** - Audio library data structure
+1. **PersistentMusicPlayer.svelte** - Main player component with wavesurfer integration
+2. **PlaylistBrowser.svelte** - Music library browser with genre-based organization
+3. **AlbumModalSwal.svelte** - Album detail modal with accordion-based mobile interface
+4. **AudioPlayer.svelte** - Reusable audio player component
+5. **musicPlayer.js** - Svelte store for state management
+6. **audioPlaylists.js** - Audio library data structure
+
+### Utility Libraries
+
+1. **time.js** - Shared time formatting utilities
+2. **colors.js** - Platform-specific color schemes
+3. **responsive.js** - Responsive design utilities
 
 ## PersistentMusicPlayer Component
 
@@ -105,13 +113,15 @@ const audioPlaylists = {
 ```
 
 ### Available Genres
-- **edm** - Electronic Dance Music (4 tracks)
-- **hiphop** - Hip Hop (4 tracks)
-- **orchestral** - Orchestral/Classical (6 tracks)
-- **pop** - Pop Music (2 tracks)
-- **rock** - Rock Music (3 tracks)
-- **vgm** - Video Game Music (3 tracks)
-- **atmosphere** - Ambient/Atmospheric (1 track)
+- **edm** - Electronic Dance Music (4 tracks) - includes SideXSide, Subdivide thumbnails
+- **hiphop** - Hip Hop (4 tracks) - includes zld4 thumbnail
+- **orchestral** - Orchestral/Classical (6 tracks) - includes DestinysWorld, Tribes_of_Dust_and_Metal, WeightofTheOtherPromise thumbnails
+- **pop** - Pop Music (2 tracks) - includes ShouldIStay, WaitingonYou thumbnails
+- **rock** - Rock Music (3 tracks) - no thumbnails available
+- **vgm** - Video Game Music (3 tracks) - no thumbnails available
+- **atmosphere** - Ambient/Atmospheric (1 track) - no thumbnails available
+
+Note: Tracks without thumbnails display a default music note icon to maintain consistent UI.
 
 ### Helper Functions
 ```javascript
@@ -194,34 +204,51 @@ The player uses Tailwind CSS classes for styling:
 - Touch-friendly controls
 - Adaptive layout based on viewport
 
+## Recent Updates
+
+### Code Refactoring (Current Version)
+- **Shared Utilities**: Created shared `formatTime()` function in `/lib/utils/time.js`
+- **Color Management**: Centralized platform colors in `/lib/utils/colors.js`
+- **Responsive Design**: Added responsive utilities in `/lib/utils/responsive.js`
+- **Mobile Interface**: Implemented accordion-based mobile interface for album modals
+- **Database Integration**: Social media links now come from database instead of hardcoded values
+- **Thumbnail Optimization**: Fixed 404 errors by setting non-existent thumbnails to `null`
+
+### New Features
+- **PlaylistBrowser**: Genre-based music library with search and filtering
+- **Album Modals**: Mobile-responsive modals with streaming links and credits
+- **Cover Art Extraction**: Automatic extraction of embedded cover art from audio files
+- **Environment Variables**: Site configuration moved to environment variables
+
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Tracks not playing**
-   - Verify audio file paths are correct
+   - Verify audio file paths are correct in `audioPlaylists.js`
    - Check browser audio permissions
    - Ensure files are accessible in static directory
 
 2. **Wavesurfer not loading**
-   - Check container element exists
+   - Check container element exists in DOM
    - Verify wavesurfer.js is imported correctly
    - Check browser console for errors
+   - Ensure container has proper dimensions
 
 3. **Store not updating**
    - Ensure proper store subscriptions (`$store`)
-   - Check for reactive statement syntax
-   - Verify store imports
+   - Check for reactive statement syntax (`$effect`, `$derived`)
+   - Verify store imports are correct
 
-### Debug Mode
-Enable debug logging by adding to console:
-```javascript
-import { currentTrack, isPlaying } from '$lib/stores/musicPlayer.js';
+4. **Thumbnails showing 404 errors**
+   - Check that thumbnail paths in `audioPlaylists.js` match actual files
+   - Set `thumbnail: null` for tracks without thumbnail files
+   - Default music note icon will display automatically
 
-// Log state changes
-currentTrack.subscribe(track => console.log('Track changed:', track));
-isPlaying.subscribe(playing => console.log('Playing:', playing));
-```
+### Performance Notes
+- Debug logging has been removed from production code
+- Shared utilities reduce bundle size and improve maintainability
+- Responsive utilities ensure consistent breakpoints across components
 
 ## Performance Considerations
 

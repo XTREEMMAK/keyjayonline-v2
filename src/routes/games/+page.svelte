@@ -3,6 +3,10 @@
 	import { browser } from '$app/environment';
 	import SvgDivider from '$lib/components/ui/SvgDivider.svelte';
 
+	let {
+		data
+	} = $props();
+
 	let scrollY = $state(0);
 	let heroRef = $state();
 	let titleVisible = $state(true);
@@ -276,14 +280,17 @@
 			</div>
 
 			<div class="text-center mt-12">
-				<a 
-					href="https://youtube.com/keyjayhd" 
-					target="_blank"
-					class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-red-600 to-pink-600 text-white font-semibold rounded-full hover:from-red-700 hover:to-pink-700 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/30 hover:scale-105 transform"
-				>
-					<iconify-icon icon="mdi:youtube" class="text-xl"></iconify-icon>
-					Watch More on YouTube
-				</a>
+				{@const youtubeLink = data.socialLinks.find(link => link.name?.toLowerCase().includes('youtube'))}
+				{#if youtubeLink}
+					<a 
+						href={youtubeLink.url} 
+						target="_blank"
+						class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-red-600 to-pink-600 text-white font-semibold rounded-full hover:from-red-700 hover:to-pink-700 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/30 hover:scale-105 transform"
+					>
+						<iconify-icon icon="mdi:youtube" class="text-xl"></iconify-icon>
+						Watch More on YouTube
+					</a>
+				{/if}
 			</div>
 		</div>
 	</section>

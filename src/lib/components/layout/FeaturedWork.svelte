@@ -4,6 +4,7 @@
 	import { createScrollObserver } from '$lib/utils/scrollObserver.js';
 	import { getYouTubeThumbnail } from '$lib/utils/youtube.js';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
+	import { getResponsiveTextSize, getResponsivePadding } from '$lib/utils/responsive.js';
 	import VideoModalSwal from '$lib/components/media/VideoModalSwal.svelte';
 	
 	let {
@@ -208,16 +209,23 @@
 			tempContainer.style.position = 'absolute';
 			tempContainer.style.visibility = 'hidden';
 			tempContainer.style.width = 'max-content';
-			tempContainer.style.maxWidth = window.innerWidth >= 1024 ? '28rem' : '100%';
-			tempContainer.style.padding = window.innerWidth >= 1024 ? '3rem' : 
-										 window.innerWidth >= 768 ? '2rem' : 
-										 window.innerWidth >= 640 ? '1.5rem' : '1rem';
+			const currentWidth = window.innerWidth;
+			tempContainer.style.maxWidth = currentWidth >= 1024 ? '28rem' : '100%';
+			tempContainer.style.padding = getResponsivePadding(currentWidth);
 			tempContainer.className = 'bg-black/20 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl';
 			
-			const titleSize = window.innerWidth >= 1024 ? 'text-4xl' : 
-							  window.innerWidth >= 768 ? 'text-3xl' : 
-							  window.innerWidth >= 640 ? 'text-2xl' : 'text-2xl';
-			const textSize = window.innerWidth >= 768 ? 'text-xl' : 'text-lg';
+			const titleSize = getResponsiveTextSize(currentWidth, {
+				sm: 'text-2xl',
+				md: 'text-3xl',
+				lg: 'text-4xl',
+				xl: 'text-4xl'
+			});
+			const textSize = getResponsiveTextSize(currentWidth, {
+				sm: 'text-lg',
+				md: 'text-xl',
+				lg: 'text-xl',
+				xl: 'text-xl'
+			});
 			
 			tempContainer.innerHTML = `
 				<h3 class="${titleSize} font-bold text-white mb-4 leading-tight">${project.title}</h3>
@@ -242,8 +250,6 @@
 		// Add generous buffer to prevent any collapse during transitions
 		rightContainerHeight = Math.max(minHeight, maxHeight + 60);
 		rightContainerWidth = Math.max(minWidth, maxWidth + 20);
-		
-		console.log('Calculated optimal dimensions:', { height: maxHeight, width: maxWidth }, '-> Set to:', { height: rightContainerHeight, width: rightContainerWidth });
 	}
 	
 	// Calculate parallax transform with easing

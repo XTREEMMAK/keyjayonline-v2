@@ -22,6 +22,7 @@ import {
   NODE_ENV
 } from '$env/static/private';
 import { extractYouTubeId } from '$lib/utils/youtube.js';
+import { getMusicPlatformColors, getSocialPlatformColors } from '$lib/utils/colors.js';
 
 /* =================================================================================
  * CORE DIRECTUS CLIENT SETUP
@@ -75,7 +76,6 @@ export function buildAssetUrl(fileId, transforms = {}) {
     
     // If we have a file object but no filename_disk, fall back to Directus assets endpoint
     if (typeof fileId === 'object' && fileId !== null && !fileId.filename_disk) {
-      console.log('buildAssetUrl: No filename_disk, using Directus assets endpoint');
       const assetId = fileId.id;
       return `${DIRECTUS_URL}/assets/${assetId}`;
     }
@@ -264,97 +264,17 @@ export async function getMusicReleases() {
 /**
  * Fetches featured works/projects from Directus
  * Used for homepage Featured Work section
+ * @param {Array} [selectedFeaturedWorks] - Pre-fetched featured works from kjov2_general relationship (required)
  * @returns {Promise<Array>} Array of featured work objects
  */
-export async function getFeaturedWorks() {
-  try {
-    const directus = getDirectusInstance();
-    
-    const featuredWorks = await directus.request(
-      readItems('kjov2_featured_works', {
-        fields: [
-          '*',
-          {
-            thumbnail_image: ['id', 'filename_disk', 'filename_download']
-          },
-          {
-            background: ['id', 'filename_disk', 'filename_download', 'type']
-          }
-        ]
-        // Removed sort as these fields may not be accessible
-      })
-    );
-
-    // Remove debug log in production
-    // console.log('Featured works from Directus:', JSON.stringify(featuredWorks, null, 2));
-
-    // Transform the data to match our existing format - using the actual field names from Directus
-    return featuredWorks.map(work => ({
-      id: work.id || work.feat_id,
-      title: work.header || work.title,
-      description: work.details || work.description,
-      backgroundImageUrl: work.background ? buildAssetUrl(work.background) : 'https://images.unsplash.com/photo-1729575846511-f499d2e17d79?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmFzaWMlMjBiYWNrZ3JvdW5kfGVufDB8fDB8fHww',
-      leftContent: {
-        type: work.hosted_type || work.video_type || 'image',
-        src: (work.hosted_type === 'youtube' || work.video_type === 'youtube')
-          ? null 
-          : (work.left_local_content ? 
-              buildAssetUrl(work.left_local_content) :
-              (work.thumbnail_image ? 
-                (typeof work.thumbnail_image === 'object' ? 
-                  buildAssetUrl(work.thumbnail_image.filename_disk || work.thumbnail_image.id) : 
-                  buildAssetUrl(work.thumbnail_image)) : 
-                'https://placehold.co/800x600/1a1a1a/ffffff?text=Featured+Work')),
-        videoId: (work.hosted_type === 'youtube' || work.video_type === 'youtube') && 
-                 (work.left_remote_content || work.video_url) ? 
-          extractYouTubeId(work.left_remote_content || work.video_url) : null
-      },
-      video_url: work.left_remote_content || work.video_url,
-      video_type: work.hosted_type || work.video_type,
-      featured: work.featured || false,
-      display_order: work.sort || work.display_order || 0,
-      link: work.project_link || '#'
-    }));
-
-  } catch (error) {
-    console.error('Error fetching featured works:', error);
-    // Return fallback mock data
-    return [
-      {
-        id: 1,
-        title: '"Ephemeral Echoes" - Album Release',
-        description: 'A deep dive into the creative process behind my latest album, "Ephemeral Echoes." This project explores the interplay of organic and synthetic sounds, creating a sonic landscape that is both nostalgic and futuristic.',
-        backgroundImageUrl: 'https://images.squarespace-cdn.com/content/v1/6411d47133e5e02e0a1ebe07/1700140172111-0UTV428JELSPYOW2S8NX/DJI_0649-Pano.jpg?format=750w',
-        leftContent: {
-          type: 'image',
-          src: 'https://placehold.co/800x600/1a1a1a/ffffff?text=Album+Cover'
-        },
-        link: '#'
-      },
-      {
-        id: 2,
-        title: 'Gaming Livestream Setup',
-        description: 'Check out the details of my latest gaming rig and livestream setup, optimized for performance and audience engagement. Learn about the gear and software I use to deliver a seamless streaming experience.',
-        backgroundImageUrl: 'https://images.squarespace-cdn.com/content/v1/6411d47133e5e02e0a1ebe07/1700140172111-0UTV428JELSPYOW2S8NX/DJI_0649-Pano.jpg?format=750w',
-        leftContent: {
-          type: 'youtube',
-          videoId: 'dQw4w9WgXcQ'
-        },
-        link: '#'
-      },
-      {
-        id: 3,
-        title: 'Interactive Art Installation',
-        description: 'An exploration of my interactive art piece, "Nexus," which uses real-time sound analysis to create a responsive visual spectacle. This project was a collaboration with digital artists and developers.',
-        backgroundImageUrl: 'https://images.unsplash.com/photo-1729575846511-f499d2e17d79?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmFzaWMlMjBiYWNrZ3JvdW5kfGVufDB8fDB8fHww',
-        leftContent: {
-          type: 'image',
-          src: 'https://placehold.co/800x600/2a2a2a/ffffff?text=Art+Installation'
-        },
-        link: '#'
-      }
-    ];
+export async function getFeaturedWorks(selectedFeaturedWorks = null) {
+  if (!selectedFeaturedWorks || !Array.isArray(selectedFeaturedWorks)) {
+    console.error('getFeaturedWorks requires selectedFeaturedWorks from kjov2_general relationship');
+    return [];
   }
+
+  // Sort by display_order for consistent presentation
+  return selectedFeaturedWorks.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
 }
 
 
@@ -559,13 +479,11 @@ export async function searchBlogPosts(query, limit = 10, offset = 0) {
 // Fetch single blog post by ID or slug
 export async function getBlogPost(identifier) {
   try {
-    console.log('getBlogPost: Fetching post with identifier:', identifier);
     const directus = getDirectusInstance();
     
     // Try to fetch by slug first, then by ID
     let post;
     try {
-      console.log('getBlogPost: Trying to fetch by slug');
       post = await directus.request(
         readItems('kjov2_blog_posts', {
           fields: [
@@ -582,8 +500,6 @@ export async function getBlogPost(identifier) {
           limit: 1
         })
       );
-      
-      console.log('getBlogPost: Response from slug search:', post);
       
       if (post.length === 0) {
         // Try by ID if slug doesn't work
@@ -628,9 +544,7 @@ export async function getBlogPost(identifier) {
       tags: postData.tags ? (Array.isArray(postData.tags) ? postData.tags : postData.tags.split(',').map(tag => tag.trim())) : [],
       image: postData.featured_image ? buildAssetUrl(postData.featured_image) : '/src/lib/assets/blog-hero-default.jpg',
       featured_image: postData.featured_image ? buildAssetUrl(postData.featured_image) : null,
-      date: postData.date_published || postData.date_created,
-      date_published: postData.date_published,
-      date_created: postData.date_created,
+      date: new Date().toISOString(), // Use current date as fallback since date fields don't exist
       slug: postData.slug || `post-${postData.id}`,
       status: postData.status || 'published',
       author: 'Key Jay',
@@ -647,68 +561,6 @@ export async function getBlogPost(identifier) {
  * SOCIAL MEDIA & EXTERNAL LINKS API
  * ================================================================================= */
 
-/**
- * Fetches social media links from Directus
- * Tries multiple possible table names for backward compatibility
- * Handles icon field relationships and provides fallback data
- * @returns {Promise<Array>} Array of social media link objects
- */
-export async function getSocialLinks() {
-  const directus = getDirectusInstance();
-  
-  // Try different possible table names
-  const possibleTableNames = [
-    'kjov2_socials',
-    'kjov2_social_links', 
-    'kjov2_social_media',
-    'socials',
-    'social_links'
-  ];
-
-  for (const tableName of possibleTableNames) {
-    try {
-      const socialLinks = await directus.request(
-        readItems(tableName, {
-          fields: [
-            '*',
-            {
-              icon_selector_name: ['*']
-            }
-          ]
-        })
-      );
-
-      if (socialLinks && socialLinks.length > 0) {
-        // Transform the data to match our expected format
-        const transformedLinks = socialLinks.map(social => {
-          // Handle icon field - check if icon_selector_name is an object with icon_reference_id
-          let iconName = null;
-          if (social.icon_selector_name && typeof social.icon_selector_name === 'object') {
-            iconName = social.icon_selector_name.icon_reference_id;
-          } else {
-            iconName = social.icon_class || social.icon || social.icon_name || social.icon_selector_name || `mdi:${(social.name || '').toLowerCase()}`;
-          }
-          
-          return {
-            id: social.id,
-            name: social.platform || social.name,
-            icon: iconName,
-            url: social.url,
-            color: social.color || getDefaultSocialColor(social.platform || social.name),
-            display_order: social.display_order || social.sort_order || 0
-          };
-        });
-
-        return transformedLinks;
-      }
-    } catch (error) {
-      continue; // Try next table name
-    }
-  }
-  
-  // Return empty array if no data available
-  return [];
-}
 
 /**
  * Fetches music streaming platforms and networks from Directus
@@ -746,7 +598,7 @@ export async function getMusicNetworks() {
           name: network.name || network.platform,
           icon: iconName,
           url: network.url,
-          color: network.color || getDefaultMusicNetworkColor(network.name || network.platform),
+          color: network.color || getMusicPlatformColors(network.name || network.platform),
           display_order: network.display_order || network.sort || network.sort_order || 0
         };
       });
@@ -768,47 +620,6 @@ export async function getMusicNetworks() {
  * UTILITY FUNCTIONS & FALLBACKS
  * ================================================================================= */
 
-/**
- * Gets default Tailwind color classes for music streaming platforms
- * @param {string} platform - Platform name (lowercase)
- * @returns {string} Tailwind CSS classes for text color
- */
-function getDefaultMusicNetworkColor(platform) {
-  const colorMap = {
-    'bandcamp': 'text-cyan-400 hover:text-cyan-300',
-    'youtube': 'text-red-500 hover:text-red-400',
-    'spotify': 'text-green-500 hover:text-green-400',
-    'apple music': 'text-gray-300 hover:text-white',
-    'applemusic': 'text-gray-300 hover:text-white',
-    'tidal': 'text-white hover:text-gray-300',
-    'soundcloud': 'text-orange-500 hover:text-orange-400',
-    'amazon music': 'text-blue-400 hover:text-blue-300',
-    'deezer': 'text-orange-400 hover:text-orange-300'
-  };
-  
-  return colorMap[platform?.toLowerCase()] || 'text-white hover:text-gray-300';
-}
-
-/**
- * Gets default Tailwind color classes for social media platforms
- * @param {string} platform - Platform name (lowercase)
- * @returns {string} Tailwind CSS classes for text color
- */
-function getDefaultSocialColor(platform) {
-  const colorMap = {
-    'youtube': 'text-red-500 hover:text-red-400',
-    'instagram': 'text-pink-500 hover:text-pink-400',
-    'twitter': 'text-blue-400 hover:text-blue-300',
-    'spotify': 'text-green-500 hover:text-green-400',
-    'facebook': 'text-blue-600 hover:text-blue-500',
-    'tiktok': 'text-white hover:text-gray-300',
-    'bandcamp': 'text-cyan-400 hover:text-cyan-300',
-    'soundcloud': 'text-orange-500 hover:text-orange-400',
-    'twitch': 'text-purple-500 hover:text-purple-400'
-  };
-  
-  return colorMap[platform?.toLowerCase()] || 'text-gray-400 hover:text-white';
-}
 
 /* =================================================================================
  * SITE CONFIGURATION & SETTINGS API
@@ -827,7 +638,35 @@ export async function getSiteSettings() {
     const settings = await directus.request(
       readItems('kjov2_general', {
         fields: [
-          '*'
+          '*',
+          {
+            featured: [
+              'id',
+              'header',
+              'details',
+              'hosted_type',
+              'left_remote_content',
+              'project_link',
+              'sort',
+              {
+                thumbnail_image: ['id', 'filename_disk', 'filename_download']
+              },
+              {
+                background: ['id', 'filename_disk', 'filename_download', 'type']
+              }
+            ]
+          },
+          {
+            socials: [
+              'id',
+              'name',
+              'url',
+              'icon_selector_name',
+              {
+                icon_selector_name: ['icon_reference_id']
+              }
+            ]
+          }
         ],
         limit: 1
       })
@@ -841,8 +680,58 @@ export async function getSiteSettings() {
       throw new Error('No data from database, using fallback');
     }
     
+    // Process featured works if they exist
+    const featuredWorks = siteConfig.featured ? siteConfig.featured.map(work => ({
+      id: work.id || work.feat_id,
+      title: work.header || work.title,
+      description: work.details || work.description,
+      backgroundImageUrl: work.background ? buildAssetUrl(work.background) : 'https://images.unsplash.com/photo-1729575846511-f499d2e17d79?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmFzaWMlMjBiYWNrZ3JvdW5kfGVufDB8fDB8fHww',
+      leftContent: {
+        type: work.hosted_type || work.video_type || 'image',
+        src: (work.hosted_type === 'youtube' || work.video_type === 'youtube')
+          ? null 
+          : (work.left_local_content ? 
+              buildAssetUrl(work.left_local_content) :
+              (work.thumbnail_image ? 
+                (typeof work.thumbnail_image === 'object' ? 
+                  buildAssetUrl(work.thumbnail_image.filename_disk || work.thumbnail_image.id) : 
+                  buildAssetUrl(work.thumbnail_image)) : 
+                'https://placehold.co/800x600/1a1a1a/ffffff?text=Featured+Work')),
+        videoId: (work.hosted_type === 'youtube' || work.video_type === 'youtube') && 
+                 (work.left_remote_content || work.video_url) ? 
+          extractYouTubeId(work.left_remote_content || work.video_url) : null
+      },
+      video_url: work.left_remote_content || work.video_url,
+      video_type: work.hosted_type || work.video_type,
+      featured: work.featured || false,
+      display_order: work.sort || work.display_order || 0,
+      link: work.project_link || '#'
+    })) : [];
+
+    // Process social links if they exist
+    const socialLinks = siteConfig.socials ? siteConfig.socials.map(social => {
+      // Handle icon field - check if icon_selector_name is an object with icon_reference_id
+      let iconName = null;
+      if (social.icon_selector_name && typeof social.icon_selector_name === 'object') {
+        iconName = social.icon_selector_name.icon_reference_id;
+      } else {
+        iconName = social.icon_selector_name || `mdi:${(social.name || '').toLowerCase()}`;
+      }
+      
+      return {
+        id: social.id,
+        name: social.name,
+        icon: iconName,
+        url: social.url,
+        color: getSocialPlatformColors(social.name),
+        display_order: 0 // Default since display_order field doesn't exist
+      };
+    }) : [];
+
     const result = {
       status: siteConfig.status?.toLowerCase() || 'live', // Normalize to lowercase: 'live' or 'maintenance'
+      featuredWorks,
+      socialLinks,
       pages: {
         music: {
           disabled: siteConfig.music_page_disabled || false,
@@ -887,6 +776,8 @@ export async function getSiteSettings() {
     // Realistic fallback data that matches production database state
     const fallbackResult = {
       status: 'live',
+      featuredWorks: [], // Empty array if database is unavailable
+      socialLinks: [], // Empty array if database is unavailable
       pages: {
         music: { disabled: false, header_background: null },
         games: { disabled: false, header_background: null },

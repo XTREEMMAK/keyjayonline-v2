@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import WaveSurfer from 'wavesurfer.js';
 	import Icon from '@iconify/svelte';
+	import { formatTime } from '$lib/utils/time.js';
 	
 	let {
 		audioUrl,
@@ -24,11 +25,6 @@
 	let duration = $state('0:00');
 	let volume = $state(0.8);
 	
-	function formatTime(seconds) {
-		const minutes = Math.floor(seconds / 60);
-		const secs = Math.floor(seconds % 60);
-		return `${minutes}:${secs.toString().padStart(2, '0')}`;
-	}
 	
 	onMount(() => {
 		if (!container || !audioUrl) return;

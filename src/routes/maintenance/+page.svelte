@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
+	import { PUBLIC_CONTACT_EMAIL } from '$env/static/public';
 
 	let currentTime = $state('');
 
@@ -66,9 +67,9 @@
 			<!-- Contact Info -->
 			<div class="text-gray-400 text-sm">
 				<p>Need immediate assistance? Contact us at:</p>
-				<a href="mailto:contact@keyjayonline.com" 
+				<a href="mailto:{PUBLIC_CONTACT_EMAIL}" 
 				   class="text-blue-400 hover:text-blue-300 transition-colors duration-300">
-					contact@keyjayonline.com
+					{PUBLIC_CONTACT_EMAIL}
 				</a>
 			</div>
 		</div>

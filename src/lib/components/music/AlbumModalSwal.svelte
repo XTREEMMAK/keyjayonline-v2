@@ -4,6 +4,7 @@
 	import VideoEmbed from '$lib/components/media/VideoEmbed.svelte';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 	import { fade } from 'svelte/transition';
+	import { formatTime } from '$lib/utils/time.js';
 	import '$lib/styles/album-modal.css';
 	
 	/** @typedef {import('$lib/types').Album} Album */
@@ -596,7 +597,6 @@
 	/** @param {string} trackId */
 	window.handleDownload = function(trackId) {
 		// Implementation for download functionality
-		console.log('Download track:', trackId);
 	};
 	
 	window.handlePurchase = function() {
@@ -823,9 +823,4 @@
 	 * @param {number} seconds
 	 * @returns {string}
 	 */
-	function formatTime(seconds) {
-		const minutes = Math.floor(seconds / 60);
-		const secs = Math.floor(seconds % 60);
-		return `${minutes}:${secs.toString().padStart(2, '0')}`;
-	}
 </script>

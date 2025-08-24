@@ -1,12 +1,9 @@
-import { getSiteSettings, getSocialLinks } from '$lib/services/directus-sdk.js';
+import { getSiteSettings } from '$lib/services/directus-sdk.js';
 import { redirect, error } from '@sveltejs/kit';
 
 export async function load({ url }) {
 	try {
-		const [siteSettings, socialLinks] = await Promise.all([
-			getSiteSettings(),
-			getSocialLinks()
-		]);
+		const siteSettings = await getSiteSettings();
 		
 		// Check if site is in maintenance mode (status is already normalized to lowercase in getSiteSettings)
 		if (siteSettings.status === 'maintenance') {
@@ -35,7 +32,7 @@ export async function load({ url }) {
 
 		return {
 			siteSettings,
-			socialLinks
+			socialLinks: siteSettings.socialLinks
 		};
 	} catch (error) {
 		// If it's already a redirect, re-throw it

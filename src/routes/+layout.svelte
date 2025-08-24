@@ -6,6 +6,7 @@
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import ScrollToTop from '$lib/components/ui/ScrollToTop.svelte';
 	import PersistentMusicPlayer from '$lib/components/music/PersistentMusicPlayer.svelte';
+	import { PUBLIC_SITE_URL } from '$env/static/public';
 	
 	let { children, data } = $props();
 	
@@ -31,14 +32,14 @@
 	<meta name="description" content="The official website of musician, composer, and producer KEY JAY!"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 	<!-- Facebook Meta Tags -->
-	<meta property="og:url" content="https://keyjayonline.com"/>
+	<meta property="og:url" content={PUBLIC_SITE_URL}/>
 	<meta property="og:title" content="KEY JAY ONLINE"/>
 	<meta property="og:description" content="The official website of musician, composer, and producer KEY JAY!"/>
 	<meta property="og:image" content="/img/social_1200.jpg"/>
 	<!-- Twitter Meta Tags -->
 	<meta name="twitter:card" content="summary_large_image"/>
-	<meta property="twitter:domain" content="keyjayonline.com"/>
-	<meta property="twitter:url" content="https://keyjayonline.com"/>
+	<meta property="twitter:domain" content={PUBLIC_SITE_URL.replace('https://', '')}/>
+	<meta property="twitter:url" content={PUBLIC_SITE_URL}/>
 	<meta name="twitter:title" content="KEY JAY ONLINE"/>
 	<meta name="twitter:description" content="The official website of musician, composer, and producer KEY JAY!"/>
 	<meta name="twitter:image" content="/img/social_1200.jpg"/>
