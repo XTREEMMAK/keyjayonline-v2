@@ -55,9 +55,9 @@
 			featuredWork.leftContent.src;
 		
 		return `
-			<div class="video-modal-container" style="display: flex; flex-direction: column; gap: clamp(12px, 3vw, 24px); height: 100%; max-height: 80vh; padding: clamp(12px, 4vw, 20px);">
+			<div class="video-modal-container" style="display: flex; flex-direction: column; gap: clamp(16px, 2vw, 20px); height: 100%; max-height: 80vh; padding: clamp(12px, 4vw, 20px);">
 				<!-- Video Section with max-width constraint -->
-				<div class="video-section" style="flex: 1; display: flex; flex-direction: column; min-height: 0; align-items: center;">
+				<div class="video-section" style="flex: 0 1 auto; display: flex; flex-direction: column; align-items: center;">
 					<div class="video-container" style="position: relative; width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
 						${isYouTubeVideo ? `
 							<iframe 
@@ -82,15 +82,15 @@
 				</div>
 				
 				<!-- Content Section -->
-				<div class="content-section" style="flex-shrink: 0; max-height: 40%; overflow-y: auto;">
+				<div class="content-section" style="flex: 1 1 auto; min-height: 0; overflow-y: auto;">
 					<div style="text-align: left;">
 						<h2 style="font-size: 1.75rem; font-weight: bold; margin-bottom: 16px; color: #ffffff;">${featuredWork.title}</h2>
 						
 						${featuredWork.description ? `
-							<div class="featured-work-description" style="color: #d1d5db; line-height: 1.6; font-size: 1rem; margin-bottom: clamp(12px, 3vw, 24px);">
+							<div class="featured-work-description" style="color: #d1d5db; line-height: 1.6; font-size: 1rem; margin-bottom: clamp(8px, 1.5vw, 16px);">
 								<!-- HTML content will be inserted here via JavaScript -->
 								<style>
-									.featured-work-description p { margin-bottom: clamp(8px, 2vw, 1rem); }
+									.featured-work-description p { margin-bottom: clamp(6px, 1.5vw, 0.75rem); }
 									.featured-work-description p:last-child { margin-bottom: 0; }
 								</style>
 							</div>

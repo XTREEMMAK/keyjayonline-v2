@@ -8,11 +8,11 @@ export async function load({ url }) {
 			getSocialLinks()
 		]);
 		
-		// Check if site is in maintenance mode
+		// Check if site is in maintenance mode (status is already normalized to lowercase in getSiteSettings)
 		if (siteSettings.status === 'maintenance') {
 			// Don't redirect if already on maintenance page
 			if (!url.pathname.startsWith('/maintenance')) {
-				throw redirect(503, '/maintenance');
+				throw redirect(307, '/maintenance');
 			}
 		}
 		

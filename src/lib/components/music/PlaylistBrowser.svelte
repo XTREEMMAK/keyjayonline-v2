@@ -165,7 +165,7 @@
 										$currentTrack?.audioUrl === track.audioUrl ? 'bg-gray-700/70 text-blue-400' : 'text-gray-300'
 									}"
 								>
-									<div class="w-8 h-8 bg-gray-700 rounded flex-shrink-0 overflow-hidden">
+									<div class="w-8 h-8 bg-gray-700 rounded flex-shrink-0 overflow-hidden relative">
 										{#if cachedArtwork}
 											<!-- Cached extracted artwork -->
 											<img 
@@ -173,7 +173,7 @@
 												alt="Album cover for {track.title}"
 												class="w-full h-full object-cover"
 											/>
-										{:else if track.thumbnail && !thumbnailErrors.has(track.audioUrl)}
+										{:else if track.thumbnail && track.thumbnail !== null && !thumbnailErrors.has(track.audioUrl)}
 											<!-- Fallback to existing thumbnail -->
 											<img 
 												src={track.thumbnail} 
@@ -185,13 +185,16 @@
 												}}
 											/>
 										{:else}
-											<!-- Default content for tracks with no artwork -->
-											<div class="w-full h-full flex items-center justify-center">
-												{#if $currentTrack?.audioUrl === track.audioUrl && $isPlaying}
-													<Icon icon="mdi:equalizer" width={16} height={16} class="text-blue-400" />
-												{:else}
-													<span class="text-xs text-gray-400">{index + 1}</span>
-												{/if}
+											<!-- Default icon for tracks with no artwork -->
+											<div class="w-full h-full flex items-center justify-center bg-gray-600">
+												<Icon icon="mdi:music-note" width={16} height={16} class="text-gray-300" />
+											</div>
+										{/if}
+										
+										<!-- Playing indicator overlay -->
+										{#if $currentTrack?.audioUrl === track.audioUrl && $isPlaying}
+											<div class="absolute inset-0 bg-black/60 flex items-center justify-center">
+												<Icon icon="mdi:equalizer" width={14} height={14} class="text-blue-400" />
 											</div>
 										{/if}
 									</div>

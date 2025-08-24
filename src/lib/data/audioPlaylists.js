@@ -7,14 +7,14 @@ export const audioPlaylists = {
 				title: 'ABBS',
 				artist: 'Key Jay',
 				audioUrl: '/audio/edm/ABBS.mp3',
-				thumbnail: '/audio/edm/thumbs/ABBS.jpg',
+				thumbnail: null,
 				genre: 'EDM'
 			},
 			{
 				title: 'Ride Override',
 				artist: 'Key Jay',
 				audioUrl: '/audio/edm/RideOverride.mp3',
-				thumbnail: '/audio/edm/thumbs/RideOverride.jpg',
+				thumbnail: null,
 				genre: 'EDM'
 			},
 			{
@@ -41,21 +41,21 @@ export const audioPlaylists = {
 				title: 'Classic Subway Smooth',
 				artist: 'Key Jay',
 				audioUrl: '/audio/hiphop/Classic%20Subway%20Smooth.mp3',
-				thumbnail: '/audio/hiphop/thumbs/ClassicSubwaySmooth.jpg',
+				thumbnail: null,
 				genre: 'Hip Hop'
 			},
 			{
 				title: 'Too Cold',
 				artist: 'Key Jay',
 				audioUrl: '/audio/hiphop/Too%20Cold.mp3',
-				thumbnail: '/audio/hiphop/thumbs/TooCold.jpg',
+				thumbnail: null,
 				genre: 'Hip Hop'
 			},
 			{
 				title: 'ZLD3',
 				artist: 'Key Jay',
 				audioUrl: '/audio/hiphop/zld3.mp3',
-				thumbnail: '/audio/hiphop/thumbs/zld3.jpg',
+				thumbnail: null,
 				genre: 'Hip Hop'
 			},
 			{
@@ -82,14 +82,14 @@ export const audioPlaylists = {
 				title: 'Lands of Forever (Instrumental)',
 				artist: 'Key Jay',
 				audioUrl: '/audio/orchestral/LandsofForever_Instrumental.mp3',
-				thumbnail: '/audio/orchestral/thumbs/LandsofForever.jpg',
+				thumbnail: null,
 				genre: 'Orchestral'
 			},
 			{
 				title: 'Plains of Forever',
 				artist: 'Key Jay',
 				audioUrl: '/audio/orchestral/PlainsofForever.mp3',
-				thumbnail: '/audio/orchestral/thumbs/PlainsofForever.jpg',
+				thumbnail: null,
 				genre: 'Orchestral'
 			},
 			{
@@ -103,7 +103,7 @@ export const audioPlaylists = {
 				title: 'War of Blood Sand',
 				artist: 'Key Jay',
 				audioUrl: '/audio/orchestral/WarofBloodSand.mp3',
-				thumbnail: '/audio/orchestral/thumbs/WarofBloodSand.jpg',
+				thumbnail: null,
 				genre: 'Orchestral'
 			},
 			{
@@ -143,21 +143,21 @@ export const audioPlaylists = {
 				title: 'Endless Possibilities',
 				artist: 'Key Jay',
 				audioUrl: '/audio/rock/Endless%20Possibilities.mp3',
-				thumbnail: '/audio/rock/thumbs/EndlessPossibilities.jpg',
+				thumbnail: null,
 				genre: 'Rock'
 			},
 			{
 				title: 'Sand Trap',
 				artist: 'Key Jay',
 				audioUrl: '/audio/rock/Sand%20Trap.mp3',
-				thumbnail: '/audio/rock/thumbs/SandTrap.jpg',
+				thumbnail: null,
 				genre: 'Rock'
 			},
 			{
 				title: 'X-Collide',
 				artist: 'Key Jay',
 				audioUrl: '/audio/rock/X-Collide.mp3',
-				thumbnail: '/audio/rock/thumbs/X-Collide.jpg',
+				thumbnail: null,
 				genre: 'Rock'
 			}
 		]
@@ -170,21 +170,21 @@ export const audioPlaylists = {
 				title: 'Shallow Abyss',
 				artist: 'Key Jay',
 				audioUrl: '/audio/vgm/ShallowAbyss.mp3',
-				thumbnail: '/audio/vgm/thumbs/ShallowAbyss.jpg',
+				thumbnail: null,
 				genre: 'VGM'
 			},
 			{
 				title: 'Shipwreck Prison',
 				artist: 'Key Jay',
 				audioUrl: '/audio/vgm/Shipwreck%20Prison.mp3',
-				thumbnail: '/audio/vgm/thumbs/ShipwreckPrison.jpg',
+				thumbnail: null,
 				genre: 'VGM'
 			},
 			{
 				title: 'This War Between Us',
 				artist: 'Key Jay',
 				audioUrl: '/audio/vgm/ThisWarBetweenUs.mp3',
-				thumbnail: '/audio/vgm/thumbs/ThisWarBetweenUs.jpg',
+				thumbnail: null,
 				genre: 'VGM'
 			}
 		]
@@ -197,7 +197,7 @@ export const audioPlaylists = {
 				title: 'Ticket to Nowhere',
 				artist: 'Key Jay',
 				audioUrl: '/audio/atmosphere/TickettoNowhere.mp3',
-				thumbnail: '/audio/atmosphere/thumbs/TickettoNowhere.jpg',
+				thumbnail: null,
 				genre: 'Atmosphere'
 			}
 		]

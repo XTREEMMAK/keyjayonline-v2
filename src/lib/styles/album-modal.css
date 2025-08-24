@@ -85,22 +85,41 @@
 	font-weight: bold !important;
 }
 
-/* Scroll lock overlay styles */
-.scroll-lock-overlay {
-	position: absolute !important;
-	top: 0 !important;
-	left: 0 !important;
-	right: 0 !important;
-	bottom: 0 !important;
-	background: rgba(0, 0, 0, 0.1) !important;
-	backdrop-filter: blur(1px) !important;
-	z-index: 100 !important;
-	pointer-events: none !important;
-	transition: all 0.3s ease !important;
+/* Responsive Content Systems */
+.desktop-tabs-system {
+	display: block;
 }
 
-.album-content-section {
-	transition: overflow-y 0.3s ease !important;
+.mobile-accordion-system {
+	display: none;
+}
+
+/* Accordion Styles */
+.accordion-header {
+	transition: background-color 0.3s ease !important;
+}
+
+.accordion-header:hover {
+	background: rgba(55, 65, 81, 0.5) !important;
+}
+
+.accordion-content {
+	transition: max-height 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	overflow: hidden;
+}
+
+.accordion-content.collapsed {
+	max-height: 0;
+}
+
+.accordion-content-inner {
+	padding: 0 16px 16px !important;
+}
+
+.accordion-arrow {
+	transition: transform 0.3s ease !important;
+	color: #9ca3af !important;
+	flex-shrink: 0 !important;
 }
 
 @media (max-width: 768px) {
@@ -119,5 +138,14 @@
 	
 	.swal2-title {
 		font-size: 2rem !important;
+	}
+	
+	/* Switch to accordion system on mobile */
+	.desktop-tabs-system {
+		display: none !important;
+	}
+	
+	.mobile-accordion-system {
+		display: block !important;
 	}
 }

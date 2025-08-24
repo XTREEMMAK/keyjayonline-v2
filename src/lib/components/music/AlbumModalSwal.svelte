@@ -172,21 +172,23 @@
 				</div>
 				
 				<div class="album-content-section">
-					<!-- Tab Navigation -->
-					<div class="tab-navigation" style="display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0; overflow-x: auto;">
-						<button id="tab-details" class="tab-button active" onclick="switchTab('details')" style="padding: 8px 12px; min-width: max-content; white-space: nowrap; background: transparent; color: #ffffff; border: none; border-bottom: 2px solid #3b82f6; cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: all 0.3s;">
-							Main Details
-						</button>
-						<button id="tab-credits" class="tab-button" onclick="switchTab('credits')" style="padding: 8px 12px; min-width: max-content; white-space: nowrap; background: transparent; color: #9ca3af; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: all 0.3s;">
-							Credits
-						</button>
-						<button id="tab-videos" class="tab-button" onclick="switchTab('videos')" style="padding: 8px 12px; min-width: max-content; white-space: nowrap; background: transparent; color: #9ca3af; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: all 0.3s;">
-							Videos
-						</button>
-					</div>
-					
-					<!-- Tab Content -->
-					<div class="tab-content" style="position: relative; height: clamp(400px, 60vh, 600px); overflow: hidden;">
+					<!-- Desktop Tab System -->
+					<div class="desktop-tabs-system">
+						<!-- Tab Navigation -->
+						<div class="tab-navigation" style="display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0; overflow-x: auto;">
+							<button id="tab-details" class="tab-button active" onclick="switchTab('details')" style="padding: 8px 12px; min-width: max-content; white-space: nowrap; background: transparent; color: #ffffff; border: none; border-bottom: 2px solid #3b82f6; cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: all 0.3s;">
+								Main Details
+							</button>
+							<button id="tab-credits" class="tab-button" onclick="switchTab('credits')" style="padding: 8px 12px; min-width: max-content; white-space: nowrap; background: transparent; color: #9ca3af; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: all 0.3s;">
+								Credits
+							</button>
+							<button id="tab-videos" class="tab-button" onclick="switchTab('videos')" style="padding: 8px 12px; min-width: max-content; white-space: nowrap; background: transparent; color: #9ca3af; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: all 0.3s;">
+								Videos
+							</button>
+						</div>
+						
+						<!-- Tab Content -->
+						<div class="tab-content" style="position: relative; height: clamp(400px, 60vh, 600px); overflow: hidden;">
 						<!-- Main Details Tab -->
 						<div id="content-details" class="tab-panel active" style="opacity: 1; position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto; transition: opacity 0.3s ease;">
 							${album.rich_content || album.description ? `
@@ -278,6 +280,123 @@
 							` : '<p style="color: #9ca3af; text-align: center; padding: 40px;">No videos available for this album.</p>'}
 						</div>
 					</div>
+					</div>
+					
+					<!-- Mobile Accordion System -->
+					<div class="mobile-accordion-system">
+						<!-- Main Details Accordion -->
+						<div class="accordion-section">
+							<button class="accordion-header" onclick="toggleAccordion('accordion-details')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(55, 65, 81, 0.3); border: none; border-radius: 8px; color: #ffffff; font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 8px; transition: all 0.3s ease;">
+								<span>Main Details</span>
+								<iconify-icon class="accordion-arrow" icon="mdi:chevron-down" width="20" height="20" style="transition: transform 0.3s ease; color: #9ca3af;"></iconify-icon>
+							</button>
+							<div id="accordion-details" class="accordion-content expanded">
+								<div class="accordion-content-inner" style="padding: 0 16px 16px;">
+									${album.rich_content || album.description ? `
+									<div style="margin-bottom: 32px;">
+										<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 16px; text-align: left;">Album Details</h3>
+										${album.rich_content ? 
+											`<div class="album-description" style="color: #d1d5db; line-height: 1.8; font-size: 1rem; text-align: left;">${sanitizeHtml(album.rich_content)}</div>` : 
+											`<p class="album-description" style="color: #d1d5db; line-height: 1.8; font-size: 1rem; text-align: left;">${album.description}</p>`}
+									</div>
+									` : ''}
+									
+									${album.tracks && album.tracks.length > 0 ? `
+									<div style="margin-bottom: 32px;">
+										<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 16px; text-align: left;">Track List</h3>
+										<div class="mobile-track-list-container" style="display: grid; gap: 16px;">
+											${album.tracks.map(/** @type {Track} */ (track, /** @type {number} */ i) => `
+												<div style="background: rgba(55, 65, 81, 0.5); border-radius: 8px; padding: 16px;">
+													<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+														<div>
+															<h4 style="color: #ffffff; font-weight: 500; margin-bottom: 4px;">
+																${i + 1}. ${track.title}
+															</h4>
+															${track.duration ? `<span style="color: #9ca3af; font-size: 0.9rem;">${track.duration}</span>` : ''}
+														</div>
+														${track.licensable ? `<span style="padding: 4px 8px; background: rgba(34, 197, 94, 0.2); color: #22c55e; font-size: 0.75rem; border-radius: 16px;">Available for licensing</span>` : ''}
+													</div>
+													
+													${track.audio_file_url ? `<div class="track-player-mobile" data-track-id="${track.id}" data-audio-url="${track.audio_file_url}" data-track-title="${track.title}" data-artist="${album.artist || ''}" data-can-download="${track.access_type === 'free' || (userAccess?.canDownload ? 'true' : 'false')}" style="margin-bottom: 12px;"></div>` : ''}
+													
+													${track.track_description ? `<div style="color: #d1d5db; font-size: 0.9rem; line-height: 1.5;">${sanitizeHtml(track.track_description)}</div>` : ''}
+												</div>
+											`).join('')}
+										</div>
+									</div>
+									` : ''}
+									
+									${album.liner_notes ? `
+										<div style="margin-bottom: 32px;">
+											<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 16px; text-align: left;">Liner Notes</h3>
+											<div style="color: #d1d5db; white-space: pre-wrap; line-height: 1.6; text-align: left;">${album.liner_notes}</div>
+										</div>
+									` : ''}
+								</div>
+							</div>
+						</div>
+						
+						<!-- Credits Accordion -->
+						<div class="accordion-section">
+							<button class="accordion-header" onclick="toggleAccordion('accordion-credits')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(55, 65, 81, 0.3); border: none; border-radius: 8px; color: #ffffff; font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 8px; transition: all 0.3s ease;">
+								<span>Credits</span>
+								<iconify-icon class="accordion-arrow" icon="mdi:chevron-down" width="20" height="20" style="transition: transform 0.3s ease; color: #9ca3af;"></iconify-icon>
+							</button>
+							<div id="accordion-credits" class="accordion-content collapsed">
+								<div class="accordion-content-inner" style="padding: 0 16px 16px;">
+									<div style="margin-bottom: 32px;">
+										<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 20px; text-align: left;">Album Credits</h3>
+										${albumCredits.length > 0 ? `
+										<div style="display: grid; gap: 16px;">
+											${albumCredits.map(/** @type {Credit} */ (credit) => `
+												<div style="display: flex; justify-content: space-between; padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px); background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease; cursor: pointer; gap: 8px; flex-wrap: wrap;" 
+													 onmouseover="this.style.background='rgba(55, 65, 81, 0.5)'; this.style.boxShadow='0 0 20px rgba(59, 130, 246, 0.4)'; this.style.borderLeftColor='#60a5fa'"
+													 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'">
+													<span style="color: #9ca3af; font-weight: 500; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.role}</span>
+													<span style="color: #ffffff; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.name}</span>
+												</div>
+											`).join('')}
+										</div>
+										` : '<p style="color: #9ca3af; text-align: center; padding: 40px;">No credits available for this album.</p>'}
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<!-- Videos Accordion -->
+						<div class="accordion-section">
+							<button class="accordion-header" onclick="toggleAccordion('accordion-videos')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(55, 65, 81, 0.3); border: none; border-radius: 8px; color: #ffffff; font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 8px; transition: all 0.3s ease;">
+								<span>Videos</span>
+								<iconify-icon class="accordion-arrow" icon="mdi:chevron-down" width="20" height="20" style="transition: transform 0.3s ease; color: #9ca3af;"></iconify-icon>
+							</button>
+							<div id="accordion-videos" class="accordion-content collapsed">
+								<div class="accordion-content-inner" style="padding: 0 16px 16px;">
+									${album.youtube_videos?.length ? `
+										<div style="margin-bottom: 32px;">
+											<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 20px; text-align: left;">Videos</h3>
+											<div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+												${album.youtube_videos.map(/** @type {Video} */ (video) => `
+													<div style="background: rgba(55, 65, 81, 0.3); border-radius: 12px; overflow: hidden; transition: transform 0.3s;" 
+														 onmouseover="this.style.transform='scale(1.02)'" 
+														 onmouseout="this.style.transform='scale(1)'">
+														<div style="position: relative; aspect-ratio: 16/9; background: #1a1a2e;">
+															<iframe src="https://www.youtube.com/embed/${video.id}" 
+																	title="${video.title || 'Video'}"
+																	frameborder="0"
+																	allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+																	allowfullscreen
+																	style="position: absolute; inset: 0; width: 100%; height: 100%;"></iframe>
+														</div>
+														${video.title ? `<div style="padding: 12px;"><h4 style="color: #ffffff; font-weight: 500; font-size: 0.95rem;">${video.title}</h4></div>` : ''}
+													</div>
+												`).join('')}
+											</div>
+										</div>
+									` : '<p style="color: #9ca3af; text-align: center; padding: 40px;">No videos available for this album.</p>'}
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		`;
@@ -287,10 +406,7 @@
 		// Setup streaming links scroll-based visibility animation
 		setupStreamingLinksVisibility();
 		
-		// Setup inner scroll control
-		setupInnerScrollControl();
-		
-		// Initialize audio players for each track
+		// Initialize audio players for each track (desktop tabs)
 		const trackPlayers = document.querySelectorAll('.track-player');
 		trackPlayers.forEach(playerEl => {
 			const trackId = playerEl.getAttribute('data-track-id');
@@ -332,6 +448,61 @@
 			const progress = document.getElementById(`progress-${trackId}`);
 			const currentTime = document.getElementById(`current-time-${trackId}`);
 			const duration = document.getElementById(`duration-${trackId}`);
+			
+			if (audio) {
+				audio.addEventListener('loadedmetadata', () => {
+					if (duration) duration.textContent = formatTime(audio.duration);
+				});
+				
+				audio.addEventListener('timeupdate', () => {
+					const percent = (audio.currentTime / audio.duration) * 100;
+					if (progress) progress.style.width = percent + '%';
+					if (currentTime) currentTime.textContent = formatTime(audio.currentTime);
+				});
+				
+				audio.addEventListener('ended', () => {
+					if (playBtn) playBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+				});
+			}
+		});
+		
+		// Initialize audio players for mobile accordion system
+		const mobileTrackPlayers = document.querySelectorAll('.track-player-mobile');
+		mobileTrackPlayers.forEach(playerEl => {
+			const trackId = playerEl.getAttribute('data-track-id');
+			const audioUrl = playerEl.getAttribute('data-audio-url');
+			const canDownload = playerEl.getAttribute('data-can-download') === 'true';
+			
+			playerEl.innerHTML = `
+				<div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px;">
+					<button onclick="togglePlay('${trackId}')" id="play-btn-mobile-${trackId}" style="background: #3b82f6; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+							<path d="M8 5v14l11-7z"/>
+						</svg>
+					</button>
+					<div style="flex: 1;">
+						<audio id="audio-mobile-${trackId}" src="${audioUrl}" preload="metadata"></audio>
+						<div style="background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; margin-bottom: 4px;">
+							<div id="progress-mobile-${trackId}" style="background: #3b82f6; height: 100%; border-radius: 2px; width: 0%; transition: width 0.1s;"></div>
+						</div>
+						<div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af;">
+							<span id="current-time-mobile-${trackId}">0:00</span>
+							<span id="duration-mobile-${trackId}">0:00</span>
+						</div>
+					</div>
+					${canDownload ? `<button onclick="handleDownload('${trackId}')" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+							<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+						</svg>
+					</button>` : ''}
+				</div>
+			`;
+			
+			const audio = document.getElementById(`audio-mobile-${trackId}`);
+			const playBtn = document.getElementById(`play-btn-mobile-${trackId}`);
+			const progress = document.getElementById(`progress-mobile-${trackId}`);
+			const currentTime = document.getElementById(`current-time-mobile-${trackId}`);
+			const duration = document.getElementById(`duration-mobile-${trackId}`);
 			
 			if (audio) {
 				audio.addEventListener('loadedmetadata', () => {
@@ -395,17 +566,18 @@
 	
 	/** @param {string} trackId */
 	window.togglePlay = function(trackId) {
+		// Try both desktop and mobile audio elements
 		/** @type {HTMLAudioElement | null} */
-		const audio = /** @type {HTMLAudioElement | null} */ (document.getElementById(`audio-${trackId}`));
-		const playBtn = document.getElementById(`play-btn-${trackId}`);
+		const audio = /** @type {HTMLAudioElement | null} */ (document.getElementById(`audio-${trackId}`) || document.getElementById(`audio-mobile-${trackId}`));
+		const playBtn = document.getElementById(`play-btn-${trackId}`) || document.getElementById(`play-btn-mobile-${trackId}`);
 		
-		// Pause all other tracks
-		document.querySelectorAll('[id^="audio-"]').forEach(otherElement => {
+		// Pause all other tracks (both desktop and mobile)
+		document.querySelectorAll('[id^="audio-"], [id^="audio-mobile-"]').forEach(otherElement => {
 			const otherAudio = /** @type {HTMLAudioElement} */ (otherElement);
-			if (otherAudio.id !== `audio-${trackId}` && !otherAudio.paused) {
+			if (otherAudio.id !== `audio-${trackId}` && otherAudio.id !== `audio-mobile-${trackId}` && !otherAudio.paused) {
 				otherAudio.pause();
-				const otherTrackId = otherAudio.id.replace('audio-', '');
-				const otherPlayBtn = document.getElementById(`play-btn-${otherTrackId}`);
+				const otherTrackId = otherAudio.id.replace('audio-', '').replace('audio-mobile-', '');
+				const otherPlayBtn = document.getElementById(`play-btn-${otherTrackId}`) || document.getElementById(`play-btn-mobile-${otherTrackId}`);
 				if (otherPlayBtn) otherPlayBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
 			}
 		});
@@ -436,6 +608,97 @@
 		});
 	};
 	
+	/** @param {string} accordionId */
+	window.toggleAccordion = function(accordionId) {
+		const content = document.getElementById(accordionId);
+		const header = content?.previousElementSibling;
+		const arrow = header?.querySelector('.accordion-arrow');
+		
+		if (!content || !arrow) return;
+		
+		const isCollapsed = content.classList.contains('collapsed');
+		
+		if (isCollapsed) {
+			// Expand animation
+			const innerContent = content.querySelector('.accordion-content-inner');
+			const fullHeight = innerContent ? innerContent.scrollHeight : content.scrollHeight;
+			
+			// Remove collapsed class and set initial height
+			content.classList.remove('collapsed');
+			content.style.maxHeight = '0px';
+			
+			// Force reflow to ensure starting state
+			content.offsetHeight;
+			
+			// Start expansion with requestAnimationFrame for smooth animation
+			requestAnimationFrame(() => {
+				content.style.maxHeight = fullHeight + 'px';
+				arrow.style.transform = 'rotate(180deg)';
+			});
+			
+			// After animation completes, set to auto for dynamic content
+			setTimeout(() => {
+				if (!content.classList.contains('collapsed')) {
+					content.style.maxHeight = 'auto';
+				}
+			}, 500);
+		} else {
+			// Collapse animation
+			const innerContent = content.querySelector('.accordion-content-inner');
+			const currentHeight = innerContent ? innerContent.scrollHeight : content.scrollHeight;
+			
+			// Set current height first to ensure smooth collapse
+			content.style.maxHeight = currentHeight + 'px';
+			
+			// Force reflow
+			content.offsetHeight;
+			
+			// Start collapse
+			requestAnimationFrame(() => {
+				content.style.maxHeight = '0px';
+				content.classList.add('collapsed');
+				arrow.style.transform = 'rotate(0deg)';
+			});
+		}
+		
+		// Trigger streaming links visibility check after animation
+		setTimeout(() => {
+			const streamingLinks = document.querySelector('.streaming-links');
+			if (streamingLinks) {
+				const modalContent = streamingLinks.closest('.swal2-html-container');
+				if (modalContent) {
+					const event = new Event('scroll');
+					modalContent.dispatchEvent(event);
+				}
+			}
+		}, 500);
+	};
+	
+	/**
+	 * Show individual streaming link icons
+	 */
+	function showStreamingIcons(streamingLinks) {
+		const iconLinks = streamingLinks.querySelectorAll('a');
+		iconLinks.forEach(iconLink => {
+			iconLink.style.opacity = '1';
+			iconLink.style.transform = 'translateY(0)';
+			iconLink.style.pointerEvents = 'auto';
+		});
+	}
+	
+	/**
+	 * Hide individual streaming link icons while maintaining container dimensions
+	 */
+	function hideStreamingIcons(streamingLinks) {
+		const iconLinks = streamingLinks.querySelectorAll('a');
+		iconLinks.forEach(iconLink => {
+			iconLink.style.opacity = '0';
+			iconLink.style.transform = 'translateY(-10px)';
+			iconLink.style.pointerEvents = 'none';
+			// Icon containers maintain their 48px x 48px size
+		});
+	}
+	
 	/**
 	 * Setup scroll-based visibility animation for streaming links
 	 */
@@ -443,8 +706,36 @@
 		const streamingLinks = document.querySelector('.streaming-links');
 		if (!streamingLinks) return;
 		
-		// Add smooth CSS transitions
-		streamingLinks.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+		// Store original dimensions to maintain container size
+		const originalHeight = streamingLinks.offsetHeight;
+		const computedStyle = window.getComputedStyle(streamingLinks);
+		const originalMarginTop = computedStyle.marginTop;
+		const originalMarginBottom = computedStyle.marginBottom;
+		
+		// Fix icon container dimensions to prevent collapse when iconify icons are hidden
+		const iconLinks = streamingLinks.querySelectorAll('a');
+		iconLinks.forEach(iconLink => {
+			// Set fixed dimensions for each icon container
+			iconLink.style.width = '48px';
+			iconLink.style.height = '48px';
+			iconLink.style.minWidth = '48px';
+			iconLink.style.minHeight = '48px';
+			iconLink.style.flexShrink = '0';
+			iconLink.style.display = 'inline-flex';
+			iconLink.style.alignItems = 'center';
+			iconLink.style.justifyContent = 'center';
+			iconLink.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+			
+			// Ensure iconify icons maintain size
+			const iconElement = iconLink.querySelector('iconify-icon');
+			if (iconElement) {
+				iconElement.style.width = '28px';
+				iconElement.style.height = '28px';
+				iconElement.style.minWidth = '28px';
+				iconElement.style.minHeight = '28px';
+				iconElement.style.flexShrink = '0';
+			}
+		});
 		
 		let isVisible = true;
 		let scrollTimeout;
@@ -460,8 +751,47 @@
 				const scrollHeight = modalContent.scrollHeight;
 				const clientHeight = modalContent.clientHeight;
 				
-				// Check if scrolled all the way to the bottom
-				const isAtBottom = Math.abs((scrollTop + clientHeight) - scrollHeight) < 5; // 5px tolerance
+				// Check if there's actually scrollable content
+				const hasScrollableContent = scrollHeight > clientHeight;
+				
+				// Check if we're on mobile (where accordions exist)
+				const isMobile = window.innerWidth <= 768;
+				
+				// If on mobile, check accordion states
+				if (isMobile) {
+					const expandedAccordions = document.querySelectorAll('.accordion-content:not(.collapsed)');
+					const hasExpandedContent = expandedAccordions.length > 0;
+					
+					// If no accordions are expanded, always show streaming links
+					if (!hasExpandedContent) {
+						if (!isVisible) {
+							isVisible = true;
+							showStreamingIcons(streamingLinks);
+						}
+						return;
+					}
+					
+					// If accordions are expanded but no scrollable content, also show
+					if (!hasScrollableContent) {
+						if (!isVisible) {
+							isVisible = true;
+							showStreamingIcons(streamingLinks);
+						}
+						return;
+					}
+				} else {
+					// Desktop logic - if no scrollable content, always show streaming links
+					if (!hasScrollableContent) {
+						if (!isVisible) {
+							isVisible = true;
+							showStreamingIcons(streamingLinks);
+						}
+						return;
+					}
+				}
+				
+				// Check if scrolled all the way to the bottom (with larger tolerance for accordion changes)
+				const isAtBottom = Math.abs((scrollTop + clientHeight) - scrollHeight) < 20;
 				
 				// Show streaming links when NOT at bottom
 				const shouldShow = !isAtBottom;
@@ -470,15 +800,9 @@
 					isVisible = shouldShow;
 					
 					if (isVisible) {
-						// Show: fade in and slide down
-						streamingLinks.style.opacity = '1';
-						streamingLinks.style.transform = 'translateY(0)';
-						streamingLinks.style.pointerEvents = 'auto';
+						showStreamingIcons(streamingLinks);
 					} else {
-						// Hide: fade out and slide up
-						streamingLinks.style.opacity = '0';
-						streamingLinks.style.transform = 'translateY(-10px)';
-						streamingLinks.style.pointerEvents = 'none';
+						hideStreamingIcons(streamingLinks);
 					}
 				}
 			};
@@ -489,128 +813,10 @@
 				scrollTimeout = setTimeout(handleScroll, 10);
 			});
 			
+			
 			// Run initial check
 			handleScroll();
 		}
-	}
-	
-	/**
-	 * Setup inner scroll control to prevent content section scroll until main modal scroll reaches bottom
-	 */
-	function setupInnerScrollControl() {
-		const modalContent = document.querySelector('.album-modal-content') || 
-							 document.querySelector('.swal2-html-container');
-		const innerContent = document.querySelector('.album-content-section');
-		
-		if (!modalContent || !innerContent) return;
-		
-		let innerScrollEnabled = false;
-		let scrollTimeout;
-		
-		// Initially disable inner scroll on mobile/smaller screens
-		const checkScreenSize = () => window.innerWidth <= 768;
-		let isMobileView = checkScreenSize();
-		
-		// Add visual feedback overlay
-		const scrollLockOverlay = document.createElement('div');
-		scrollLockOverlay.className = 'scroll-lock-overlay';
-		scrollLockOverlay.innerHTML = `
-			<div style="
-				position: absolute; 
-				top: 50%; 
-				left: 50%; 
-				transform: translate(-50%, -50%);
-				background: rgba(0, 0, 0, 0.8); 
-				color: white; 
-				padding: 12px 20px; 
-				border-radius: 20px; 
-				font-size: 0.85rem; 
-				text-align: center;
-				border: 1px solid rgba(59, 130, 246, 0.3);
-				backdrop-filter: blur(10px);
-				opacity: 0;
-				transition: opacity 0.3s ease;
-				pointer-events: none;
-				z-index: 1000;
-			">
-				📜 Scroll down to access detailed content
-			</div>
-		`;
-		innerContent.style.position = 'relative';
-		innerContent.appendChild(scrollLockOverlay);
-		
-		const updateInnerScrollState = () => {
-			if (!isMobileView) {
-				// On desktop, always allow inner scroll
-				innerScrollEnabled = true;
-				innerContent.style.overflowY = 'auto';
-				scrollLockOverlay.style.opacity = '0';
-				return;
-			}
-			
-			const scrollTop = modalContent.scrollTop;
-			const scrollHeight = modalContent.scrollHeight;
-			const clientHeight = modalContent.clientHeight;
-			
-			// Check if main modal is at bottom (with tolerance)
-			const isAtBottom = Math.abs((scrollTop + clientHeight) - scrollHeight) < 30;
-			
-			if (isAtBottom && !innerScrollEnabled) {
-				// Enable inner scroll
-				innerScrollEnabled = true;
-				innerContent.style.overflowY = 'auto';
-				innerContent.style.transition = 'all 0.3s ease';
-				scrollLockOverlay.style.opacity = '0';
-			} else if (!isAtBottom && innerScrollEnabled) {
-				// Disable inner scroll
-				innerScrollEnabled = false;
-				innerContent.style.overflowY = 'hidden';
-				innerContent.scrollTop = 0; // Reset inner scroll position
-				scrollLockOverlay.style.opacity = '0.9';
-			}
-		};
-		
-		// Initial setup
-		if (isMobileView) {
-			innerContent.style.overflowY = 'hidden';
-			setTimeout(() => {
-				scrollLockOverlay.style.opacity = '0.9';
-			}, 500);
-		}
-		
-		// Monitor main modal scroll
-		modalContent.addEventListener('scroll', () => {
-			if (scrollTimeout) clearTimeout(scrollTimeout);
-			scrollTimeout = setTimeout(updateInnerScrollState, 10);
-		});
-		
-		// Handle window resize
-		window.addEventListener('resize', () => {
-			const wasMobile = isMobileView;
-			isMobileView = checkScreenSize();
-			
-			if (wasMobile !== isMobileView) {
-				updateInnerScrollState();
-			}
-		});
-		
-		// Prevent scroll events on inner content when locked
-		innerContent.addEventListener('wheel', (e) => {
-			if (!innerScrollEnabled && isMobileView) {
-				e.preventDefault();
-				// Redirect scroll to main modal
-				modalContent.scrollTop += e.deltaY;
-			}
-		}, { passive: false });
-		
-		innerContent.addEventListener('touchmove', (e) => {
-			if (!innerScrollEnabled && isMobileView) {
-				e.preventDefault();
-			}
-		}, { passive: false });
-		
-		// Run initial check
-		updateInnerScrollState();
 	}
 	
 	/**

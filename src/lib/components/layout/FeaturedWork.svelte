@@ -286,7 +286,7 @@
 			 ontouchend={handleTouchEnd}>
 			
 			<!-- Section Heading -->
-			<div class="flex-shrink-0 text-center pt-32 sm:pt-24 lg:pt-32 xl:pt-[188px] pb-8 px-4 sm:px-8" transition:fade={{ duration: 800 }}>
+			<div class="flex-shrink-0 text-center pt-32 sm:pt-24 lg:pt-32 xl:pt-[188px] pb-8 px-4 sm:px-8" transition:fly={{ y: -50, duration: 800, delay: 100 }}>
 				<h2 class="font-light text-white uppercase tracking-widest text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style="line-height: 1;">Featured Work</h2>
 			</div>
 			
@@ -296,7 +296,7 @@
 					<div class="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-stretch justify-center">
 				
 						<!-- Left Column - Image or YouTube Video -->
-						<div class="flex-1 flex justify-center items-center w-full">
+						<div class="flex-1 flex justify-center items-center w-full" transition:fly={{ x: -100, duration: 800, delay: 300 }}>
 							<!-- Stable container for media content -->
 							<div class="w-full aspect-video rounded-2xl overflow-hidden relative cursor-pointer group" onclick={() => handleLeftContentClick(currentProject)}>
 								{#key currentProjectIndex}
@@ -331,7 +331,7 @@
 						</div>
 						
 						<!-- Right Column - Content -->
-						<div class="flex-1 flex justify-center items-center lg:max-w-lg w-full relative">
+						<div class="flex-1 flex justify-center items-center lg:max-w-lg w-full relative" transition:fly={{ x: 100, duration: 800, delay: 400 }}>
 							<!-- Stable container that maintains dimensions during transitions -->
 							<div class="w-full relative" style="height: {rightContainerHeight}px; transition: height 0.3s ease;">
 								{#key currentProjectIndex}

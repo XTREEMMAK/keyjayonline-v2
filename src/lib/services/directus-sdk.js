@@ -836,14 +836,13 @@ export async function getSiteSettings() {
     // Handle the case where settings is an object (single record) instead of array
     const siteConfig = Array.isArray(settings) ? settings[0] : settings;
     
-    
     // Check if we got valid data from the database
     if (!siteConfig || Object.keys(siteConfig).length === 0) {
       throw new Error('No data from database, using fallback');
     }
     
     const result = {
-      status: siteConfig.status || 'live', // 'live' or 'maintenance'
+      status: siteConfig.status?.toLowerCase() || 'live', // Normalize to lowercase: 'live' or 'maintenance'
       pages: {
         music: {
           disabled: siteConfig.music_page_disabled || false,
