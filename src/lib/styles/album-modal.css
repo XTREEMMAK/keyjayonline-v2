@@ -1,0 +1,123 @@
+/* Album Modal Global Styles */
+.album-modal-popup {
+	border-radius: 16px !important;
+	backdrop-filter: blur(10px) !important;
+	transition: all 0.4s ease !important;
+}
+
+.album-modal-content {
+	padding: 0 !important;
+	max-height: 80vh !important;
+	overflow-y: auto !important;
+	transition: height 0.4s ease !important;
+	
+	/* Custom scrollbar styling */
+	scrollbar-width: thin;
+	scrollbar-color: rgba(59, 130, 246, 0.6) rgba(31, 41, 55, 0.5);
+}
+
+.album-modal-content::-webkit-scrollbar {
+	width: 8px;
+}
+
+.album-modal-content::-webkit-scrollbar-track {
+	background: rgba(31, 41, 55, 0.3);
+	border-radius: 4px;
+}
+
+.album-modal-content::-webkit-scrollbar-thumb {
+	background: linear-gradient(135deg, rgba(59, 130, 246, 0.6), rgba(147, 51, 234, 0.6));
+	border-radius: 4px;
+}
+
+.album-modal-content::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.8));
+}
+
+.album-modal-container {
+	display: grid;
+	grid-template-columns: 1fr 2fr;
+	gap: 40px;
+	padding: 32px;
+	align-items: start;
+}
+
+.album-info-section {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	position: sticky;
+	top: 0;
+}
+
+.album-content-section {
+	overflow-y: auto;
+	max-height: 70vh;
+	padding-right: 12px;
+	
+	/* Custom scrollbar for content section */
+	scrollbar-width: thin;
+	scrollbar-color: rgba(59, 130, 246, 0.4) rgba(31, 41, 55, 0.3);
+}
+
+.album-content-section::-webkit-scrollbar {
+	width: 6px;
+}
+
+.album-content-section::-webkit-scrollbar-track {
+	background: rgba(31, 41, 55, 0.2);
+	border-radius: 3px;
+}
+
+.album-content-section::-webkit-scrollbar-thumb {
+	background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(147, 51, 234, 0.4));
+	border-radius: 3px;
+}
+
+.album-content-section::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(135deg, rgba(59, 130, 246, 0.6), rgba(147, 51, 234, 0.6));
+}
+
+/* SweetAlert2 title override for larger size */
+.swal2-title {
+	font-size: 3rem !important;
+	font-weight: bold !important;
+}
+
+/* Scroll lock overlay styles */
+.scroll-lock-overlay {
+	position: absolute !important;
+	top: 0 !important;
+	left: 0 !important;
+	right: 0 !important;
+	bottom: 0 !important;
+	background: rgba(0, 0, 0, 0.1) !important;
+	backdrop-filter: blur(1px) !important;
+	z-index: 100 !important;
+	pointer-events: none !important;
+	transition: all 0.3s ease !important;
+}
+
+.album-content-section {
+	transition: overflow-y 0.3s ease !important;
+}
+
+@media (max-width: 768px) {
+	.album-modal-container {
+		grid-template-columns: 1fr;
+		gap: 24px;
+	}
+	
+	.album-info-section {
+		position: relative;
+	}
+	
+	.album-content-section {
+		max-height: none;
+	}
+	
+	.swal2-title {
+		font-size: 2rem !important;
+	}
+}

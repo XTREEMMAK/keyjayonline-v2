@@ -1,0 +1,211 @@
+{
+  "downloadDate": "2025-08-22T23:58:24.152Z",
+  "summary": {
+    "total": 33,
+    "downloaded": 31,
+    "alreadyExists": 0,
+    "failed": 2
+  },
+  "mappings": [
+    {
+      "url": "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=600",
+      "localPath": "/static/img/blog-music-studio.jpg",
+      "context": "Blog post about building dream studio desk",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=600",
+      "localPath": "/static/img/blog-gaming-year.jpg",
+      "context": "Blog post about favorite games of the year",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600",
+      "localPath": "/static/img/blog-voice-acting.jpg",
+      "context": "Blog post about voice acting in indie games",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?w=600",
+      "localPath": "/static/img/blog-audio-plugins.jpg",
+      "context": "Blog post about building audio plugins with JUCE",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=600",
+      "localPath": "/static/img/blog-workflow-optimization.jpg",
+      "context": "Blog post about creative workflow optimization",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "localPath": "/static/img/blog-remote-production.jpg",
+      "context": "Blog post about collaboration in remote productions",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1729575846511-f499d2e17d79?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmFzaWMlMjBiYWNrZ3JvdW5kfGVufDB8fDB8fHww",
+      "localPath": "/static/img/background-featured-work.jpg",
+      "context": "Default background for featured work items",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200",
+      "localPath": "/static/img/hero-voice-acting.jpg",
+      "context": "Hero image for voice acting page",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150",
+      "localPath": "/static/img/testimonial-sarah-mitchell.jpg",
+      "context": "Testimonial image for Sarah Mitchell from BrandVoice Studios",
+      "status": "failed",
+      "error": "Failed to download https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150: 404"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+      "localPath": "/static/img/testimonial-marcus-rodriguez.jpg",
+      "context": "Testimonial image for Marcus Rodriguez from Indie Studios",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
+      "localPath": "/static/img/testimonial-emily-chen.jpg",
+      "context": "Testimonial image for Emily Chen from TechFlow Media",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+      "localPath": "/static/img/testimonial-david-kim.jpg",
+      "context": "Testimonial image for David Kim from StartupXYZ",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200",
+      "localPath": "/static/img/hero-about.jpg",
+      "context": "Hero image for about page",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500",
+      "localPath": "/static/img/music-cover-orchestral.jpg",
+      "context": "Cover art for orchestral music and gallery",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500",
+      "localPath": "/static/img/music-cover-electronic.jpg",
+      "context": "Cover art for electronic music",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500",
+      "localPath": "/static/img/music-cover-acoustic.jpg",
+      "context": "Cover art for acoustic music",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500",
+      "localPath": "/static/img/music-gallery-studio.jpg",
+      "context": "Gallery image for music studio",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1200",
+      "localPath": "/static/img/hero-contact.jpg",
+      "context": "Hero image for contact page",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600",
+      "localPath": "/static/img/games-retro-arcade.jpg",
+      "context": "Retro arcade games image",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600",
+      "localPath": "/static/img/games-modern-console.jpg",
+      "context": "Modern console gaming image",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1591154669695-5f2a8d20c089?w=600",
+      "localPath": "/static/img/games-indie-development.jpg",
+      "context": "Indie game development image",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600",
+      "localPath": "/static/img/games-project-rpg.jpg",
+      "context": "RPG project thumbnail",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1585504198199-20277593b94f?w=600",
+      "localPath": "/static/img/games-project-puzzle.jpg",
+      "context": "Puzzle game project thumbnail",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1486401899868-0e435ed85128?w=600",
+      "localPath": "/static/img/games-project-platformer.jpg",
+      "context": "Platformer game project thumbnail",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=1200",
+      "localPath": "/static/img/hero-games.jpg",
+      "context": "Hero image for games page",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=600",
+      "localPath": "/static/img/tech-web-development.jpg",
+      "context": "Web development technology",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=600",
+      "localPath": "/static/img/tech-mobile-apps.jpg",
+      "context": "Mobile app development",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600",
+      "localPath": "/static/img/tech-data-science.jpg",
+      "context": "Data science and analytics",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1200",
+      "localPath": "/static/img/hero-tech.jpg",
+      "context": "Hero image for tech page",
+      "status": "failed",
+      "error": "Failed to download https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1200: 404"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600",
+      "localPath": "/static/img/productions-video-editing.jpg",
+      "context": "Video editing and production",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600",
+      "localPath": "/static/img/productions-music-recording.jpg",
+      "context": "Music recording production",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=600",
+      "localPath": "/static/img/productions-live-performance.jpg",
+      "context": "Live performance production",
+      "status": "downloaded"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=1200",
+      "localPath": "/static/img/hero-productions.jpg",
+      "context": "Hero image for productions page",
+      "status": "downloaded"
+    }
+  ]
+}
