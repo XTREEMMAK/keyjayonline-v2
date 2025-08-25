@@ -1,4 +1,4 @@
-import { getSiteSettings } from '$lib/services/directus-sdk.js';
+import { getSiteSettings } from '$lib/api/index.js';
 import { redirect, error } from '@sveltejs/kit';
 
 export async function load({ url }) {

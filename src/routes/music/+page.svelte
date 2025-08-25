@@ -10,6 +10,7 @@
 	import Icon from '@iconify/svelte';
 	import { browser } from '$app/environment';
 	import SvgDivider from '$lib/components/ui/SvgDivider.svelte';
+	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	
 	let { data } = $props();
 	
@@ -27,6 +28,48 @@
 	let musicNetworks = $state(data.musicNetworks || []);
 	let loading = $state(false);
 	let error = $state(data.error || null);
+	
+	// Latest Projects data and configuration
+	let customDesignOverride = $state(data.customDesignOverride || false);
+	let currentProjectIndex = $state(0);
+	let isTransitioning = $state(false);
+	let visibleElements = $state(new Set());
+	
+	// Mock data for latest projects
+	const latestProjects = [
+		{
+			id: 1,
+			title: '"Ephemeral Echoes" - New Album',
+			description: 'My latest album exploring the intersection of organic and digital soundscapes. A deep dive into experimental production techniques and collaborative artistry.<br><br>Features 12 original tracks spanning electronic, ambient, and experimental genres with guest appearances from emerging Miami artists.',
+			backgroundImageUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200',
+			mediaUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
+			mediaType: 'image',
+			tags: ['Electronic', 'Ambient', 'Experimental'],
+			link: '/music#albums'
+		},
+		{
+			id: 2,
+			title: 'Miami Music Festival 2024 - Live Performance',
+			description: 'An electrifying live performance showcasing new material and fan favorites at Miami Music Festival 2024.<br><br>This 90-minute set featured special guest appearances and improvised segments that created an unforgettable musical experience for over 5,000 attendees.',
+			backgroundImageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200',
+			mediaUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800',
+			mediaType: 'image',
+			tags: ['Live Performance', 'Festival', 'Improvisation'],
+			link: '/productions'
+		},
+		{
+			id: 3,
+			title: 'Nexus Sessions - Collaborative EP',
+			description: 'A groundbreaking collaborative project with emerging artists from the Miami music scene.<br><br>Each of the 6 tracks represents a different fusion of styles and creative perspectives, blending jazz fusion, hip hop, and R&B elements into a cohesive artistic statement.',
+			backgroundImageUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1200',
+			mediaUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800',
+			mediaType: 'image',
+			tags: ['Jazz Fusion', 'Hip Hop', 'R&B'],
+			link: '/music#albums'
+		}
+	];
+	
+	const currentProject = $derived(latestProjects[currentProjectIndex]);
 	
 	// Get unique release types from albums for dynamic filters
 	let releaseTypes = $derived(() => {
@@ -333,11 +376,51 @@
 		loadRandomTrack();
 		showPlayer();
 	}
+	
+	// Project rotator functions
+	function prevProject() {
+		if (isTransitioning) return;
+		const newIndex = (currentProjectIndex - 1 + latestProjects.length) % latestProjects.length;
+		isTransitioning = true;
+		currentProjectIndex = newIndex;
+		setTimeout(() => {
+			isTransitioning = false;
+		}, 600);
+	}
+
+	function nextProject() {
+		if (isTransitioning) return;
+		const newIndex = (currentProjectIndex + 1) % latestProjects.length;
+		isTransitioning = true;
+		currentProjectIndex = newIndex;
+		setTimeout(() => {
+			isTransitioning = false;
+		}, 600);
+	}
+
+	function goToProject(index) {
+		if (isTransitioning || index === currentProjectIndex) return;
+		isTransitioning = true;
+		currentProjectIndex = index;
+		setTimeout(() => {
+			isTransitioning = false;
+		}, 600);
+	}
+
+	// Intersection Observer function
+	function observeElement(node, key) {
+		if (!browser) return;
+		return createIntersectionObserver(node, (isVisible) => {
+			if (isVisible && !visibleElements.has(key)) {
+				visibleElements = new Set([...visibleElements, key]);
+			}
+		}, { threshold: 0.2, rootMargin: '-100px' });
+	}
 </script>
 
 <div class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/10 to-gray-900">
 	<!-- Hero Section -->
-	<section bind:this={heroRef} class="relative h-[70vh] flex items-end justify-start overflow-hidden">
+	<section bind:this={heroRef} class="relative h-[70vh] flex items-end justify-start overflow-hidden section-triangle z-20">
 		<div 
 			class="absolute inset-0 parallax-bg"
 			style="transform: translateY({scrollY * 0.3}px)"
@@ -361,7 +444,7 @@
 		">
 			{#if titleVisible}
 				<div in:fly={{ x: 200, duration: 800, delay: 300 }}>
-					<div class="sm:scale-100 scale-75">
+					<div class="scale-75 sm:scale-100 xl:scale-150 2xl:scale-[230%] transition-transform">
 						<SpinningPlayButton onClick={handlePlayButtonClick} />
 					</div>
 				</div>
@@ -371,7 +454,7 @@
 		<div class="relative z-10 p-8 pb-16">
 			{#if titleVisible}
 				<div class="hero-text-container">
-					<h1 class="music-title text-7xl sm:text-8xl md:text-9xl font-bold text-white" class:animate={titleAnimated}>
+					<h1 class="music-title hero-title-responsive font-bold text-white" class:animate={titleAnimated}>
 						MUSIC
 					</h1>
 					<p class="music-subtitle text-lg text-gray-300 max-w-lg mt-4" class:animate={titleAnimated}>
@@ -381,6 +464,112 @@
 			{/if}
 		</div>
 	</section>
+	
+	<!-- Latest Projects Section -->
+	<!-- Custom Design Override Toggle - Full Viewport Section -->
+		{#if customDesignOverride}
+			<section class="relative w-full overflow-hidden min-h-screen" style="margin-top: -120px; z-index: 5;">
+				<!-- Full viewport custom section placeholder - can be populated from DirectUS -->
+				<div class="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-gray-900 to-purple-900/20"></div>
+				<div class="relative z-10 min-h-screen flex items-center justify-center">
+					<div class="text-center">
+						<h2 class="text-6xl font-bold text-white mb-4">Custom Featured Section</h2>
+						<p class="text-gray-400 text-xl">This section can be customized from DirectUS CMS</p>
+					</div>
+				</div>
+			</section>
+		{:else}
+			<!-- Default Featured Work Style Layout -->
+			<section 
+				class="relative w-full overflow-hidden min-h-screen"
+				style="margin-top: -120px; z-index: 5;">
+				
+				<!-- Background with fade transition -->
+				{#key currentProjectIndex}
+					<div 
+						class="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+						style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}');"
+						transition:fade={{ duration: 800 }}>
+					</div>
+				{/key}
+				
+				<div class="relative z-10 min-h-screen flex flex-col">
+					<!-- Section Heading -->
+					<div 
+						use:observeElement={'latest-projects-heading'}
+						class="flex-shrink-0 text-center pt-32 sm:pt-24 lg:pt-32 xl:pt-[188px] pb-8 px-4 sm:px-8 transition-all duration-1000 transform {
+							visibleElements.has('latest-projects-heading') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+						}"
+					>
+						<h2 class="font-light text-white uppercase tracking-widest text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style="line-height: 1;">Latest Projects</h2>
+					</div>
+					
+					<!-- Content Container -->
+					<div class="flex-1 flex items-center justify-center px-4 sm:px-8 pb-20">
+						<div class="container mx-auto max-w-4xl">
+							<!-- Single Centered Column - Project Media -->
+							<div 
+								use:observeElement={'latest-projects-content'}
+								class="flex justify-center items-center w-full transition-all duration-1200 transform {
+									visibleElements.has('latest-projects-content') ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+								}"
+								style="transition-delay: 200ms;"
+							>
+								<div class="w-full max-w-3xl aspect-video rounded-2xl overflow-hidden relative cursor-pointer group">
+									{#key currentProjectIndex}
+										<div class="w-full h-full absolute inset-0" 
+											 in:fly={{ y: 50, duration: 600, delay: 200 }}
+											 out:fly={{ y: -50, duration: 300 }}>
+											<img 
+												src={currentProject.mediaUrl}
+												alt={currentProject.title}
+												class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl shadow-2xl">
+											
+											<!-- Content Overlay -->
+											<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+											
+											<!-- Project Title Overlay -->
+											<div class="absolute bottom-6 left-6 right-6">
+												<h3 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight text-center">
+													{currentProject.title}
+												</h3>
+											</div>
+											
+											<!-- Play button overlay -->
+											<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+												<div class="bg-black/40 backdrop-blur-sm rounded-full p-6 group-hover:bg-black/60 group-hover:scale-110 transition-all duration-300">
+													<svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+														<path d="M8 5v14l11-7z"/>
+													</svg>
+												</div>
+											</div>
+										</div>
+									{/key}
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<!-- Dot Navigation for multiple projects -->
+				<div 
+					use:observeElement={'latest-projects-dots'}
+					class="absolute bottom-8 sm:bottom-12 lg:bottom-16 left-1/2 transform -translate-x-1/2 z-30 flex space-x-3 transition-all duration-1000 {
+						visibleElements.has('latest-projects-dots') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+					}"
+					style="transition-delay: 400ms;"
+				>
+					{#each latestProjects as project, index}
+						<button
+							class="w-4 h-4 rounded-full transition-all duration-300 border-2 {index === currentProjectIndex ? 'bg-white border-white scale-125 shadow-lg shadow-white/30' : 'bg-white/30 border-white/50 hover:bg-blue-400/80 hover:border-blue-400 hover:scale-110'} {isTransitioning ? 'opacity-50 cursor-not-allowed' : ''}"
+							onclick={() => goToProject(index)}
+							disabled={isTransitioning}
+							aria-label="Go to project {index + 1}"
+						></button>
+					{/each}
+				</div>
+			</section>
+		{/if}
 	
 	<!-- View Switcher -->
 	<div class="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
@@ -460,7 +649,7 @@
 									activeFilter === releaseType
 										? 'bg-blue-600/20 text-blue-400 border border-blue-600 shadow-lg shadow-blue-500/20'
 										: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 hover:shadow-md hover:shadow-gray-500/15'
-								}"
+							}"
 							>
 								{releaseType.charAt(0).toUpperCase() + releaseType.slice(1).replace(/_/g, ' ')}
 							</button>
@@ -472,7 +661,7 @@
 	</div>
 	
 	<!-- Content Section -->
-	<section class="container mx-auto px-4 py-12">
+	<section class="container mx-auto px-4 py-12" style="margin-top: -60px; padding-top: 80px;">
 		<div class="content-container" style="transition: opacity 0.3s ease-in-out;">
 		{#if view === 'albums'}
 			{#if loading}
@@ -569,9 +758,7 @@
 	
 	<!-- Listen On Section -->
 	{#if view === 'albums'}
-		<!-- Top Divider -->
-		<SvgDivider type="wave" className="text-gray-800" />
-		
+		<SvgDivider type="wave" className="text-gray-900 z-20" />
 		<section class="py-20" style="background-color: oklch(0.21 0.03 263.45);">
 			<div class="container mx-auto px-4 text-center">
 				<h2 class="text-3point5xl font-bold text-white mb-12">Listen On</h2>
@@ -593,16 +780,14 @@
 				{/if}
 			</div>
 		</section>
-		
-		<!-- Bottom Divider -->
-		<SvgDivider type="wave" flipY={true} className="text-gray-900" />
 	{/if}
 	
 	<!-- Behind the Scenes Section -->
 	{#if view === 'albums'}
-		<section class="bg-gradient-to-br from-blue-900/20 via-gray-900 to-purple-900/20 py-20" style="margin-top: -77px;">
+		<SvgDivider type="wave" flipY={true} className="text-gray-900 z-20" />
+		<section class="bg-gradient-to-br from-blue-900/20 via-gray-900 to-purple-900/20 py-20 z-0" style="margin-top: -80px; padding-top: 180px;">
 			<div class="container mx-auto px-4">
-				<div class="text-center mb-12" style="margin-top: 120px;">
+				<div class="text-center mb-12">
 					<h2 class="text-3point5xl font-bold text-white mb-4">Behind the Scenes</h2>
 					<p class="text-gray-400 max-w-2xl mx-auto">
 						Get an inside look at the creative process, studio sessions, and stories behind the music
@@ -711,7 +896,7 @@
 	{/if}
 	
 	<!-- Contact Section -->
-	<section id="contact" class="bg-gray-900/50 py-16">
+	<section id="contact" class="bg-gray-900 py-16 section-curve-top z-30" style="margin-top: -80px; isolation: isolate;">
 		<div class="container mx-auto px-4">
 			<div class="max-w-2xl mx-auto text-center">
 				<h2 class="text-3point5xl font-bold text-white mb-4">Need Custom Music?</h2>
@@ -782,6 +967,105 @@
 		will-change: transform;
 		backface-visibility: hidden;
 		perspective: 1000px;
+	}
+	
+	/* Divider mask styles */
+	.section-wave-top {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		/* Wave shape using polygon points */
+		clip-path: polygon(
+			0 60px,
+			10% 40px, 20% 50px, 30% 30px, 40% 50px, 50% 20px,
+			60% 50px, 70% 30px, 80% 50px, 90% 40px, 100% 60px,
+			100% 100%, 0 100%
+		);
+	}
+	
+	.section-wave-bottom {
+		position: relative;
+		/* Wave shape at bottom - flipped version of top wave */
+		clip-path: polygon(
+			0 0, 100% 0,
+			100% calc(100% - 60px),
+			90% calc(100% - 40px), 80% calc(100% - 50px), 70% calc(100% - 30px), 
+			60% calc(100% - 50px), 50% calc(100% - 20px), 40% calc(100% - 50px), 
+			30% calc(100% - 30px), 20% calc(100% - 50px), 10% calc(100% - 40px), 
+			0 calc(100% - 60px)
+		);
+	}
+	
+	.section-curve-top {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		/* Smooth curve using multiple polygon points */
+		clip-path: polygon(
+			0 80px,
+			5% 72px, 10% 65px, 15% 58px, 20% 52px, 25% 46px,
+			30% 40px, 35% 35px, 40% 31px, 45% 28px, 50% 26px,
+			55% 28px, 60% 31px, 65% 35px, 70% 40px, 75% 46px,
+			80% 52px, 85% 58px, 90% 65px, 95% 72px, 100% 80px,
+			100% 100%, 0 100%
+		);
+	}
+	
+	.section-slant-top {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		clip-path: polygon(0 0, 100% 80px, 100% 100%, 0 100%);
+	}
+	
+	.section-curve-bottom {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		/* Smooth curve at the bottom using multiple polygon points */
+		clip-path: polygon(
+			0 0, 100% 0,
+			100% calc(100% - 80px),
+			95% calc(100% - 72px), 90% calc(100% - 65px), 85% calc(100% - 58px), 
+			80% calc(100% - 52px), 75% calc(100% - 46px), 70% calc(100% - 40px), 
+			65% calc(100% - 35px), 60% calc(100% - 31px), 55% calc(100% - 28px), 
+			50% calc(100% - 26px),
+			45% calc(100% - 28px), 40% calc(100% - 31px), 35% calc(100% - 35px), 
+			30% calc(100% - 40px), 25% calc(100% - 46px), 20% calc(100% - 52px), 
+			15% calc(100% - 58px), 10% calc(100% - 65px), 5% calc(100% - 72px), 
+			0 calc(100% - 80px)
+		);
+	}
+	
+	.section-triangle {
+		position: relative;
+		/* Triangle pointing down from bottom center */
+		clip-path: polygon(
+			0 0, 100% 0, 100% calc(100% - 60px),
+			50% 100%, 0 calc(100% - 60px)
+		);
+	}
+	
+	/* Wave top and curve bottom combined */
+	.section-wave-top.section-curve-bottom {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		/* Wave at top, curve at bottom */
+		clip-path: polygon(
+			0 60px,
+			10% 40px, 20% 50px, 30% 30px, 40% 50px, 50% 20px,
+			60% 50px, 70% 30px, 80% 50px, 90% 40px, 100% 60px,
+			100% calc(100% - 80px),
+			95% calc(100% - 72px), 90% calc(100% - 65px), 85% calc(100% - 58px), 
+			80% calc(100% - 52px), 75% calc(100% - 46px), 70% calc(100% - 40px), 
+			65% calc(100% - 35px), 60% calc(100% - 31px), 55% calc(100% - 28px), 
+			50% calc(100% - 26px),
+			45% calc(100% - 28px), 40% calc(100% - 31px), 35% calc(100% - 35px), 
+			30% calc(100% - 40px), 25% calc(100% - 46px), 20% calc(100% - 52px), 
+			15% calc(100% - 58px), 10% calc(100% - 65px), 5% calc(100% - 72px), 
+			0 calc(100% - 80px)
+		);
 	}
 	
 	.spinning-play-container {

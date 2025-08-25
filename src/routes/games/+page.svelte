@@ -158,7 +158,7 @@
 		<div class="relative z-10 p-8 pb-16">
 			{#if titleVisible}
 				<div class="hero-text-container">
-					<h1 class="games-title text-7xl sm:text-8xl md:text-9xl font-bold text-white" class:animate={titleAnimated}>
+					<h1 class="games-title hero-title-responsive font-bold text-white" class:animate={titleAnimated}>
 						GAMES
 					</h1>
 					<p class="games-subtitle text-lg text-gray-300 max-w-lg mt-4" class:animate={titleAnimated}>
@@ -280,8 +280,9 @@
 			</div>
 
 			<div class="text-center mt-12">
-				{@const youtubeLink = data.socialLinks.find(link => link.name?.toLowerCase().includes('youtube'))}
-				{#if youtubeLink}
+				{#if data.socialLinks}
+					{@const youtubeLink = data.socialLinks.find(link => link.name?.toLowerCase().includes('youtube'))}
+					{#if youtubeLink}
 					<a 
 						href={youtubeLink.url} 
 						target="_blank"
@@ -290,6 +291,7 @@
 						<iconify-icon icon="mdi:youtube" class="text-xl"></iconify-icon>
 						Watch More on YouTube
 					</a>
+					{/if}
 				{/if}
 			</div>
 		</div>

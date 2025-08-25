@@ -1,4 +1,4 @@
-import { getMusicReleases, getMusicNetworks } from '$lib/services/directus-sdk.js';
+import { getMusicReleases, getMusicNetworks } from '$lib/api/index.js';
 
 export async function load() {
 	try {

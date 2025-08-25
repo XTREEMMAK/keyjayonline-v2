@@ -204,7 +204,7 @@
 
 <div class="min-h-screen bg-gradient-to-br from-gray-900 via-teal-900/10 to-gray-900">
 	<!-- Hero Section -->
-	<section bind:this={heroRef} class="relative h-[70vh] flex items-end justify-start overflow-hidden">
+	<section bind:this={heroRef} class="relative h-[70vh] flex items-end justify-start overflow-hidden section-triangle z-20">
 		<div 
 			class="absolute inset-0 parallax-bg"
 			style="transform: translateY({scrollY * 0.3}px)"
@@ -233,7 +233,7 @@
 	</section>
 
 	<!-- Contact Form Section -->
-	<section class="bg-gray-900/95 backdrop-blur-sm py-20">
+	<section class="bg-gray-900/95 backdrop-blur-sm py-20 z-10" style="margin-top: -60px; padding-top: 80px;">
 		<div class="container mx-auto px-4">
 			<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
 				<!-- Contact Form -->
@@ -421,7 +421,7 @@
 						<h3 class="text-white font-semibold mb-4">Connect on Social Media</h3>
 						<div class="flex gap-4">
 							{#each data.socialLinks as social}
-								<a href={social.url} target="_blank" class="w-12 h-12 bg-gray-600/20 hover:bg-gray-600/30 rounded-full flex items-center justify-center transition-colors duration-300 {social.color}">
+								<a href={social.url} target="_blank" aria-label="{social.name || social.platform || 'Social Media'}" class="w-12 h-12 bg-gray-600/20 hover:bg-gray-600/30 rounded-full flex items-center justify-center transition-colors duration-300 {social.color}">
 									<iconify-icon icon={social.icon} class="text-xl"></iconify-icon>
 								</a>
 							{/each}
@@ -432,12 +432,8 @@
 		</div>
 	</section>
 
-	<div style="margin-top: -80px; position: relative; z-index: 20;">
-		<SvgDivider type="wave" className="text-gray-800" />
-	</div>
-
 	<!-- FAQ Section -->
-	<section class="bg-gray-800 py-20" style="margin-top: -80px; padding-top: 120px;">
+	<section class="bg-gray-800 py-20 section-wave-top z-0">
 		<div class="container mx-auto px-4">
 			<div class="max-w-4xl mx-auto">
 				<div class="text-center mb-12">
@@ -503,5 +499,91 @@
 		will-change: transform;
 		backface-visibility: hidden;
 		perspective: 1000px;
+	}
+	
+	/* Divider mask styles */
+	.section-wave-top {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		/* Wave shape using polygon points */
+		clip-path: polygon(
+			0 60px,
+			10% 40px, 20% 50px, 30% 30px, 40% 50px, 50% 20px,
+			60% 50px, 70% 30px, 80% 50px, 90% 40px, 100% 60px,
+			100% 100%, 0 100%
+		);
+	}
+	
+	.section-curve-top {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		/* Smooth curve using multiple polygon points */
+		clip-path: polygon(
+			0 80px,
+			5% 72px, 10% 65px, 15% 58px, 20% 52px, 25% 46px,
+			30% 40px, 35% 35px, 40% 31px, 45% 28px, 50% 26px,
+			55% 28px, 60% 31px, 65% 35px, 70% 40px, 75% 46px,
+			80% 52px, 85% 58px, 90% 65px, 95% 72px, 100% 80px,
+			100% 100%, 0 100%
+		);
+	}
+	
+	.section-slant-top {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		clip-path: polygon(0 0, 100% 80px, 100% 100%, 0 100%);
+	}
+	
+	.section-curve-bottom {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		/* Smooth curve at the bottom using multiple polygon points */
+		clip-path: polygon(
+			0 0, 100% 0,
+			100% calc(100% - 80px),
+			95% calc(100% - 72px), 90% calc(100% - 65px), 85% calc(100% - 58px), 
+			80% calc(100% - 52px), 75% calc(100% - 46px), 70% calc(100% - 40px), 
+			65% calc(100% - 35px), 60% calc(100% - 31px), 55% calc(100% - 28px), 
+			50% calc(100% - 26px),
+			45% calc(100% - 28px), 40% calc(100% - 31px), 35% calc(100% - 35px), 
+			30% calc(100% - 40px), 25% calc(100% - 46px), 20% calc(100% - 52px), 
+			15% calc(100% - 58px), 10% calc(100% - 65px), 5% calc(100% - 72px), 
+			0 calc(100% - 80px)
+		);
+	}
+	
+	.section-triangle {
+		position: relative;
+		/* Triangle pointing down from bottom center */
+		clip-path: polygon(
+			0 0, 100% 0, 100% calc(100% - 60px),
+			50% 100%, 0 calc(100% - 60px)
+		);
+	}
+	
+	/* Wave top and curve bottom combined */
+	.section-wave-top.section-curve-bottom {
+		position: relative;
+		margin-top: -80px;
+		padding-top: 160px;
+		/* Wave at top, curve at bottom */
+		clip-path: polygon(
+			0 60px,
+			10% 40px, 20% 50px, 30% 30px, 40% 50px, 50% 20px,
+			60% 50px, 70% 30px, 80% 50px, 90% 40px, 100% 60px,
+			100% calc(100% - 80px),
+			95% calc(100% - 72px), 90% calc(100% - 65px), 85% calc(100% - 58px), 
+			80% calc(100% - 52px), 75% calc(100% - 46px), 70% calc(100% - 40px), 
+			65% calc(100% - 35px), 60% calc(100% - 31px), 55% calc(100% - 28px), 
+			50% calc(100% - 26px),
+			45% calc(100% - 28px), 40% calc(100% - 31px), 35% calc(100% - 35px), 
+			30% calc(100% - 40px), 25% calc(100% - 46px), 20% calc(100% - 52px), 
+			15% calc(100% - 58px), 10% calc(100% - 65px), 5% calc(100% - 72px), 
+			0 calc(100% - 80px)
+		);
 	}
 </style>

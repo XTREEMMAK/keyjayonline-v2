@@ -1,4 +1,4 @@
-import { getFeaturedWorks, getBlogPosts } from '$lib/services/directus-sdk.js';
+import { getFeaturedWorks, getBlogPosts } from '$lib/api/index.js';
 
 export async function load({ parent }) {
 	try {

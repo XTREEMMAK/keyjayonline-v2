@@ -70,18 +70,28 @@
 					</p>
 				{/if}
 				
-				<!-- Scroll Indicator -->
-				<div class="scroll-indicator">
-					<svg class="w-8 h-8 sm:w-10 sm:h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-					</svg>
-				</div>
 			</div>
 		</div>
 	
 </header>
 
 <style>
+	/* Video hero container */
+	.video-hero {
+		height: 100vh;
+		width: 100%;
+		overflow: hidden;
+	}
+	
+	.video-hero video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+	
 	/* Simplified positioning */
 	.video-overlay {
 		position: absolute;
@@ -90,6 +100,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 1rem;
+		background-color: rgba(0, 0, 0, 0.4);
 	}
 	
 	.hero-content {
@@ -100,7 +111,7 @@
 	}
 	
 	.hero-title {
-		font-size: clamp(2.5rem, 12vw, 6rem); /* Responsive text sizing */
+		font-size: clamp(2.5rem, 12vw, 4rem); /* Responsive text sizing */
 		font-weight: bold; /* font-bold */
 		text-transform: uppercase; /* uppercase */
 		line-height: 0.9; /* leading-none */
@@ -119,15 +130,6 @@
 		padding-top: 0.5rem; /* pt-2 */
 	}
 	
-	.scroll-indicator {
-		margin-top: 1rem; /* mt-4 */
-		animation: bounce 2s infinite;
-	}
-	
-	@keyframes bounce {
-		0%, 100% { transform: translateY(0); }
-		50% { transform: translateY(10px); }
-	}
 	
 	/* Responsive adjustments */
 	@media (max-width: 480px) {
@@ -156,11 +158,18 @@
 	/* Large screens - Tailwind lg: breakpoint (1024px+) */
 	@media (min-width: 1024px) {
 		.hero-content {
-			margin-top: 32rem; /* Much higher positioning for large screens */
+			margin-top: 24rem; /* Adjusted positioning for large screens */
 		}
 		
 		.hero-subtext {
 			max-width: 600px; /* Wider subtext for large screens */
+		}
+	}
+	
+	/* Taller screens - push content higher */
+	@media (min-width: 1024px) and (min-height: 900px) {
+		.hero-content {
+			margin-top: 32rem; /* Higher positioning for tall screens */
 		}
 	}
 	
@@ -183,10 +192,6 @@
 		.hero-subtext {
 			margin-bottom: 0.5rem;
 			padding-top: 0.25rem;
-		}
-		
-		.scroll-indicator {
-			display: none;
 		}
 	}
 	

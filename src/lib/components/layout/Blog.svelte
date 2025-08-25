@@ -177,7 +177,7 @@
 <section id="blog" class="relative py-24 px-8 bg-[#0d0e12]" bind:this={sectionElement}>
 	{#if visible}
 		<div class="container mx-auto" transition:fade={{ duration: 800 }}>
-			<h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-center mb-6 sm:mb-8 uppercase tracking-widest">Latest Musings</h2>
+			<h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-center mb-6 sm:mb-8 uppercase tracking-widest text-white">Latest Musings</h2>
 			
 			<!-- Filter Buttons -->
 			<div class="flex flex-wrap justify-center gap-2 mb-12">

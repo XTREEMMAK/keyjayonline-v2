@@ -1,4 +1,4 @@
-import { getBlogPosts, searchBlogPosts } from '$lib/services/directus-sdk.js';
+import { getBlogPosts, searchBlogPosts } from '$lib/api/index.js';
 import { json } from '@sveltejs/kit';
 
 export async function GET({ url }) {

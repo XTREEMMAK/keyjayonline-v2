@@ -15,6 +15,7 @@
 	let lastScrollY = $state(0);
 	let showNavigation = $state(true);
 	let isMobile = $state(false);
+	let isScrolled = $state(false);
 
 	onMount(() => {
 		let ticking = false;
@@ -30,6 +31,9 @@
 				requestAnimationFrame(() => {
 					const currentScrollY = window.scrollY;
 					const scrollDifference = Math.abs(currentScrollY - lastScrollY);
+
+					// Track if we've scrolled to activate sticky nav effects
+					isScrolled = currentScrollY > 50;
 
 					// Increased scroll play - only trigger if there's significant scroll movement
 					if (scrollDifference > 15) {
@@ -78,7 +82,7 @@
 
 {#if showNavigation}
 	<!-- Header containing logo and menu button -->
-	<div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 sm:left-6 sm:translate-x-0 hidden sm:block" transition:fly={{ x: -200, duration: 400 }}>
+	<div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 sm:left-6 sm:translate-x-0 hidden sm:block {isScrolled ? '-mt-6' : ''}" transition:fly={{ x: -200, duration: 400 }}>
 		<!-- Logo - Use a larger size and center on mobile -->
 		<a href="/" class="logo p-2 transition-all duration-700 ease-out transform scale-100 hover:scale-105 flex flex-col items-center group" bind:this={logo}>
 			<img src="/img/KJ_Logo_Medium_W.svg" alt="KEY JAY Logo" class="w-16 sm:w-24 md:w-32 h-auto transition-all duration-700 group-hover:drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
@@ -98,7 +102,7 @@
 		
 		<!-- Menu Button -->
 		{#if !navOpen}
-			<div class="menu-button cursor-pointer p-3 sm:p-6 rounded-full bg-gray-900/50 hover:bg-gray-800/70 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-700 ease-out flex items-center justify-center gap-1 sm:gap-2 group" 
+			<div class="menu-button cursor-pointer px-4 py-2 sm:px-6 sm:py-3 rounded-full bg-gray-900/50 hover:bg-gray-800/70 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-700 ease-out flex items-center justify-center gap-1 sm:gap-2 group" 
 				 bind:this={menuButton} 
 				 onclick={toggleMenu}
 				 onkeydown={(e) => {
@@ -109,8 +113,8 @@
 				 }}
 				 role="button" 
 				 tabindex="0"
-				 in:fly={{ x: -50, duration: 300, delay: 100 }}
-				 out:fly={{ x: -50, duration: 300 }}>
+				 in:fly={{ x: isMobile ? -50 : 50, duration: 300, delay: 100 }}
+				 out:fly={{ x: isMobile ? -50 : 50, duration: 300 }}>
 			<svg class="w-5 h-5 sm:w-6 sm:h-6 text-white group-hover:text-blue-300 transition-colors duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
 			</svg>

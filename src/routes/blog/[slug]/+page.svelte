@@ -99,7 +99,7 @@
 
 <div class="min-h-screen bg-gradient-to-br from-gray-900 via-rose-900/10 to-gray-900">
 	<!-- Hero Section -->
-	<section bind:this={heroRef} class="relative h-[70vh] flex items-end justify-start overflow-hidden">
+	<section bind:this={heroRef} class="relative h-[70vh] flex items-end justify-start overflow-hidden section-triangle z-20">
 		<div 
 			class="absolute inset-0 parallax-bg"
 			style="transform: translateY({scrollY * 0.3}px)"
@@ -157,10 +157,10 @@
 	</section>
 
 	<!-- Blog Content -->
-	<section class="bg-gray-900/95 backdrop-blur-sm py-20">
+	<section class="bg-gray-900/95 backdrop-blur-sm py-20 z-10" style="margin-top: -60px; padding-top: 80px;">
 		<div class="container mx-auto px-4 max-w-4xl">
 			<article class="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-2xl">
-				<div class="prose prose-lg prose-invert max-w-none [&>p]:mb-4 [&>p:last-child]:mb-0 [&>h1]:text-white [&>h2]:text-white [&>h3]:text-white [&>h4]:text-white [&>h5]:text-white [&>h6]:text-white [&>strong]:text-white [&>em]:text-gray-300 [&>blockquote]:border-l-rose-500 [&>blockquote]:bg-gray-700/30 [&>blockquote]:p-4 [&>blockquote]:my-6 [&>code]:bg-gray-700 [&>code]:text-rose-300 [&>pre]:bg-gray-700 [&>pre]:border [&>pre]:border-gray-600">
+				<div class="prose prose-lg prose-invert max-w-none text-white [&>p]:mb-4 [&>p:last-child]:mb-0 [&>p]:text-white [&>h1]:text-white [&>h2]:text-white [&>h3]:text-white [&>h4]:text-white [&>h5]:text-white [&>h6]:text-white [&>strong]:text-white [&>em]:text-gray-300 [&>blockquote]:border-l-rose-500 [&>blockquote]:bg-gray-700/30 [&>blockquote]:p-4 [&>blockquote]:my-6 [&>code]:bg-gray-700 [&>code]:text-rose-300 [&>pre]:bg-gray-700 [&>pre]:border [&>pre]:border-gray-600 [&>li]:text-white [&>ul]:text-white [&>ol]:text-white">
 					{@html sanitizeHtml(blogPost.content)}
 				</div>
 				
@@ -191,10 +191,6 @@
 			</div>
 		</div>
 	</section>
-
-	<div style="margin-top: -80px; position: relative; z-index: 20;">
-		<SvgDivider type="wave" className="text-gray-800" />
-	</div>
 </div>
 
 <style>
@@ -241,5 +237,15 @@
 		will-change: transform;
 		backface-visibility: hidden;
 		perspective: 1000px;
+	}
+	
+	/* Triangle clip mask */
+	.section-triangle {
+		position: relative;
+		/* Triangle pointing down from bottom center */
+		clip-path: polygon(
+			0 0, 100% 0, 100% calc(100% - 60px),
+			50% 100%, 0 calc(100% - 60px)
+		);
 	}
 </style>

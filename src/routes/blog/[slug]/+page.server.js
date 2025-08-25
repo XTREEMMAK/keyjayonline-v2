@@ -1,4 +1,4 @@
-import { getBlogPost } from '$lib/services/directus-sdk.js';
+import { getBlogPost } from '$lib/api/index.js';
 import { error } from '@sveltejs/kit';
 
 export async function load({ params }) {

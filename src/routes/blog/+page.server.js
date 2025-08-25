@@ -1,4 +1,4 @@
-import { getBlogPosts, getBlogPageHeader } from '$lib/services/directus-sdk.js';
+import { getBlogPosts, getBlogPageHeader } from '$lib/api/index.js';
 
 export async function load({ url }) {
 	try {
