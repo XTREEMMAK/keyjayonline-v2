@@ -22,7 +22,7 @@
 </script>
 
 <!-- Hero Section: Full-screen video background -->
-<header class="video-hero relative hero-clipped" style="z-index: 10;">
+<header class="video-hero relative hero-triangle-clip" style="z-index: 10;">
 		<video 
 			bind:this={videoElement}
 			autoplay 
@@ -81,6 +81,24 @@
 		height: 100vh;
 		width: 100%;
 		overflow: hidden;
+	}
+
+	/* Triangle clip-path for seamless transition */
+	.hero-triangle-clip {
+		clip-path: polygon(0 0, 100% 0, 100% calc(100% - 120px), 50% 100%, 0 calc(100% - 120px));
+	}
+
+	/* Responsive triangle adjustments */
+	@media (max-width: 768px) {
+		.hero-triangle-clip {
+			clip-path: polygon(0 0, 100% 0, 100% calc(100% - 80px), 50% 100%, 0 calc(100% - 80px));
+		}
+	}
+
+	@media (max-width: 480px) {
+		.hero-triangle-clip {
+			clip-path: polygon(0 0, 100% 0, 100% calc(100% - 60px), 50% 100%, 0 calc(100% - 60px));
+		}
 	}
 	
 	.video-hero video {
@@ -166,6 +184,13 @@
 		}
 	}
 	
+	/* Extra large screens - Above 1750px resolution */
+	@media (min-width: 1750px) {
+		.hero-title {
+			font-size: clamp(4rem, 12vw, 8rem); /* Increased max size to 8rem */
+		}
+	}
+	
 	/* Taller screens - push content higher */
 	@media (min-width: 1024px) and (min-height: 900px) {
 		.hero-content {
@@ -216,34 +241,6 @@
 		}
 	}
 	
-	/* Hero clipping shape - restored curved divider */
-	.hero-clipped {
-		clip-path: polygon(
-			0 0,
-			100% 0,
-			100% calc(100% - 120px),
-			95% calc(100% - 110px),
-			90% calc(100% - 100px),
-			85% calc(100% - 92px),
-			80% calc(100% - 85px),
-			75% calc(100% - 78px),
-			70% calc(100% - 72px),
-			65% calc(100% - 67px),
-			60% calc(100% - 63px),
-			55% calc(100% - 60px),
-			50% calc(100% - 58px),
-			45% calc(100% - 60px),
-			40% calc(100% - 63px),
-			35% calc(100% - 67px),
-			30% calc(100% - 72px),
-			25% calc(100% - 78px),
-			20% calc(100% - 85px),
-			15% calc(100% - 92px),
-			10% calc(100% - 100px),
-			5% calc(100% - 110px),
-			0 calc(100% - 120px)
-		);
-	}
 	
 	/* Text styling with animations */
 	.key-jay-text {

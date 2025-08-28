@@ -130,9 +130,20 @@
 				<nav class="flex-1 overflow-y-auto min-h-0 nav-scroll">
 					<ul class="space-y-1 pb-4 pr-2">
 						{#each menuItems() as item, i}
-							<li 
-								transition:fly={{ x: 50, delay: 200 + (i * 50), duration: 400 }}
-							>
+							{#if isOpen}
+								<li 
+									in:fly={{ 
+										x: isSmallScreen ? -50 : 50, 
+										delay: 100 + (i * 50), 
+										duration: 400,
+										easing: cubicOut 
+									}}
+									out:fly={{ 
+										x: isSmallScreen ? -50 : 50, 
+										duration: 200,
+										easing: cubicOut 
+									}}
+								>
 								<button
 									onclick={() => handleNavClick(item.href)}
 									class="group w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all duration-300 text-left border border-transparent hover:border-white/10"
@@ -156,12 +167,18 @@
 									</svg>
 								</button>
 							</li>
+							{/if}
 						{/each}
 					</ul>
 				</nav>
 				
 				<!-- Social Links -->
-				<div class="mt-4 pt-4 border-t border-white/10 flex-shrink-0" transition:fly={{ y: 20, delay: 600, duration: 400 }}>
+				<div class="mt-4 pt-4 border-t border-white/10 flex-shrink-0" transition:fly={{ 
+					y: 20, 
+					delay: 300 + (menuItems().length * 40), 
+					duration: 400,
+					easing: cubicOut 
+				}}>
 					<div class="text-center">
 						<h3 class="text-white font-medium mb-2 text-sm">Connect</h3>
 						<div class="flex justify-center">
@@ -176,7 +193,12 @@
 				</div>
 				
 				<!-- Footer -->
-				<div class="mt-3 text-center flex-shrink-0" transition:fly={{ y: 20, delay: 700, duration: 400 }}>
+				<div class="mt-3 text-center flex-shrink-0" transition:fly={{ 
+					y: 20, 
+					delay: 350 + (menuItems().length * 40), 
+					duration: 400,
+					easing: cubicOut 
+				}}>
 					<p class="text-gray-500 text-sm">
 						© 2024 Key Jay Online
 					</p>

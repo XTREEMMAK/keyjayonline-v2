@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { fade, slide } from 'svelte/transition';
+	import { fade, slide, fly } from 'svelte/transition';
 	import { createScrollObserver } from '$lib/utils/scrollObserver.js';
 	
 	let sectionElement = $state();
@@ -18,12 +18,14 @@
 	{#if visible}
 		<div class="container mx-auto" transition:fade={{ duration: 800 }}>
 			<h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-center mb-8 sm:mb-12 uppercase tracking-widest text-white">About Me</h2>
-			<div class="flex flex-col lg:flex-row items-center gap-12 bg-gray-900 rounded-3xl p-8 shadow-2xl" transition:slide={{ duration: 600, delay: 200 }}>
-				<div class="w-full lg:w-1/2 flex justify-center">
+			<div class="flex flex-col lg:flex-row items-center gap-12 bg-gray-900 rounded-3xl p-8 shadow-2xl">
+				<div class="w-full lg:w-1/2 flex justify-center" 
+					 in:fly={{ x: -100, duration: 800, delay: 300 }}>
 					<!-- Use a new image with a circular mask effect -->
-					<img src="https://placehold.co/1200x800/1a1a1a/ffffff?text=REA+Speaker+Stage" alt="REA Speaker Stage" class="rounded-3xl object-cover w-full h-auto shadow-xl transition-transform duration-300 ease-in-out hover:scale-105 circle-mask">
+					<img src="/img/keyjay_about.webp" alt="Key Jay" class="rounded-3xl object-cover w-full h-auto shadow-xl transition-transform duration-300 ease-in-out hover:scale-105 circle-mask">
 				</div>
-				<div class="w-full lg:w-1/2 text-center lg:text-left">
+				<div class="w-full lg:w-1/2 text-center lg:text-left"
+					 in:fade={{ duration: 800, delay: 500 }}>
 					<p class="text-lg sm:text-xl mb-6 leading-relaxed text-gray-300">
 						I'm Jamaal "Key Jay" Ephriam - a multi-disciplinary creative with over 15 years of experience 
 						spanning music production, web development, and creative content. From my classical piano foundations 

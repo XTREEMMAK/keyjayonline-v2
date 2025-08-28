@@ -12,7 +12,8 @@ export { getDirectusInstance } from './core/client.js';
 
 // Content APIs
 export { 
-  getMusicReleases 
+  getMusicReleases
+  // getMusicSamples removed to avoid circular import issues - import directly from content/music.js if needed
 } from './content/music.js';
 
 export { 
@@ -25,6 +26,38 @@ export {
 export { 
   getFeaturedWorks 
 } from './content/featured.js';
+
+export {
+  getGamesLibrary,
+  getCurrentDiscordActivity,
+  getRecentGamingSessions,
+  getGameById,
+  searchGamesLibrary
+} from './content/gaming.js';
+
+export {
+  getResourceCategories,
+  getResources,
+  getFeaturedResources,
+  getCodeSnippets,
+  getResourceById,
+  searchResources
+} from './content/resources.js';
+
+export {
+  getPhotoGalleries,
+  getPhotos,
+  getFeaturedPhotos,
+  getPhotoById,
+  getPhotoTags,
+  searchPhotos
+} from './content/photos.js';
+
+export {
+  getMusicPageHeader,
+  getTechPageHeader,
+  getGamesPageHeader
+} from './content/pages.js';
 
 // Social APIs
 export { 

@@ -3,6 +3,8 @@
 	import WaveSurfer from 'wavesurfer.js';
 	import Icon from '@iconify/svelte';
 	import { formatTime } from '$lib/utils/time.js';
+	import { getAudioUrl } from '$lib/utils/environment.js';
+	import { getAudioPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 	
 	let {
 		audioUrl,
@@ -29,20 +31,13 @@
 	onMount(() => {
 		if (!container || !audioUrl) return;
 		
+		// Transform audio URL for CORS bypass in development
+		const transformedAudioUrl = getAudioUrl(audioUrl);
+		
 		wavesurfer = WaveSurfer.create({
 			container,
-			waveColor,
-			progressColor,
-			height,
-			barWidth: 2,
-			barGap: 1,
-			barRadius: 2,
-			cursorWidth: 2,
-			cursorColor: '#fff',
-			mediaControls: false,
-			normalize: true,
-			responsive: true,
-			url: audioUrl
+			...getAudioPlayerConfig({ waveColor, progressColor, height }),
+			url: transformedAudioUrl
 		});
 		
 		wavesurfer.setVolume(volume);

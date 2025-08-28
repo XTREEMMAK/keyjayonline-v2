@@ -3,11 +3,19 @@
 	import { browser } from '$app/environment';
 	import SvgDivider from '$lib/components/ui/SvgDivider.svelte';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
+	import Icon from '@iconify/svelte';
 
+	let { data } = $props();
+	
 	let scrollY = $state(0);
 	let heroRef = $state();
 	let titleVisible = $state(true);
 	let titleAnimated = $state(false);
+	
+	// Get hero image from database or use fallback
+	const heroImage = $derived.by(() => {
+		return data.techPageHeader || 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1200';
+	});
 
 	// Tech projects data
 	const techProjects = [
@@ -199,7 +207,7 @@
 			style="transform: translateY({scrollY * 0.3}px)"
 		>
 			<img 
-				src="https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1200" 
+				src={heroImage} 
 				alt="Code and Technology"
 				class="w-full h-[120%] object-cover"
 			/>
@@ -222,7 +230,7 @@
 	</section>
 
 	<!-- Projects Section -->
-	<section class="bg-gray-900/95 backdrop-blur-sm py-20 z-10" style="margin-top: -60px; padding-top: 80px;">
+	<section class="bg-gray-900/95 backdrop-blur-sm py-20 z-10 relative" style="margin-top: -60px; padding-top: 80px; isolation: isolate;">
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Featured Projects</h2>
@@ -231,9 +239,9 @@
 				</p>
 			</div>
 
-			<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+			<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 relative" style="z-index: 1;">
 				{#each techProjects as project}
-					<article class="bg-gray-900/50 backdrop-blur-sm rounded-xl overflow-hidden hover:bg-gray-800/50 transition-all duration-300 hover:scale-105 flex flex-col min-h-[500px]">
+					<article class="bg-gray-900/50 backdrop-blur-sm rounded-xl overflow-hidden hover:bg-gray-800/50 transition-all duration-300 transform hover:scale-[1.02] flex flex-col min-h-[500px] isolate">
 						<div class="aspect-video relative">
 							<img 
 								src={project.image} 
@@ -266,18 +274,18 @@
 								<a 
 									href={project.github} 
 									target="_blank"
-									class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 text-center"
+									class="flex-1 relative overflow-hidden px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 text-center group"
 								>
-									<iconify-icon icon="mdi:github" class="inline mr-2"></iconify-icon>
-									Code
+									<Icon icon="mdi:github" class="absolute right-0 top-1/2 -translate-y-1/2 text-[4rem] opacity-10 group-hover:opacity-20 transition-opacity duration-300" style="right: -10px;" />
+									<span class="relative z-10">Code</span>
 								</a>
 								<a 
 									href={project.demo} 
 									target="_blank"
-									class="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 hover:scale-105 text-center"
+									class="flex-1 relative overflow-hidden px-4 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 hover:scale-105 text-center group"
 								>
-									<iconify-icon icon="mdi:eye" class="inline mr-2"></iconify-icon>
-									Demo
+									<Icon icon="mdi:eye" class="absolute right-0 top-1/2 -translate-y-1/2 text-[4rem] opacity-10 group-hover:opacity-20 transition-opacity duration-300" style="right: -10px;" />
+									<span class="relative z-10">Demo</span>
 								</a>
 							</div>
 						</div>
@@ -299,7 +307,7 @@
 
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 				{#each tutorials as tutorial}
-					<article class="bg-gray-900/50 backdrop-blur-sm rounded-xl overflow-hidden hover:bg-gray-800/50 transition-all duration-300 hover:scale-105 flex flex-col min-h-[500px]">
+					<article class="bg-gray-900/50 backdrop-blur-sm rounded-xl overflow-hidden hover:bg-gray-800/50 transition-all duration-300 transform hover:scale-[1.02] flex flex-col min-h-[500px] isolate">
 						<div class="aspect-video relative">
 							<img 
 								src={tutorial.image} 
@@ -361,7 +369,7 @@
 						<div class="space-y-4">
 							{#each stack.items as item}
 								<div class="flex items-center gap-4">
-									<iconify-icon icon={item.icon} class="text-cyan-400 text-2xl flex-shrink-0"></iconify-icon>
+									<Icon icon={item.icon} class="text-cyan-400 text-2xl flex-shrink-0" />
 									<div class="flex-1">
 										<div class="flex justify-between items-center mb-2">
 											<span class="text-white font-medium">{item.name}</span>
@@ -402,22 +410,22 @@
 
 			<div class="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
 				<div class="text-center">
-					<iconify-icon icon="mdi:code-tags" class="text-cyan-400 text-3xl mb-2"></iconify-icon>
+					<Icon icon="mdi:code-tags" class="text-cyan-400 text-3xl mb-2" />
 					<h3 class="text-white font-semibold mb-1">Clean Code</h3>
 					<p class="text-gray-400 text-sm">Well-structured, maintainable solutions</p>
 				</div>
 				<div class="text-center">
-					<iconify-icon icon="mdi:speedometer" class="text-blue-400 text-3xl mb-2"></iconify-icon>
+					<Icon icon="mdi:speedometer" class="text-blue-400 text-3xl mb-2" />
 					<h3 class="text-white font-semibold mb-1">Performance</h3>
 					<p class="text-gray-400 text-sm">Optimized for speed and efficiency</p>
 				</div>
 				<div class="text-center">
-					<iconify-icon icon="mdi:devices" class="text-purple-400 text-3xl mb-2"></iconify-icon>
+					<Icon icon="mdi:devices" class="text-purple-400 text-3xl mb-2" />
 					<h3 class="text-white font-semibold mb-1">Cross-Platform</h3>
 					<p class="text-gray-400 text-sm">Solutions that work everywhere</p>
 				</div>
 				<div class="text-center">
-					<iconify-icon icon="mdi:account-group" class="text-green-400 text-3xl mb-2"></iconify-icon>
+					<Icon icon="mdi:account-group" class="text-green-400 text-3xl mb-2" />
 					<h3 class="text-white font-semibold mb-1">Collaborative</h3>
 					<p class="text-gray-400 text-sm">Team-oriented development approach</p>
 				</div>

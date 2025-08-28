@@ -96,9 +96,13 @@
 			duration: 400 
 		 }}>
 		<!-- Social Media Section - Hidden on smaller screens -->
-		<div class="hidden sm:flex items-center">
-			<SocialIcons layout="horizontal" size={32} gap="gap-4" className="text-white" {socialLinks} />
-		</div>
+		{#if !navOpen}
+			<div class="hidden sm:flex items-center"
+				 in:fly={{ x: 200, duration: 300, delay: 100 }}
+				 out:fly={{ x: 200, duration: 300 }}>
+				<SocialIcons layout="horizontal" size={32} gap="gap-4" className="text-white" {socialLinks} />
+			</div>
+		{/if}
 		
 		<!-- Menu Button -->
 		{#if !navOpen}

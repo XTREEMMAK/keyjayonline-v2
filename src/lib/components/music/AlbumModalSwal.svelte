@@ -5,6 +5,16 @@
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 	import { fade } from 'svelte/transition';
 	import { formatTime } from '$lib/utils/time.js';
+	import { getAudioUrl } from '$lib/utils/environment.js';
+import { 
+	getTrackPlayerConfig, 
+	setupTrackPlayerEvents, 
+	pauseOthersAndToggle, 
+	cleanupTrackPlayer,
+	PLAYER_ICONS,
+	createTrackPlayerConfig
+} from '$lib/utils/wavesurfer-helpers.js';
+	// import { getMusicSamples } from '$lib/api/content/musicSamples.js';
 	import '$lib/styles/album-modal.css';
 	
 	/** @typedef {import('$lib/types').Album} Album */
@@ -21,7 +31,20 @@
 	
 	
 	export async function showModal() {
-		const modalContent = createModalContent();
+		// Fetch music samples via server-side API endpoint
+		let samples = [];
+		try {
+			const response = await fetch(`/api/music-samples/${album.id}`);
+			if (response.ok) {
+				samples = await response.json();
+			} else {
+				console.error('Failed to fetch music samples:', response.status, response.statusText);
+			}
+		} catch (error) {
+			console.error('Error fetching music samples:', error);
+		}
+		
+		const modalContent = createModalContent(samples);
 		
 		const result = await Swal.fire({
 			title: album.title,
@@ -127,7 +150,7 @@
 		return platformColors[platform] || { bg: 'rgba(59, 130, 246, 0.2)', bgHover: 'rgba(59, 130, 246, 0.3)', color: '#3b82f6' };
 	}
 
-	function createModalContent() {
+	function createModalContent(samples = []) {
 		// Use real credits from album data, or empty array if none
 		const albumCredits = album.credits || [];
 		
@@ -201,25 +224,23 @@
 							</div>
 							` : ''}
 							
-							${album.tracks && album.tracks.length > 0 ? `
+							${samples && samples.length > 0 ? `
 							<div style="margin-bottom: 32px;">
-								<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 16px; text-align: left;">Track List</h3>
+								<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 16px; text-align: left;">Track Samples</h3>
 								<div id="track-list-container" style="display: grid; gap: 16px;">
-									${album.tracks.map(/** @type {Track} */ (track, /** @type {number} */ i) => `
+									${samples.map(/** @type {any} */ (sample, /** @type {number} */ i) => `
 										<div style="background: rgba(55, 65, 81, 0.5); border-radius: 8px; padding: 16px;">
 											<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
 												<div>
 													<h4 style="color: #ffffff; font-weight: 500; margin-bottom: 4px;">
-														${i + 1}. ${track.title}
+														${sample.trackNumber || i + 1}. ${sample.title}
 													</h4>
-													${track.duration ? `<span style="color: #9ca3af; font-size: 0.9rem;">${track.duration}</span>` : ''}
+													${sample.duration ? `<span style="color: #9ca3af; font-size: 0.9rem;">${sample.duration}</span>` : ''}
 												</div>
-												${track.licensable ? `<span style="padding: 4px 8px; background: rgba(34, 197, 94, 0.2); color: #22c55e; font-size: 0.75rem; border-radius: 16px;">Available for licensing</span>` : ''}
+												${sample.isFeatured ? `<span style="padding: 4px 8px; background: rgba(34, 197, 94, 0.2); color: #22c55e; font-size: 0.75rem; border-radius: 16px;">Featured</span>` : ''}
 											</div>
 											
-											${track.audio_file_url ? `<div class="track-player" data-track-id="${track.id}" data-audio-url="${track.audio_file_url}" data-track-title="${track.title}" data-artist="${album.artist || ''}" data-can-download="${track.access_type === 'free' || (userAccess?.canDownload ? 'true' : 'false')}" style="margin-bottom: 12px;"></div>` : ''}
-											
-											${track.track_description ? `<div style="color: #d1d5db; font-size: 0.9rem; line-height: 1.5;">${sanitizeHtml(track.track_description)}</div>` : ''}
+											${sample.previewUrl ? `<div class="track-player" data-track-id="${sample.id}" data-audio-url="${sample.previewUrl}" data-track-title="${sample.title}" data-artist="${album.artist || ''}" data-can-download="false" style="margin-bottom: 12px;"></div>` : ''}
 										</div>
 									`).join('')}
 								</div>
@@ -302,25 +323,23 @@
 									</div>
 									` : ''}
 									
-									${album.tracks && album.tracks.length > 0 ? `
+									${samples && samples.length > 0 ? `
 									<div style="margin-bottom: 32px;">
 										<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 16px; text-align: left;">Track List</h3>
 										<div class="mobile-track-list-container" style="display: grid; gap: 16px;">
-											${album.tracks.map(/** @type {Track} */ (track, /** @type {number} */ i) => `
+											${samples.map(/** @type {any} */ (sample, /** @type {number} */ i) => `
 												<div style="background: rgba(55, 65, 81, 0.5); border-radius: 8px; padding: 16px;">
 													<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
 														<div>
 															<h4 style="color: #ffffff; font-weight: 500; margin-bottom: 4px;">
-																${i + 1}. ${track.title}
+																${sample.trackNumber || i + 1}. ${sample.title}
 															</h4>
-															${track.duration ? `<span style="color: #9ca3af; font-size: 0.9rem;">${track.duration}</span>` : ''}
+															${sample.duration ? `<span style="color: #9ca3af; font-size: 0.9rem;">${sample.duration}</span>` : ''}
 														</div>
-														${track.licensable ? `<span style="padding: 4px 8px; background: rgba(34, 197, 94, 0.2); color: #22c55e; font-size: 0.75rem; border-radius: 16px;">Available for licensing</span>` : ''}
+														${sample.isFeatured ? `<span style="padding: 4px 8px; background: rgba(34, 197, 94, 0.2); color: #22c55e; font-size: 0.75rem; border-radius: 16px;">Featured</span>` : ''}
 													</div>
 													
-													${track.audio_file_url ? `<div class="track-player-mobile" data-track-id="${track.id}" data-audio-url="${track.audio_file_url}" data-track-title="${track.title}" data-artist="${album.artist || ''}" data-can-download="${track.access_type === 'free' || (userAccess?.canDownload ? 'true' : 'false')}" style="margin-bottom: 12px;"></div>` : ''}
-													
-													${track.track_description ? `<div style="color: #d1d5db; font-size: 0.9rem; line-height: 1.5;">${sanitizeHtml(track.track_description)}</div>` : ''}
+													${sample.previewUrl ? `<div class="track-player-mobile" data-track-id="${sample.id}" data-audio-url="${sample.previewUrl}" data-track-title="${sample.title}" data-artist="${album.artist || ''}" data-can-download="false" style="margin-bottom: 12px;"></div>` : ''}
 												</div>
 											`).join('')}
 										</div>
@@ -407,118 +426,129 @@
 		// Setup streaming links scroll-based visibility animation
 		setupStreamingLinksVisibility();
 		
-		// Initialize audio players for each track (desktop tabs)
+		// Initialize WaveSurfer audio players for each track (desktop tabs)
 		const trackPlayers = document.querySelectorAll('.track-player');
-		trackPlayers.forEach(playerEl => {
+		trackPlayers.forEach(async (playerEl) => {
 			const trackId = playerEl.getAttribute('data-track-id');
 			const audioUrl = playerEl.getAttribute('data-audio-url');
-			// const trackTitle = playerEl.getAttribute('data-track-title');
-			// const artist = playerEl.getAttribute('data-artist');
+			const trackTitle = playerEl.getAttribute('data-track-title');
 			const canDownload = playerEl.getAttribute('data-can-download') === 'true';
 			
-			// Create a simple HTML5 audio player
+			// Create WaveSurfer player container
 			playerEl.innerHTML = `
-				<div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px;">
-					<button onclick="togglePlay('${trackId}')" id="play-btn-${trackId}" style="background: #3b82f6; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-							<path d="M8 5v14l11-7z"/>
-						</svg>
-					</button>
-					<div style="flex: 1;">
-						<audio id="audio-${trackId}" src="${audioUrl}" preload="metadata"></audio>
-						<div style="background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; margin-bottom: 4px;">
-							<div id="progress-${trackId}" style="background: #3b82f6; height: 100%; border-radius: 2px; width: 0%; transition: width 0.1s;"></div>
+				<div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px;">
+					<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+						<button id="play-btn-${trackId}" style="background: #3b82f6; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+							${PLAYER_ICONS.play}
+						</button>
+						<div style="flex: 1;">
+							<div style="font-size: 0.875rem; color: #ffffff; margin-bottom: 4px;">${trackTitle}</div>
+							<div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af;">
+								<span id="current-time-${trackId}">0:00</span>
+								<span id="duration-${trackId}">0:00</span>
+							</div>
 						</div>
-						<div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af;">
-							<span id="current-time-${trackId}">0:00</span>
-							<span id="duration-${trackId}">0:00</span>
-						</div>
+						${canDownload ? `<button onclick="handleDownload('${trackId}')" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+							</svg>
+						</button>` : ''}
 					</div>
-					${canDownload ? `<button onclick="handleDownload('${trackId}')" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-							<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-						</svg>
-					</button>` : ''}
+					<div id="waveform-${trackId}" style="margin: 8px 0;"></div>
 				</div>
 			`;
 			
-			// Add audio event listeners
-			/** @type {HTMLAudioElement | null} */
-			const audio = /** @type {HTMLAudioElement | null} */ (document.getElementById(`audio-${trackId}`));
-			const playBtn = document.getElementById(`play-btn-${trackId}`);
-			const progress = document.getElementById(`progress-${trackId}`);
-			const currentTime = document.getElementById(`current-time-${trackId}`);
-			const duration = document.getElementById(`duration-${trackId}`);
-			
-			if (audio) {
-				audio.addEventListener('loadedmetadata', () => {
-					if (duration) duration.textContent = formatTime(audio.duration);
-				});
+			try {
+				// Transform audio URL for environment-aware CORS handling
+				const transformedAudioUrl = getAudioUrl(audioUrl);
+				console.log('Initializing WaveSurfer for track:', trackId);
+				console.log('Original URL:', audioUrl);
+				console.log('Transformed URL:', transformedAudioUrl);
 				
-				audio.addEventListener('timeupdate', () => {
-					const percent = (audio.currentTime / audio.duration) * 100;
-					if (progress) progress.style.width = percent + '%';
-					if (currentTime) currentTime.textContent = formatTime(audio.currentTime);
-				});
+				// Dynamic import WaveSurfer to avoid SSR issues
+				const WaveSurfer = (await import('wavesurfer.js')).default;
+				console.log('WaveSurfer imported successfully');
 				
-				audio.addEventListener('ended', () => {
-					if (playBtn) playBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
-				});
+				// Initialize WaveSurfer with shared track player configuration
+				const wavesurfer = WaveSurfer.create(
+					createTrackPlayerConfig(`#waveform-${trackId}`, transformedAudioUrl)
+				);
+				console.log('WaveSurfer instance created for track:', trackId);
+				
+				// Get UI elements
+				const playBtn = document.getElementById(`play-btn-${trackId}`);
+				const currentTime = document.getElementById(`current-time-${trackId}`);
+				const duration = document.getElementById(`duration-${trackId}`);
+				
+				// Setup standard event listeners using shared helper
+				setupTrackPlayerEvents(wavesurfer, { playBtn, currentTime, duration }, trackId);
+				
+			} catch (error) {
+				console.error('Error initializing WaveSurfer for track:', trackId, error);
+				// Fallback to basic audio if WaveSurfer fails
+				playerEl.innerHTML = `<p style="color: #ef4444;">Error loading audio player</p>`;
 			}
 		});
 		
-		// Initialize audio players for mobile accordion system
+		// Initialize WaveSurfer audio players for mobile accordion system
 		const mobileTrackPlayers = document.querySelectorAll('.track-player-mobile');
-		mobileTrackPlayers.forEach(playerEl => {
+		mobileTrackPlayers.forEach(async (playerEl) => {
 			const trackId = playerEl.getAttribute('data-track-id');
 			const audioUrl = playerEl.getAttribute('data-audio-url');
+			const trackTitle = playerEl.getAttribute('data-track-title');
 			const canDownload = playerEl.getAttribute('data-can-download') === 'true';
 			
+			// Create WaveSurfer player container for mobile
 			playerEl.innerHTML = `
-				<div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px;">
-					<button onclick="togglePlay('${trackId}')" id="play-btn-mobile-${trackId}" style="background: #3b82f6; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-							<path d="M8 5v14l11-7z"/>
-						</svg>
-					</button>
-					<div style="flex: 1;">
-						<audio id="audio-mobile-${trackId}" src="${audioUrl}" preload="metadata"></audio>
-						<div style="background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; margin-bottom: 4px;">
-							<div id="progress-mobile-${trackId}" style="background: #3b82f6; height: 100%; border-radius: 2px; width: 0%; transition: width 0.1s;"></div>
+				<div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px;">
+					<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+						<button id="play-btn-mobile-${trackId}" style="background: #3b82f6; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+							${PLAYER_ICONS.play}
+						</button>
+						<div style="flex: 1;">
+							<div style="font-size: 0.875rem; color: #ffffff; margin-bottom: 4px;">${trackTitle}</div>
+							<div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af;">
+								<span id="current-time-mobile-${trackId}">0:00</span>
+								<span id="duration-mobile-${trackId}">0:00</span>
+							</div>
 						</div>
-						<div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af;">
-							<span id="current-time-mobile-${trackId}">0:00</span>
-							<span id="duration-mobile-${trackId}">0:00</span>
-						</div>
+						${canDownload ? `<button onclick="handleDownload('${trackId}')" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+							</svg>
+						</button>` : ''}
 					</div>
-					${canDownload ? `<button onclick="handleDownload('${trackId}')" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-							<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-						</svg>
-					</button>` : ''}
+					<div id="waveform-mobile-${trackId}" style="margin: 8px 0;"></div>
 				</div>
 			`;
 			
-			const audio = document.getElementById(`audio-mobile-${trackId}`);
-			const playBtn = document.getElementById(`play-btn-mobile-${trackId}`);
-			const progress = document.getElementById(`progress-mobile-${trackId}`);
-			const currentTime = document.getElementById(`current-time-mobile-${trackId}`);
-			const duration = document.getElementById(`duration-mobile-${trackId}`);
-			
-			if (audio) {
-				audio.addEventListener('loadedmetadata', () => {
-					if (duration) duration.textContent = formatTime(audio.duration);
-				});
+			try {
+				// Transform audio URL for environment-aware CORS handling
+				const transformedAudioUrl = getAudioUrl(audioUrl);
+				console.log('Initializing mobile WaveSurfer for track:', trackId);
+				console.log('Original URL:', audioUrl);
+				console.log('Transformed URL:', transformedAudioUrl);
 				
-				audio.addEventListener('timeupdate', () => {
-					const percent = (audio.currentTime / audio.duration) * 100;
-					if (progress) progress.style.width = percent + '%';
-					if (currentTime) currentTime.textContent = formatTime(audio.currentTime);
-				});
+				// Dynamic import WaveSurfer to avoid SSR issues
+				const WaveSurfer = (await import('wavesurfer.js')).default;
 				
-				audio.addEventListener('ended', () => {
-					if (playBtn) playBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
-				});
+				// Initialize WaveSurfer with shared track player configuration
+				const wavesurfer = WaveSurfer.create(
+					createTrackPlayerConfig(`#waveform-mobile-${trackId}`, transformedAudioUrl)
+				);
+				
+				// Get UI elements
+				const playBtn = document.getElementById(`play-btn-mobile-${trackId}`);
+				const currentTime = document.getElementById(`current-time-mobile-${trackId}`);
+				const duration = document.getElementById(`duration-mobile-${trackId}`);
+				
+				// Setup standard event listeners using shared helper with mobile prefix
+				setupTrackPlayerEvents(wavesurfer, { playBtn, currentTime, duration }, `mobile-${trackId}`);
+				
+			} catch (error) {
+				console.error('Error initializing WaveSurfer for mobile track:', trackId, error);
+				// Fallback to error message if WaveSurfer fails
+				playerEl.innerHTML = `<p style="color: #ef4444;">Error loading audio player</p>`;
 			}
 		});
 	}
@@ -567,30 +597,11 @@
 	
 	/** @param {string} trackId */
 	window.togglePlay = function(trackId) {
-		// Try both desktop and mobile audio elements
-		/** @type {HTMLAudioElement | null} */
-		const audio = /** @type {HTMLAudioElement | null} */ (document.getElementById(`audio-${trackId}`) || document.getElementById(`audio-mobile-${trackId}`));
-		const playBtn = document.getElementById(`play-btn-${trackId}`) || document.getElementById(`play-btn-mobile-${trackId}`);
+		// Try to get WaveSurfer instances (both desktop and mobile)
+		const wavesurfer = window[`wavesurfer-${trackId}`] || window[`wavesurfer-mobile-${trackId}`];
 		
-		// Pause all other tracks (both desktop and mobile)
-		document.querySelectorAll('[id^="audio-"], [id^="audio-mobile-"]').forEach(otherElement => {
-			const otherAudio = /** @type {HTMLAudioElement} */ (otherElement);
-			if (otherAudio.id !== `audio-${trackId}` && otherAudio.id !== `audio-mobile-${trackId}` && !otherAudio.paused) {
-				otherAudio.pause();
-				const otherTrackId = otherAudio.id.replace('audio-', '').replace('audio-mobile-', '');
-				const otherPlayBtn = document.getElementById(`play-btn-${otherTrackId}`) || document.getElementById(`play-btn-mobile-${otherTrackId}`);
-				if (otherPlayBtn) otherPlayBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
-			}
-		});
-		
-		if (audio && playBtn) {
-			if (audio.paused) {
-				audio.play();
-				playBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>`;
-			} else {
-				audio.pause();
-				playBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
-			}
+		if (wavesurfer) {
+			pauseOthersAndToggle(wavesurfer, trackId);
 		}
 	};
 	

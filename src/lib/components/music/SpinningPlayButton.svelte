@@ -13,7 +13,7 @@
 					a 37,37 0 1,1 74,0
 					a 37,37 0 1,1 -74,0"/>
 			</defs>
-			<text font-size="7.7" fill="white" opacity="0.8">
+			<text font-size="7" fill="white" opacity="0.8">
 				<textPath href="#circle">
 					Don't think just play! Don't think just play! Don't think just PLAY!
 				</textPath>
@@ -33,8 +33,8 @@
 
 <style>
 	.spinning-play-button-wrapper {
-		width: 180px;
-		height: 180px;
+		width: 200px;
+		height: 200px;
 	}
 	
 	.play-circle-text {

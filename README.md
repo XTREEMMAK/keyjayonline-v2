@@ -46,32 +46,70 @@ src/
     └── ...
 ```
 
-## Getting Started
+## Quick Start
 
-### Prerequisites
-
-- Node.js (v18 or higher)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd keyjayonline.com_v2
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
-
-3. Start the development server:
-```bash
+cp .env.example .env  # Configure your environment
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+Visit `http://localhost:5173` to see the site.
+
+## Documentation
+
+- **[Development Setup Guide](docs/DEVELOPMENT.md)** - Comprehensive development environment setup
+- **[Production Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment and security checklist  
+- **[Audio CORS Bypass Technical Documentation](docs/AUDIO_CORS_BYPASS.md)** - Technical details of the audio system
+- **[Music Player System](docs/MUSIC_PLAYER.md)** - Music player architecture and usage
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js 18+
+- npm 8+
+- Access to development database and Directus instance
+
+### Environment Configuration
+
+Create a `.env` file from the example:
+
+```bash
+cp .env.example .env
+```
+
+Key variables for development:
+
+```bash
+# Database Configuration  
+DATABASE_HOST=192.168.10.156
+DATABASE_PORT=5432
+DATABASE_NAME=kjo_v2_db
+
+# Directus CMS
+DIRECTUS_URL=http://192.168.10.24:8057
+DIRECTUS_TOKEN=your_token
+
+# CDN Configuration
+CDN_BASE_URL=https://kjo.nyc3.cdn.digitaloceanspaces.com
+
+# Audio CORS Bypass (Development Only)
+BYPASS_CORS_IN_DEV=true
+```
+
+### Audio Development Features
+
+The development environment includes automatic CORS bypass for audio files:
+
+- **Automatic URL transformation** from CDN to localhost proxy
+- **Vite proxy configuration** for seamless development
+- **Environment-aware WaveSurfer configuration**
+- **Production-safe** (automatically disabled in builds)
+
+See [Development Guide](docs/DEVELOPMENT.md) for detailed setup instructions.
 
 ## Music Player System
 
@@ -119,22 +157,29 @@ Bottom-docked music player with:
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+See [Development Setup Guide](docs/DEVELOPMENT.md) for complete environment variable documentation.
 
-```env
-DIRECTUS_URL=your_directus_instance_url
-DIRECTUS_TOKEN=your_directus_token
-```
+Example `.env.example` file is provided with all required variables.
 
 ## Deployment
 
-The site is configured for easy deployment on:
-- Vercel (recommended)
-- Netlify
-- Any Node.js hosting platform
+**Important**: See [Production Deployment Guide](docs/DEPLOYMENT.md) for complete deployment instructions including:
 
-Build command: `npm run build`
-Output directory: `build`
+- Security checklist and pre-deployment verification
+- CDN CORS configuration requirements
+- Environment variable setup for production
+- Platform-specific deployment guides
+
+### Supported Platforms
+- Node.js servers (recommended)
+- Vercel
+- Netlify
+- Any SvelteKit-compatible hosting
+
+### Build Configuration
+- Build command: `npm run build`
+- Output directory: `build`
+- Runtime: Node.js 18+
 
 ## Contributing
 

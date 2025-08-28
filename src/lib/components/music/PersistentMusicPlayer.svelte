@@ -3,6 +3,8 @@
 	import { fly, slide } from 'svelte/transition';
 	import WaveSurfer from 'wavesurfer.js';
 	import Icon from '@iconify/svelte';
+	import { getAudioUrl } from '$lib/utils/environment.js';
+import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 	import { 
 		playerVisible, 
 		isPlaying, 
@@ -49,17 +51,7 @@
 			console.log('Creating wavesurfer instance with container:', container);
 			wavesurfer = WaveSurfer.create({
 				container,
-				waveColor: 'rgb(200, 0, 200)',
-				progressColor: 'rgb(100, 0, 100)',
-				height: 50,
-				barWidth: 2,
-				barGap: 1,
-				barRadius: 2,
-				cursorWidth: 2,
-				cursorColor: '#fff',
-				mediaControls: false,
-				normalize: true,
-				interact: true
+				...getPersistentPlayerConfig()
 			});
 			
 			console.log('Wavesurfer instance created:', !!wavesurfer);
@@ -114,9 +106,9 @@
 				isLoading = false;
 			});
 			
-		} catch (error) {
-			console.error('Failed to create wavesurfer:', error);
-		}
+			} catch (error) {
+				console.error('Failed to create wavesurfer:', error);
+			}
 	});
 	
 	// Create visual wavesurfer for expanded view
@@ -138,22 +130,13 @@
 			console.log('Creating visual wavesurfer instance');
 			visualWavesurfer = WaveSurfer.create({
 				container: visualContainer,
-				waveColor: 'rgb(200, 0, 200)',
-				progressColor: 'rgb(100, 0, 100)',
-				height: 50,
-				barWidth: 2,
-				barGap: 1,
-				barRadius: 2,
-				cursorWidth: 2,
-				cursorColor: '#fff',
-				mediaControls: false,
-				normalize: true,
-				interact: true
+				...getPersistentPlayerConfig()
 			});
 			
-			// Load current track if available
+			// Load current track if available (with CORS bypass)
 			if (wavesurfer && $currentTrack?.audioUrl) {
-				visualWavesurfer.load($currentTrack.audioUrl);
+				const transformedUrl = getAudioUrl($currentTrack.audioUrl);
+				visualWavesurfer.load(transformedUrl);
 			}
 			
 			// Handle interaction - when user clicks visual waveform, control main wavesurfer
@@ -236,13 +219,15 @@
 				wavesurfer.pause();
 			}
 			
-			await wavesurfer.load(track.audioUrl);
+			const transformedUrl = getAudioUrl(track.audioUrl);
+			await wavesurfer.load(transformedUrl);
 			console.log('Track loaded successfully:', track.title);
 			
 			// Load into visual wavesurfer as well
 			if (visualWavesurfer) {
 				try {
-					await visualWavesurfer.load(track.audioUrl);
+					const transformedVisualUrl = getAudioUrl(track.audioUrl);
+					await visualWavesurfer.load(transformedVisualUrl);
 					console.log('Visual wavesurfer loaded successfully');
 				} catch (error) {
 					console.error('Error loading visual wavesurfer:', error);

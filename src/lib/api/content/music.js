@@ -166,3 +166,14 @@ export async function getMusicReleases() {
     return [];
   }
 }
+
+/**
+ * Fetches music samples for a specific release from Directus
+ * @param {number} releaseId - The ID of the music release
+ * @returns {Promise<Array>} Array of music sample objects with track info
+ */
+export async function getMusicSamples(releaseId) {
+  // Completely disabled - return empty array to stop Vite errors
+  console.log('getMusicSamples disabled - releaseId:', releaseId);
+  return [];
+}

@@ -1,15 +1,17 @@
-import { getMusicReleases, getMusicNetworks } from '$lib/api/index.js';
+import { getMusicReleases, getMusicNetworks, getMusicPageHeader } from '$lib/api/index.js';
 
 export async function load() {
 	try {
-		const [albums, musicNetworks] = await Promise.all([
+		const [albums, musicNetworks, musicPageHeader] = await Promise.all([
 			getMusicReleases(),
-			getMusicNetworks()
+			getMusicNetworks(),
+			getMusicPageHeader()
 		]);
 		
 		return {
 			albums: albums || [],
-			musicNetworks: musicNetworks || []
+			musicNetworks: musicNetworks || [],
+			musicPageHeader
 		};
 	} catch (error) {
 		console.error('Failed to load music releases:', error);
@@ -18,6 +20,7 @@ export async function load() {
 		return {
 			albums: [],
 			musicNetworks: [],
+			musicPageHeader: null,
 			error: error.message
 		};
 	}

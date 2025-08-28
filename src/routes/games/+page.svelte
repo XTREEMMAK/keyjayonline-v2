@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import SvgDivider from '$lib/components/ui/SvgDivider.svelte';
+	import GameModalSwal from '$lib/components/gaming/GameModalSwal.svelte';
 
 	let {
 		data
@@ -11,9 +12,16 @@
 	let heroRef = $state();
 	let titleVisible = $state(true);
 	let titleAnimated = $state(false);
+	let selectedCategory = $state(data.selectedCategory || 'all');
+	let showDiscordWidget = $state(true);
+	
+	// Get hero image from database or use fallback
+	const heroImage = $derived.by(() => {
+		return data.gamesPageHeader || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200';
+	});
 
-	// Game reviews data
-	const gameReviews = [
+	// Use dynamic data from DirectUS, with fallbacks to existing static data
+	const gameReviews = data.gameReviews?.length > 0 ? data.gameReviews : [
 		{
 			id: 1,
 			title: 'Cyberpunk 2077: Phantom Liberty',
@@ -49,8 +57,7 @@
 		}
 	];
 
-	// Content creation data
-	const gameContent = [
+	const gameContent = data.gameContent?.length > 0 ? data.gameContent : [
 		{
 			id: 1,
 			type: 'Stream Highlight',
@@ -79,6 +86,26 @@
 			description: 'My honest thoughts after 100+ hours in Bethesda\'s space epic'
 		}
 	];
+	
+	let gameModal;
+	
+	// Helper function to open game detail modal
+	async function openGameModal(game) {
+		try {
+			// Find the full game data from DirectUS if available
+			const fullGame = data.gamesLibrary?.find(g => g.id === game.id) || game;
+			
+			// Create modal instance with full game data
+			gameModal = new GameModalSwal({
+				target: document.body,
+				props: { game: fullGame }
+			});
+			
+			await gameModal.showModal();
+		} catch (error) {
+			console.error('Error opening game modal:', error);
+		}
+	}
 
 	onMount(() => {
 		if (!browser) return;
@@ -147,7 +174,7 @@
 			style="transform: translateY({scrollY * 0.3}px)"
 		>
 			<img 
-				src="https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=1200" 
+				src={heroImage} 
 				alt="Gaming Setup"
 				class="w-full h-[120%] object-cover"
 			/>
@@ -168,6 +195,145 @@
 			{/if}
 		</div>
 	</section>
+
+	<!-- Currently Playing Widget -->
+	{#if data.currentDiscordActivity && showDiscordWidget}
+		<section class="bg-gray-800/95 backdrop-blur-sm py-8">
+			<div class="container mx-auto px-4">
+				<div class="max-w-4xl mx-auto">
+					<div class="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-xl p-6 border border-purple-500/20">
+						<div class="flex items-center gap-4">
+							<div class="flex-shrink-0">
+								<div class="relative">
+									{#if data.currentDiscordActivity.large_image}
+										<img 
+											src={data.currentDiscordActivity.large_image} 
+											alt={data.currentDiscordActivity.game_name}
+											class="w-16 h-16 rounded-lg object-cover"
+										/>
+									{:else}
+										<div class="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+											<iconify-icon icon="mdi:gamepad" class="text-white text-2xl"></iconify-icon>
+										</div>
+									{/if}
+									<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-gray-800"></div>
+								</div>
+							</div>
+							
+							<div class="flex-1 min-w-0">
+								<div class="flex items-center gap-2 mb-1">
+									<div class="flex items-center gap-1">
+										<div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+										<span class="text-green-400 text-sm font-medium">Currently Playing</span>
+									</div>
+									<button 
+										onclick={() => showDiscordWidget = false}
+										class="ml-auto text-gray-400 hover:text-white transition-colors"
+									>
+										<iconify-icon icon="mdi:close" class="text-lg"></iconify-icon>
+									</button>
+								</div>
+								
+								<h3 class="text-white font-semibold text-lg mb-1">{data.currentDiscordActivity.game_name}</h3>
+								
+								{#if data.currentDiscordActivity.details}
+									<p class="text-gray-300 text-sm mb-1">{data.currentDiscordActivity.details}</p>
+								{/if}
+								
+								{#if data.currentDiscordActivity.state}
+									<p class="text-gray-400 text-sm">{data.currentDiscordActivity.state}</p>
+								{/if}
+								
+								{#if data.currentDiscordActivity.game_info}
+									<div class="flex items-center gap-3 mt-3">
+										<span class="text-purple-400 text-sm">
+											<iconify-icon icon="mdi:star" class="mr-1"></iconify-icon>
+											{data.currentDiscordActivity.game_info.personal_rating}/10
+										</span>
+										<span class="text-blue-400 text-sm">
+											<iconify-icon icon="mdi:controller" class="mr-1"></iconify-icon>
+											{data.currentDiscordActivity.game_info.platform}
+										</span>
+									</div>
+								{/if}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	{/if}
+
+	<!-- Gaming Stats Dashboard -->
+	{#if data.stats}
+		<section class="bg-gray-900/50 py-16">
+			<div class="container mx-auto px-4">
+				<div class="max-w-6xl mx-auto">
+					<div class="text-center mb-8">
+						<h2 class="text-2xl font-bold text-white mb-2">Gaming Overview</h2>
+						<p class="text-gray-400">My gaming journey by the numbers</p>
+					</div>
+					
+					<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+						<div class="bg-gray-800/50 rounded-xl p-6 text-center border border-gray-700/50">
+							<div class="text-3xl font-bold text-blue-400 mb-2">{data.stats.totalGames}</div>
+							<div class="text-gray-400 text-sm">Games Played</div>
+						</div>
+						
+						<div class="bg-gray-800/50 rounded-xl p-6 text-center border border-gray-700/50">
+							<div class="text-3xl font-bold text-green-400 mb-2">{data.stats.totalPlaytime}h</div>
+							<div class="text-gray-400 text-sm">Total Playtime</div>
+						</div>
+						
+						<div class="bg-gray-800/50 rounded-xl p-6 text-center border border-gray-700/50">
+							<div class="text-3xl font-bold text-yellow-400 mb-2">{data.stats.averageRating}</div>
+							<div class="text-gray-400 text-sm">Average Rating</div>
+						</div>
+						
+						<div class="bg-gray-800/50 rounded-xl p-6 text-center border border-gray-700/50">
+							<div class="text-3xl font-bold text-purple-400 mb-2">{data.stats.recentlyPlayed}</div>
+							<div class="text-gray-400 text-sm">Recently Played</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	{/if}
+
+	<!-- Category Filter -->
+	{#if data.categories?.length > 0}
+		<section class="bg-gray-800/30 py-8">
+			<div class="container mx-auto px-4">
+				<div class="max-w-4xl mx-auto">
+					<div class="flex flex-wrap gap-2 justify-center">
+						<button 
+							class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+							class:bg-purple-600={selectedCategory === 'all'}
+							class:text-white={selectedCategory === 'all'}
+							class:bg-gray-700={selectedCategory !== 'all'}
+							class:text-gray-300={selectedCategory !== 'all'}
+							onclick={() => selectedCategory = 'all'}
+						>
+							All Games
+						</button>
+						
+						{#each data.categories as category}
+							<button 
+								class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+								class:bg-purple-600={selectedCategory === category}
+								class:text-white={selectedCategory === category}
+								class:bg-gray-700={selectedCategory !== category}
+								class:text-gray-300={selectedCategory !== category}
+								onclick={() => selectedCategory = category}
+							>
+								{category}
+							</button>
+						{/each}
+					</div>
+				</div>
+			</div>
+		</section>
+	{/if}
 
 	<!-- Game Reviews Section -->
 	<section class="bg-gray-900/95 backdrop-blur-sm py-20">
@@ -216,7 +382,10 @@
 									<span>Playtime: {game.playtime}</span>
 									<span>{game.review_date}</span>
 								</div>
-								<button class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 hover:scale-105">
+								<button 
+									class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 hover:scale-105"
+									onclick={() => openGameModal(game)}
+								>
 									Read Full Review
 								</button>
 							</div>

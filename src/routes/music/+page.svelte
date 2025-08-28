@@ -35,6 +35,11 @@
 	let isTransitioning = $state(false);
 	let visibleElements = $state(new Set());
 	
+	// Get hero image from database or use optimized fallback
+	const heroImage = $derived.by(() => {
+		return data.musicPageHeader || '/img/J_Header_2560.webp';
+	});
+	
 	// Mock data for latest projects
 	const latestProjects = [
 		{
@@ -426,7 +431,7 @@
 			style="transform: translateY({scrollY * 0.3}px)"
 		>
 			<img 
-				src="/img/J_Header_5k.webp" 
+				src={heroImage} 
 				alt="Key Jay"
 				class="w-full h-[120%] object-cover"
 			/>
@@ -484,11 +489,11 @@
 				class="relative w-full overflow-hidden min-h-screen"
 				style="margin-top: -120px; z-index: 5;">
 				
-				<!-- Background with fade transition -->
+				<!-- Parallax Background with fade transition -->
 				{#key currentProjectIndex}
 					<div 
-						class="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-						style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}');"
+						class="absolute inset-0 bg-cover bg-center transition-all duration-1000 parallax-bg"
+						style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}'); transform: translateY({scrollY * 0.015}px) scale(1.05);"
 						transition:fade={{ duration: 800 }}>
 					</div>
 				{/key}
@@ -497,7 +502,7 @@
 					<!-- Section Heading -->
 					<div 
 						use:observeElement={'latest-projects-heading'}
-						class="flex-shrink-0 text-center pt-32 sm:pt-24 lg:pt-32 xl:pt-[188px] pb-8 px-4 sm:px-8 transition-all duration-1000 transform {
+						class="flex-shrink-0 text-center pt-32 sm:pt-24 lg:pt-32 xl:pt-[188px] pb-8 px-4 sm:px-8 transition-all duration-1000 transform latest-projects-header {
 							visibleElements.has('latest-projects-heading') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
 						}"
 					>
@@ -505,7 +510,7 @@
 					</div>
 					
 					<!-- Content Container -->
-					<div class="flex-1 flex items-center justify-center px-4 sm:px-8 pb-20">
+					<div class="flex-1 flex items-center justify-center px-4 sm:px-8 pb-20 min-h-0 latest-projects-container">
 						<div class="container mx-auto max-w-4xl">
 							<!-- Single Centered Column - Project Media -->
 							<div 
@@ -903,9 +908,9 @@
 				<p class="text-gray-400 mb-8">
 					Let's create something unique for your project. From commercial licenses to custom compositions.
 				</p>
-				<button class="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/30 hover:scale-105 transform">
+				<a href="/contact" class="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/30 hover:scale-105 transform">
 					Get in Touch
-				</button>
+				</a>
 			</div>
 		</div>
 	</section>
@@ -1077,5 +1082,31 @@
 	.spinning-play-container.animate {
 		opacity: 1;
 		transform: translateX(0) scale(1);
+	}
+	
+	/* Latest Projects spacing adjustments for widths 470-1265px */
+	@media (min-width: 470px) and (max-width: 1265px) {
+		.latest-projects-header {
+			padding-top: 14rem; /* Updated to 14rem (224px) for better visibility */
+		}
+		
+		.latest-projects-container {
+			margin-top: 108px; /* Your tested value */
+			max-height: calc(100vh - 300px);
+		}
+	}
+	
+	/* Normalize with larger screens */
+	@media (min-width: 1266px) {
+		.latest-projects-container {
+			max-height: calc(100vh - 200px);
+		}
+	}
+	
+	/* Smaller screens normalization */
+	@media (max-width: 469px) {
+		.latest-projects-container {
+			max-height: calc(100vh - 150px);
+		}
 	}
 </style>
