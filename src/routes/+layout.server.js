@@ -1,5 +1,9 @@
 import { getSiteSettings } from '$lib/api/index.js';
 import { redirect, error } from '@sveltejs/kit';
+import { CDN_BASE_URL, USE_CDN_FOR_ASSETS, NODE_ENV } from '$env/static/private';
+
+// Temporarily hidden pages - remove this when ready to re-enable
+const TEMPORARILY_HIDDEN_PAGES = ['games', 'tech', 'blog'];
 
 export async function load({ url }) {
 	try {
@@ -21,10 +25,15 @@ export async function load({ url }) {
 		// Check if current page is disabled
 		const currentPath = url.pathname.slice(1) || 'home'; // Remove leading slash
 		const pageKey = currentPath.split('/')[0]; // Get first segment for nested routes
-		
+
+		// Check if page is temporarily hidden
+		if (TEMPORARILY_HIDDEN_PAGES.includes(pageKey)) {
+			throw redirect(302, '/');
+		}
+
 		if (pageKey !== 'home' && pageKey !== '404' && pageKey !== 'maintenance') {
 			const pageConfig = siteSettings.pages[pageKey];
-			
+
 			if (pageConfig && pageConfig.disabled) {
 				throw redirect(302, '/');
 			}
@@ -32,7 +41,8 @@ export async function load({ url }) {
 
 		return {
 			siteSettings,
-			socialLinks: siteSettings.socialLinks
+			socialLinks: siteSettings.socialLinks,
+			cdnBaseUrl: (USE_CDN_FOR_ASSETS === 'true' || NODE_ENV === 'production') ? CDN_BASE_URL : ''
 		};
 	} catch (error) {
 		// If it's already a redirect, re-throw it
@@ -47,7 +57,8 @@ export async function load({ url }) {
 				status: 'live',
 				pages: {}
 			},
-			socialLinks: []
+			socialLinks: [],
+			cdnBaseUrl: (USE_CDN_FOR_ASSETS === 'true' || NODE_ENV === 'production') ? CDN_BASE_URL : ''
 		};
 	}
 }

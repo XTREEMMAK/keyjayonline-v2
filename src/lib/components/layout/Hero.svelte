@@ -1,9 +1,14 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fly, fade } from 'svelte/transition';
-	
+
+	let { cdnBaseUrl = '' } = $props();
+
 	let videoElement = $state();
 	let showAnimations = $state(false);
+
+	// Build video URL based on environment (CDN in production, local in development)
+	const videoBase = $derived(cdnBaseUrl ? `${cdnBaseUrl}/videos` : '/videos');
 
 	onMount(() => {
 		// Ensure video plays even if autoplay is blocked
@@ -23,18 +28,18 @@
 
 <!-- Hero Section: Full-screen video background -->
 <header class="video-hero relative hero-triangle-clip" style="z-index: 10;">
-		<video 
+		<video
 			bind:this={videoElement}
-			autoplay 
-			muted 
-			loop 
-			playsinline 
+			autoplay
+			muted
+			loop
+			playsinline
 			disablepictureinpicture
-			class="pointer-events-none" 
-			poster="/videos/MAIN-poster-00001.jpg"
+			class="pointer-events-none"
+			poster="{videoBase}/MAIN-poster-00001.jpg"
 			preload="auto">
-			<source src="/videos/MAIN-transcode.webm" type="video/webm">
-			<source src="/videos/MAIN-transcode.mp4" type="video/mp4">
+			<source src="{videoBase}/MAIN-transcode.webm" type="video/webm">
+			<source src="{videoBase}/MAIN-transcode.mp4" type="video/mp4">
 			Your browser does not support the video tag.
 		</video>
 		<div class="video-overlay">

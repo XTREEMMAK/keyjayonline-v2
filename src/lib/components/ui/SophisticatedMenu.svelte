@@ -12,7 +12,10 @@
 	} = $props();
 	
 	let isSmallScreen = $state(false);
-	
+
+	// Temporarily hidden pages - remove this when ready to re-enable
+	const TEMPORARILY_HIDDEN_PAGES = ['games', 'tech', 'blog'];
+
 	const allMenuItems = [
 		{ name: 'Home', href: '/', icon: 'mdi:home-outline', description: 'Return to the main page', pageKey: 'home' },
 		{ name: 'Music', href: '/music', icon: 'mdi:music-note-outline', description: 'Explore albums, singles & beats', pageKey: 'music' },
@@ -25,27 +28,33 @@
 		{ name: 'Contact', href: '/contact', icon: 'mdi:email-outline', description: 'Get in touch', pageKey: 'contact' }
 	];
 
-	// Filter out disabled pages
+	// Filter out disabled pages and temporarily hidden pages
 	const menuItems = $derived(() => {
 		console.log('SophisticatedMenu - siteSettings:', siteSettings);
-		
-		if (!siteSettings?.pages) {
-			console.log('SophisticatedMenu - No pages config, showing all items');
-			return allMenuItems;
-		}
-		
+
 		const filteredItems = allMenuItems.filter(item => {
 			// Always show home page
 			if (item.pageKey === 'home') return true;
-			
-			const pageConfig = siteSettings.pages[item.pageKey];
-			const isDisabled = pageConfig?.disabled;
-			
-			console.log(`SophisticatedMenu - ${item.pageKey}:`, { pageConfig, isDisabled, shouldShow: !isDisabled });
-			
-			return !isDisabled;
+
+			// Check if page is temporarily hidden
+			if (TEMPORARILY_HIDDEN_PAGES.includes(item.pageKey)) {
+				console.log(`SophisticatedMenu - ${item.pageKey}: temporarily hidden`);
+				return false;
+			}
+
+			// Check CMS-based disable setting if available
+			if (siteSettings?.pages) {
+				const pageConfig = siteSettings.pages[item.pageKey];
+				const isDisabled = pageConfig?.disabled;
+
+				console.log(`SophisticatedMenu - ${item.pageKey}:`, { pageConfig, isDisabled, shouldShow: !isDisabled });
+
+				return !isDisabled;
+			}
+
+			return true;
 		});
-		
+
 		console.log('SophisticatedMenu - Filtered menu items:', filteredItems.map(i => i.pageKey));
 		return filteredItems;
 	});

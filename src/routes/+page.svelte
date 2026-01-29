@@ -14,7 +14,7 @@
 </svelte:head>
 
 <div class="bg-[#0b0c0f]">
-	<Hero />
+	<Hero cdnBaseUrl={data.cdnBaseUrl} />
 	
 	<!-- Main Content Sections -->
 	<div id="main-content">

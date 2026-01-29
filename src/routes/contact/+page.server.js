@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { contactFormSchema } from '$lib/schemas/contactForm.js';
 import * as v from 'valibot';
 import { dev } from '$app/environment';
+import { env } from '$env/dynamic/private';
 import { sanitizeFormData, sanitizeWebhookPayload, hashString, sanitizeUserAgent } from '$lib/utils/sanitize.js';
 import { checkRateLimit, getRateLimitHeaders, validateSubmissionTime } from '$lib/utils/rateLimit.js';
 
@@ -166,8 +167,8 @@ export const actions = {
 
 async function sendWebhook(payload) {
   try {
-    const webhookUrl = process.env.CONTACT_FORM_WEBHOOK_URL;
-    const webhookSecret = process.env.CONTACT_FORM_WEBHOOK_SECRET;
+    const webhookUrl = env.CONTACT_FORM_WEBHOOK_URL;
+    const webhookSecret = env.CONTACT_FORM_WEBHOOK_SECRET;
     
     if (!webhookUrl) {
       if (dev) {

@@ -1,0 +1,151 @@
+# docker-compose.yml for KeyJay Online v2
+# Container prefix: kjo2_
+
+services:
+  # ==========================================================================
+  # PostgreSQL Database
+  # ==========================================================================
+  kjo2_postgres:
+    image: postgres:15-alpine
+    container_name: kjo2_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-kjo_v2_db}
+      POSTGRES_USER: ${DB_USER:-kjo_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Database password required}
+    volumes:
+      - kjo2_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - kjo2_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-kjo_user} -d ${DB_DATABASE:-kjo_v2_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Internal only - uncomment below for debugging
+    # ports:
+    #   - "5432:5432"
+
+  # ==========================================================================
+  # Directus CMS
+  # ==========================================================================
+  kjo2_directus:
+    image: directus/directus:11
+    container_name: kjo2_directus
+    restart: unless-stopped
+    depends_on:
+      kjo2_postgres:
+        condition: service_healthy
+    environment:
+      # Database
+      # DB_HOST: kjo2_postgres for local container, or external IP for remote DB
+      DB_CLIENT: pg
+      DB_HOST: ${DB_HOST:-kjo2_postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: ${DB_DATABASE:-kjo_v2_db}
+      DB_USER: ${DB_USER:-kjo_user}
+      DB_PASSWORD: ${DB_PASSWORD:?Database password required}
+
+      # Directus Settings
+      KEY: ${DIRECTUS_KEY:?Directus key required}
+      SECRET: ${DIRECTUS_SECRET:?Directus secret required}
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL:-admin@keyjayonline.com}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD:?Admin password required}
+
+      # Public URL (for asset URLs)
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
+
+      # CORS
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "true"
+    volumes:
+      - kjo2_directus_uploads:/directus/uploads
+      - kjo2_directus_extensions:/directus/extensions
+    networks:
+      - kjo2_network
+    ports:
+      - "${DIRECTUS_PORT:-8055}:8055"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8055/server/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ==========================================================================
+  # SvelteKit Application
+  # ==========================================================================
+  kjo2_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DIRECTUS_URL: http://kjo2_directus:8055
+        DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:?Directus token required}
+        PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://keyjayonline.com}
+        CDN_BASE_URL: ${CDN_BASE_URL:-https://kjo.nyc3.cdn.digitaloceanspaces.com}
+        S3_BUCKET_URL: ${S3_BUCKET_URL:-https://kjo.nyc3.digitaloceanspaces.com}
+        USE_CDN_FOR_ASSETS: ${USE_CDN_FOR_ASSETS:-true}
+        NODE_ENV: production
+        IGDB_CLIENT_ID: ${IGDB_CLIENT_ID:-placeholder}
+        IGDB_ACCESS_TOKEN: ${IGDB_ACCESS_TOKEN:-placeholder}
+        DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-placeholder}
+        DISCORD_USER_ID: ${DISCORD_USER_ID:-placeholder}
+        PUBLIC_CONTACT_EMAIL: ${PUBLIC_CONTACT_EMAIL:-contact@keyjayonline.com}
+    image: kjo2_app:${APP_VERSION:-latest}
+    container_name: kjo2_app
+    restart: unless-stopped
+    depends_on:
+      kjo2_directus:
+        condition: service_healthy
+    environment:
+      # Runtime environment variables
+      NODE_ENV: production
+      PORT: 3000
+
+      # Directus connection (internal Docker network)
+      DIRECTUS_URL: http://kjo2_directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:?Directus token required}
+
+      # CDN Configuration
+      CDN_BASE_URL: ${CDN_BASE_URL:-https://kjo.nyc3.cdn.digitaloceanspaces.com}
+      USE_CDN_FOR_ASSETS: "true"
+
+      # Public URLs
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://keyjayonline.com}
+      PUBLIC_CONTACT_EMAIL: ${PUBLIC_CONTACT_EMAIL:-contact@keyjayonline.com}
+
+      # Contact Form Webhook
+      CONTACT_FORM_WEBHOOK_URL: ${CONTACT_FORM_WEBHOOK_URL:-}
+      CONTACT_FORM_WEBHOOK_SECRET: ${CONTACT_FORM_WEBHOOK_SECRET:-}
+    networks:
+      - kjo2_network
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# ==========================================================================
+# Networks
+# ==========================================================================
+networks:
+  kjo2_network:
+    name: kjo2_network
+    driver: bridge
+
+# ==========================================================================
+# Volumes
+# ==========================================================================
+volumes:
+  kjo2_postgres_data:
+    name: kjo2_postgres_data
+  kjo2_directus_uploads:
+    name: kjo2_directus_uploads
+  kjo2_directus_extensions:
+    name: kjo2_directus_extensions

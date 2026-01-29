@@ -10,8 +10,11 @@
 	
 	let footerElement = $state();
 	let vantaEffect = $state();
-	
-	// Navigation items - simplified to always show
+
+	// Temporarily hidden pages - remove this when ready to re-enable
+	const TEMPORARILY_HIDDEN_PAGES = ['tech', 'blog'];
+
+	// Navigation items - filtered to hide temporarily disabled pages
 	const navItems = [
 		{ path: '/', label: 'Home' },
 		{ path: '/music', label: 'Music' },
@@ -21,7 +24,7 @@
 		{ path: '/blog', label: 'Blog' },
 		{ path: '/about', label: 'About' },
 		{ path: '/contact', label: 'Contact' }
-	];
+	].filter(item => !TEMPORARILY_HIDDEN_PAGES.includes(item.path.slice(1)));
 	
 	onMount(async () => {
 		// Load Vanta scripts dynamically

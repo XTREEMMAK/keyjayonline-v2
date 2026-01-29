@@ -28,4 +28,4 @@ export function getDirectusInstance() {
  * Re-export commonly used Directus SDK functions for convenience
  * This makes it easier to replace with different query builders later
  */
-export { readItems, readItem } from '@directus/sdk';
+export { readItems, readItem, createItem, updateItem } from '@directus/sdk';

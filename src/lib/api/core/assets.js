@@ -6,8 +6,9 @@
  * CMS or CDN solutions while maintaining consistent interfaces.
  */
 
-import { 
+import {
   DIRECTUS_URL,
+  DIRECTUS_TOKEN,
   CDN_BASE_URL,
   S3_BUCKET_URL,
   USE_CDN_FOR_ASSETS,
@@ -47,7 +48,7 @@ export function buildAssetUrl(fileId, transforms = {}) {
     // If we have a file object but no filename_disk, fall back to Directus assets endpoint
     if (typeof fileId === 'object' && fileId !== null && !fileId.filename_disk) {
       const assetId = fileId.id;
-      return `${DIRECTUS_URL}/assets/${assetId}`;
+      return `${DIRECTUS_URL}/assets/${assetId}?access_token=${DIRECTUS_TOKEN}`;
     }
     
     // When using CDN, we can't use DirectUS transforms, just return direct file URL
@@ -57,9 +58,10 @@ export function buildAssetUrl(fileId, transforms = {}) {
   // Fallback to DirectUS assets endpoint for local development
   // This would only be used if CDN is not configured
   const baseUrl = DIRECTUS_URL;
-  const transformParams = new URLSearchParams(transforms).toString();
-  const queryString = transformParams ? `?${transformParams}` : '';
-  
+  const params = new URLSearchParams(transforms);
+  params.set('access_token', DIRECTUS_TOKEN);
+  const queryString = `?${params.toString()}`;
+
   // For DirectUS assets endpoint, use the ID without extension
   const assetId = typeof fileId === 'object' ? fileId.id : fileId;
   return `${baseUrl}/assets/${assetId}${queryString}`;
