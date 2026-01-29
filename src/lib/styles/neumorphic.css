@@ -1,0 +1,418 @@
+/* Neumorphic Design System for KeyJay Online v2 */
+
+/* =============================================================================
+   Global Overflow Fix
+   ============================================================================= */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* =============================================================================
+   Modal Scroll Lock (scrollbar compensation without position:fixed)
+   ============================================================================= */
+body.modal-open {
+  overflow: hidden !important;
+  /* Scrollbar compensation to prevent layout shift */
+  padding-right: var(--scrollbar-width, 0px) !important;
+}
+
+/* Compensate fixed elements for scrollbar width */
+body.modal-open .neu-navbar {
+  padding-right: calc(16px + var(--scrollbar-width, 0px));
+}
+
+body.modal-open .fixed-play-button {
+  right: var(--scrollbar-width, 0px);
+}
+
+/* Ensure SweetAlert2 modals allow internal scrolling */
+body.modal-open .swal2-container {
+  touch-action: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.modal-open .swal2-html-container,
+body.modal-open .album-modal-content {
+  touch-action: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* =============================================================================
+   Color Palette
+   ============================================================================= */
+:root {
+  /* Base colors - muted dark grays */
+  --neu-bg: #2a2d35;
+  --neu-bg-light: #32363f;
+  --neu-bg-dark: #22252b;
+
+  /* Shadow colors */
+  --neu-shadow-light: rgba(60, 64, 72, 0.5);
+  --neu-shadow-dark: rgba(18, 20, 24, 0.8);
+
+  /* Accent colors (from brand) */
+  --neu-accent: #667eea;
+  --neu-accent-purple: #764ba2;
+  --neu-accent-soft: rgba(102, 126, 234, 0.15);
+
+  /* Border colors */
+  --neu-border: rgba(255, 255, 255, 0.05);
+  --neu-border-focus: rgba(102, 126, 234, 0.5);
+
+  /* Text colors */
+  --neu-text-primary: #ffffff;
+  --neu-text-secondary: #9ca3af;
+  --neu-text-muted: #6b7280;
+}
+
+/* =============================================================================
+   Neumorphic Card
+   ============================================================================= */
+.neu-card {
+  background: var(--neu-bg);
+  border-radius: 20px;
+  border: 1px solid var(--neu-border);
+  box-shadow:
+    8px 8px 16px var(--neu-shadow-dark),
+    -8px -8px 16px var(--neu-shadow-light);
+  transition: all 0.3s ease;
+}
+
+.neu-card:hover {
+  box-shadow:
+    12px 12px 24px var(--neu-shadow-dark),
+    -12px -12px 24px var(--neu-shadow-light);
+}
+
+.neu-card-sm {
+  background: var(--neu-bg);
+  border-radius: 12px;
+  border: 1px solid var(--neu-border);
+  box-shadow:
+    4px 4px 8px var(--neu-shadow-dark),
+    -4px -4px 8px var(--neu-shadow-light);
+}
+
+.neu-card-flat {
+  background: var(--neu-bg);
+  border-radius: 16px;
+  border: 1px solid var(--neu-border);
+  box-shadow:
+    4px 4px 12px var(--neu-shadow-dark),
+    -4px -4px 12px var(--neu-shadow-light);
+}
+
+/* =============================================================================
+   Neumorphic Buttons
+   ============================================================================= */
+.neu-button {
+  background: var(--neu-bg);
+  border-radius: 12px;
+  border: 1px solid var(--neu-border);
+  box-shadow:
+    4px 4px 8px var(--neu-shadow-dark),
+    -4px -4px 8px var(--neu-shadow-light);
+  padding: 12px 24px;
+  color: var(--neu-text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.neu-button:hover {
+  box-shadow:
+    2px 2px 4px var(--neu-shadow-dark),
+    -2px -2px 4px var(--neu-shadow-light);
+}
+
+.neu-button:active,
+.neu-button.active {
+  box-shadow:
+    inset 4px 4px 8px var(--neu-shadow-dark),
+    inset -4px -4px 8px var(--neu-shadow-light);
+}
+
+.neu-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Button variants */
+.neu-button-accent {
+  background: linear-gradient(135deg, var(--neu-accent), var(--neu-accent-purple));
+}
+
+.neu-button-accent:hover {
+  box-shadow:
+    2px 2px 4px var(--neu-shadow-dark),
+    -2px -2px 4px var(--neu-shadow-light),
+    0 0 20px var(--neu-accent-soft);
+}
+
+.neu-button-round {
+  border-radius: 50px;
+  padding: 10px 20px;
+}
+
+.neu-button-icon {
+  padding: 12px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =============================================================================
+   Neumorphic Navbar (Floating)
+   ============================================================================= */
+.neu-navbar {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--neu-bg);
+  border-radius: 50px;
+  border: 1px solid var(--neu-border);
+  box-shadow:
+    8px 8px 20px var(--neu-shadow-dark),
+    -8px -8px 20px var(--neu-shadow-light);
+  padding: 8px 16px;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.neu-navbar-item {
+  padding: 8px 16px;
+  border-radius: 50px;
+  color: var(--neu-text-secondary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.neu-navbar-item:hover {
+  color: var(--neu-text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.neu-navbar-item.active {
+  /* Use section-specific color via CSS variable, with darker shade for gradient */
+  background: linear-gradient(135deg, var(--item-glow-color, var(--neu-accent)), color-mix(in srgb, var(--item-glow-color, var(--neu-accent)) 70%, #1a1a2e));
+  color: var(--neu-text-primary);
+  box-shadow:
+    2px 2px 4px var(--neu-shadow-dark),
+    -2px -2px 4px var(--neu-shadow-light);
+}
+
+/* =============================================================================
+   Neumorphic Inputs
+   ============================================================================= */
+.neu-input {
+  background: var(--neu-bg-dark);
+  border-radius: 12px;
+  border: 1px solid var(--neu-border);
+  box-shadow:
+    inset 4px 4px 8px var(--neu-shadow-dark),
+    inset -4px -4px 8px var(--neu-shadow-light);
+  padding: 12px 16px;
+  color: var(--neu-text-primary);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.neu-input::placeholder {
+  color: var(--neu-text-muted);
+}
+
+.neu-input:focus {
+  outline: none;
+  border-color: var(--neu-accent);
+  box-shadow:
+    inset 4px 4px 8px var(--neu-shadow-dark),
+    inset -4px -4px 8px var(--neu-shadow-light),
+    0 0 0 2px var(--neu-accent-soft);
+}
+
+.neu-textarea {
+  background: var(--neu-bg-dark);
+  border-radius: 12px;
+  border: 1px solid var(--neu-border);
+  box-shadow:
+    inset 4px 4px 8px var(--neu-shadow-dark),
+    inset -4px -4px 8px var(--neu-shadow-light);
+  padding: 12px 16px;
+  color: var(--neu-text-primary);
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* =============================================================================
+   Neumorphic Modal
+   ============================================================================= */
+.neu-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.neu-modal {
+  background: var(--neu-bg);
+  border-radius: 24px;
+  border: 1px solid var(--neu-border);
+  box-shadow:
+    16px 16px 32px var(--neu-shadow-dark),
+    -16px -16px 32px var(--neu-shadow-light);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.neu-modal-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--neu-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.neu-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.neu-modal-footer {
+  padding: 24px;
+  border-top: 1px solid var(--neu-border);
+}
+
+/* Modal sizes */
+.neu-modal-sm { width: 100%; max-width: 400px; }
+.neu-modal-md { width: 100%; max-width: 600px; }
+.neu-modal-lg { width: 100%; max-width: 800px; }
+.neu-modal-xl { width: 100%; max-width: 1000px; }
+.neu-modal-full { width: 95vw; max-width: none; }
+
+/* =============================================================================
+   Accessibility - Interactive Elements
+   ============================================================================= */
+.neu-interactive {
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.neu-interactive:focus,
+.neu-interactive:focus-visible {
+  border-color: var(--neu-accent);
+  outline: none;
+}
+
+/* =============================================================================
+   Neumorphic Utilities
+   ============================================================================= */
+.neu-shadow {
+  box-shadow:
+    8px 8px 16px var(--neu-shadow-dark),
+    -8px -8px 16px var(--neu-shadow-light);
+}
+
+.neu-shadow-sm {
+  box-shadow:
+    4px 4px 8px var(--neu-shadow-dark),
+    -4px -4px 8px var(--neu-shadow-light);
+}
+
+.neu-shadow-lg {
+  box-shadow:
+    12px 12px 24px var(--neu-shadow-dark),
+    -12px -12px 24px var(--neu-shadow-light);
+}
+
+.neu-shadow-inset {
+  box-shadow:
+    inset 4px 4px 8px var(--neu-shadow-dark),
+    inset -4px -4px 8px var(--neu-shadow-light);
+}
+
+.neu-bg {
+  background-color: var(--neu-bg);
+}
+
+.neu-bg-light {
+  background-color: var(--neu-bg-light);
+}
+
+.neu-bg-dark {
+  background-color: var(--neu-bg-dark);
+}
+
+/* =============================================================================
+   Content Container (for sections)
+   ============================================================================= */
+.neu-content-container {
+  /* Gradient: transparent at top (header shows video), fades to solid below */
+  background: linear-gradient(
+    to bottom,
+    transparent 0px,
+    rgba(42, 45, 53, 0.3) 100px,
+    rgba(42, 45, 53, 0.85) 180px,
+    rgba(42, 45, 53, 0.95) 250px
+  );
+  /* Note: backdrop-filter moved to pseudo-element to not break sticky positioning */
+  border-top: 1px solid var(--neu-border);
+  position: relative;
+  /* Ensure overflow doesn't break sticky positioning in children */
+  overflow: visible;
+}
+
+/* Apply backdrop-filter via pseudo-element to preserve sticky children */
+.neu-content-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* =============================================================================
+   Scrollbar Styling
+   ============================================================================= */
+.neu-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--neu-accent) var(--neu-bg-dark);
+}
+
+.neu-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.neu-scrollbar::-webkit-scrollbar-track {
+  background: var(--neu-bg-dark);
+  border-radius: 4px;
+}
+
+.neu-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--neu-accent), var(--neu-accent-purple));
+  border-radius: 4px;
+}
+
+.neu-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--neu-accent);
+}

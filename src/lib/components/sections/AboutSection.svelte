@@ -1,0 +1,773 @@
+<script>
+	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
+	import { fade } from 'svelte/transition';
+	import Icon from '@iconify/svelte';
+	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
+	import { navigateTo, navbarVisible } from '$lib/stores/navigation.js';
+	import { showStickyNav, hideStickyNav, aboutActiveTab } from '$lib/stores/stickyNav.js';
+	import { get } from 'svelte/store';
+	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
+
+	// ============================================================================
+	// STATE VARIABLES
+	// ============================================================================
+	let activeTab = $state('bio');
+	let visibleElements = $state(new Set());
+	let tabContentVisible = $state(true);
+
+	// Reference to the inline tab nav for scroll detection
+	let inlineNavRef = $state(null);
+	let stickyNavActive = $state(false);
+
+	// Bio image sticky refs and state
+	let bioImageRef = $state(null);
+	let bioWrapperRef = $state(null);
+	let bioImageOffset = $state(0);
+
+	// Sync with store when tab changes externally (from portal)
+	$effect(() => {
+		const storeTab = $aboutActiveTab;
+		if (storeTab !== activeTab) {
+			activeTab = storeTab;
+			// Trigger content update
+			handleTabChange(storeTab, true);
+		}
+	});
+
+	// Scroll detection for sticky nav portal and bio image sticky
+	onMount(() => {
+		if (!browser) return;
+
+		function handleScroll() {
+			if (!inlineNavRef) return;
+
+			const rect = inlineNavRef.getBoundingClientRect();
+			const navbarOffset = get(navbarVisible) ? 88 : 0;
+
+			// When inline nav top goes above the navbar, show sticky portal
+			if (rect.top <= navbarOffset) {
+				if (!stickyNavActive) {
+					stickyNavActive = true;
+					showStickyNav(navbarOffset);
+				}
+			} else {
+				if (stickyNavActive) {
+					stickyNavActive = false;
+					hideStickyNav();
+				}
+			}
+
+			// Bio image sticky behavior (only on large screens)
+			if (bioImageRef && bioWrapperRef && window.innerWidth >= 1024) {
+				const stickyTop = 80; // Below sticky nav
+				const wrapperRect = bioWrapperRef.getBoundingClientRect();
+				const imageRect = bioImageRef.getBoundingClientRect();
+				const imageHeight = imageRect.height;
+
+				// Calculate the bottom boundary (wrapper bottom minus image height)
+				const maxOffset = wrapperRect.height - imageHeight;
+
+				if (wrapperRect.top <= stickyTop) {
+					// Image should start sticking
+					const rawOffset = stickyTop - wrapperRect.top;
+					// Clamp to not go past the wrapper bottom
+					bioImageOffset = Math.min(Math.max(0, rawOffset), maxOffset);
+				} else {
+					bioImageOffset = 0;
+				}
+			} else {
+				bioImageOffset = 0;
+			}
+		}
+
+		window.addEventListener('scroll', handleScroll, { passive: true });
+		window.addEventListener('resize', handleScroll, { passive: true });
+
+		// Subscribe to navbar visibility changes
+		const unsubscribe = navbarVisible.subscribe(() => {
+			handleScroll();
+		});
+
+		return () => {
+			window.removeEventListener('scroll', handleScroll);
+			window.removeEventListener('resize', handleScroll);
+			unsubscribe();
+			hideStickyNav();
+		};
+	});
+
+	// Export switchTab for external calls (from portal)
+	export function switchTab(tab) {
+		activeTab = tab;
+		aboutActiveTab.set(tab);
+		handleTabChange(tab, false);
+	}
+
+
+	// ============================================================================
+	// CONFIGURATION DATA
+	// ============================================================================
+
+	// Tab color themes - adapted for neumorphic design
+	const tabThemes = {
+		bio: {
+			gradient: 'from-gray-900 via-emerald-900/10 to-gray-900',
+			accent: 'from-emerald-600 to-blue-600',
+			border: 'border-emerald-600',
+			text: 'text-emerald-400',
+			bg: 'bg-emerald-600/20'
+		},
+		music: {
+			gradient: 'from-blue-900 via-purple-900/20 to-gray-900',
+			accent: 'from-blue-600 to-purple-600',
+			border: 'border-blue-600',
+			text: 'text-blue-400',
+			bg: 'bg-blue-600/20'
+		},
+		tech: {
+			gradient: 'from-cyan-900 via-green-900/20 to-gray-900',
+			accent: 'from-cyan-600 to-green-600',
+			border: 'border-cyan-600',
+			text: 'text-cyan-400',
+			bg: 'bg-cyan-600/20'
+		},
+		creative: {
+			gradient: 'from-orange-900 via-pink-900/20 to-gray-900',
+			accent: 'from-orange-600 to-pink-600',
+			border: 'border-orange-600',
+			text: 'text-orange-400',
+			bg: 'bg-orange-600/20'
+		}
+	};
+
+	// ============================================================================
+	// CONTENT DATA
+	// ============================================================================
+
+	// Biography content for the general bio tab
+	const biography = {
+		image: '/img/KJ_Bio.jpg',
+		content: `
+			Jamaal "Key Jay" Ephriam's journey into the world of music and entertainment began before he could even walk. Born into a family where music wasn't just appreciated but lived and breathed, he was surrounded by the rhythms, melodies, and harmonies that would shape his future. His parents, both accomplished musicians, recognized their son's innate musical ability early on and began nurturing his gift at the tender age of five.
+
+			What started as formal piano lessons quickly evolved into something much greater. Young Jamaal didn't just learn to play notes; he learned to speak the language of music fluently. By his teenage years, he had expanded beyond classical piano to master keyboards, vocals, and guitar, developing a versatility that would become his signature. His musical palette grew to encompass jazz, R&B, hip hop, rock, gospel, and electronic music – each genre adding new colors to his creative canvas.
+
+			But Jamaal's talents weren't confined to just performance. His curiosity led him to the technical side of music, where he discovered a passion for production, composition, and arrangement. College years at Florida International University saw him diving deep into professional audio recording, but also unexpectedly opening doors to the world of technology and programming. This unique combination of artistic creativity and technical expertise would set him apart in an increasingly digital creative landscape.
+
+			The evolution from musician to multi-disciplinary creative was organic. Web development skills acquired during a high school competition – where he became a finalist in a 5-hour live website design challenge – merged with his audio expertise to create innovative digital experiences. He composed music for video games like "Dies Irae," developed websites for creative projects, and even ventured into creating his own intellectual properties with KJC Comix and the audio drama series "FLUR: Blades of the Universe."
+
+			Today, as the force behind KEY JAY ONLINE and a key player at 4 Media Central, LLC, Jamaal continues to push boundaries across multiple creative frontiers. His performances at venues like the Miami Music Festival, Hard Rock, and Transit Lounge showcase his dynamic stage presence, while his work in voice acting, video production, and creative direction demonstrates his range as a complete creative professional.
+
+			What sets Jamaal apart isn't just his technical skill or creative vision – it's his philosophy of authentic expression and genuine connection. Whether he's producing a track, developing a website, voicing a character, or directing a creative project, he brings the same passion and dedication that first drew him to that piano as a five-year-old child. His motto, "Don't think, just play," isn't just about music; it's about approaching all creative endeavors with spontaneity, trust in one's instincts, and joy in the process.
+		`
+	};
+
+	// Professional journey milestones by category
+	const milestones = {
+		music: [
+			{
+				year: '1990s',
+				title: 'Classical Foundation',
+				description: 'Started formal piano training at age 5, nurtured by parents who were musicians themselves.',
+				icon: 'mdi:piano'
+			},
+			{
+				year: '2010',
+				title: 'Musical Evolution',
+				description: 'Expanded into jazz, R&B, hip hop, and electronic music production.',
+				icon: 'mdi:music-note'
+			},
+			{
+				year: '2011',
+				title: 'Party-Zon Project',
+				description: 'Produced, mixed, composed, and performed on dance/electronic music project.',
+				icon: 'mdi:album'
+			},
+			{
+				year: '2018-2019',
+				title: 'Project Kingdom XIII',
+				description: 'Created comprehensive music compilation as composer, sound designer, and mixing engineer.',
+				icon: 'mdi:microphone'
+			},
+			{
+				year: 'Present',
+				title: 'Live Performances',
+				description: 'Regular performances at Miami Music Festival, Beer Festival, Hard Rock, Transit Lounge.',
+				icon: 'mdi:stadium'
+			}
+		],
+		tech: [
+			{
+				year: '2005-2010',
+				title: 'Early Web Development',
+				description: 'Became finalist in 5-hour live website design scholarship competition during high school.',
+				icon: 'mdi:code-tags'
+			},
+			{
+				year: '2010-2016',
+				title: 'Florida International University',
+				description: 'Studied professional audio recording and expanded into programming and web technologies.',
+				icon: 'mdi:school'
+			},
+			{
+				year: '2016',
+				title: 'Game Development',
+				description: 'Composed music for "Dies Irae" video game and developed supporting websites.',
+				icon: 'mdi:gamepad-variant'
+			},
+			{
+				year: '2020',
+				title: 'Audio Tech Integration',
+				description: 'Developed custom audio plugins and tools, merging music production with programming.',
+				icon: 'mdi:waveform'
+			},
+			{
+				year: 'Present',
+				title: '4 Media Central, LLC',
+				description: 'Leading technical projects combining web development, audio engineering, and creative production.',
+				icon: 'mdi:briefcase'
+			}
+		],
+		creative: [
+			{
+				year: '2009-2014',
+				title: 'FLUR: Blades of the Universe',
+				description: 'Created and produced original audio drama series, handling all aspects from writing to voice acting.',
+				icon: 'mdi:podcast'
+			},
+			{
+				year: '2015',
+				title: 'Voice Acting Career',
+				description: 'Began professional voice work for indie games, podcasts, and commercial projects.',
+				icon: 'mdi:microphone'
+			},
+			{
+				year: '2018',
+				title: 'KJC Comix',
+				description: 'Launched original comic series with integrated audio elements and web experiences.',
+				icon: 'mdi:book-open-variant'
+			},
+			{
+				year: '2020',
+				title: 'Video Production',
+				description: 'Expanded into full video production services, from concept to final edit.',
+				icon: 'mdi:video'
+			},
+			{
+				year: '2024',
+				title: 'KEY JAY ONLINE',
+				description: 'Unified all creative endeavors under one platform, offering comprehensive creative services.',
+				icon: 'mdi:rocket-launch'
+			}
+		]
+	};
+
+	// Skills and expertise with quantifiable metrics
+	const skills = {
+		bio: [], // No skills section for bio tab
+		music: [
+			{ name: 'Music Production', metric: '15+ Years Experience', icon: 'mdi:music-note' },
+			{ name: 'Live Performance', metric: '50+ Venues', icon: 'mdi:microphone-variant' },
+			{ name: 'Tracks Produced', metric: '100+ Original Works', icon: 'mdi:album' },
+			{ name: 'Instruments', metric: 'Piano, Keys, Vocals, Guitar', icon: 'mdi:piano' },
+			{ name: 'Genres Mastered', metric: '7 Distinct Styles', icon: 'mdi:playlist-music' },
+			{ name: 'Studio Sessions', metric: '500+ Hours', icon: 'mdi:headphones' }
+		],
+		tech: [
+			{ name: 'Web Development', metric: '10+ Years Experience', icon: 'mdi:web' },
+			{ name: 'Projects Completed', metric: '50+ Websites & Apps', icon: 'mdi:checkbox-marked-circle' },
+			{ name: 'Languages', metric: 'JavaScript, Python, C++', icon: 'mdi:code-braces' },
+			{ name: 'Frameworks', metric: 'React, Svelte, Node.js', icon: 'mdi:react' },
+			{ name: 'Audio Programming', metric: 'VST Plugins, MIDI Tools', icon: 'mdi:waveform' },
+			{ name: 'Database Systems', metric: 'SQL, MongoDB, Firebase', icon: 'mdi:database' }
+		],
+		creative: [
+			{ name: 'Voice Acting', metric: '8+ Years Experience', icon: 'mdi:microphone' },
+			{ name: 'Audio Dramas', metric: 'FLUR Series Creator', icon: 'mdi:podcast' },
+			{ name: 'Video Production', metric: '100+ Projects', icon: 'mdi:video' },
+			{ name: 'Content Creation', metric: 'Gaming, Tech, Music', icon: 'mdi:youtube' },
+			{ name: 'Sound Design', metric: 'Games & Media', icon: 'mdi:speaker' },
+			{ name: 'Creative Direction', metric: 'Brand Campaigns', icon: 'mdi:palette' }
+		]
+	};
+
+	// Client testimonials
+	const testimonials = [
+		{
+			name: 'Sarah Mitchell',
+			company: 'BrandVoice Studios',
+			role: 'Creative Director',
+			quote: 'Working with Key Jay has been an absolute pleasure. His versatility across music production and voice work allowed us to create a cohesive brand experience that exceeded our expectations.',
+			project: 'Brand Campaign Series',
+			rating: 5,
+			category: 'creative'
+		},
+		{
+			name: 'Marcus Rodriguez',
+			company: 'Indie Studios',
+			role: 'Game Director',
+			quote: 'Key Jay brought our characters to life with his incredible voice acting range. His understanding of gaming culture made the collaboration seamless and authentic.',
+			project: 'RPG Character Voices',
+			rating: 5,
+			category: 'creative'
+		},
+		{
+			name: 'Emily Chen',
+			company: 'TechFlow Media',
+			role: 'Content Producer',
+			quote: 'The combination of technical expertise and creative vision that Key Jay brings is rare. He delivered both the audio solution and the creative direction we needed.',
+			project: 'Podcast Production',
+			rating: 5,
+			category: 'tech'
+		},
+		{
+			name: 'David Kim',
+			company: 'Miami Music Collective',
+			role: 'Event Coordinator',
+			quote: 'Key Jay\'s live performances always bring incredible energy. His ability to read the crowd and adapt his set makes him a festival favorite.',
+			project: 'Miami Music Festival',
+			rating: 5,
+			category: 'music'
+		}
+	];
+
+	// Tab content descriptions
+	const tabDescriptions = {
+		bio: {
+			title: 'Biography',
+			subtitle: 'The Journey of a Multi-Disciplinary Creative',
+			description: ''
+		},
+		music: {
+			title: 'Music & Audio Production',
+			subtitle: 'From Classical Foundations to Modern Production',
+			description: 'With over 15 years of experience in music production and performance, I bring a unique blend of classical training and modern production techniques. My journey began at age 5 with formal piano training, evolving into a multi-genre approach that spans jazz, R&B, hip hop, rock, gospel, and electronic music.'
+		},
+		tech: {
+			title: 'Technology & Development',
+			subtitle: 'Building Digital Experiences',
+			description: 'A decade of web development experience combined with audio engineering expertise allows me to create unique digital solutions. From VST plugin development to full-stack web applications, I bridge the gap between creative vision and technical implementation.'
+		},
+		creative: {
+			title: 'Creative & Voice Work',
+			subtitle: 'Bringing Stories to Life',
+			description: 'As a voice actor, content creator, and multimedia producer, I specialize in crafting immersive experiences. From the FLUR audio drama series to game character voices and brand campaigns, I bring authenticity and passion to every project.'
+		}
+	};
+
+	// ============================================================================
+	// UTILITY FUNCTIONS
+	// ============================================================================
+
+	// Internal tab change handler (fromStoreSync=true skips scroll when syncing from portal)
+	function handleTabChange(tab, fromStoreSync = false) {
+		const isSameTab = activeTab === tab;
+		if (!fromStoreSync) {
+			activeTab = tab;
+		}
+
+		// Always reset visible elements, but preserve background visibility
+		const preserveBackground = visibleElements.has('bio-bg');
+		visibleElements = new Set();
+		if (preserveBackground) {
+			visibleElements.add('bio-bg');
+		}
+
+		// Scroll and content recovery for both new tabs and same-tab clicks
+		if (browser) {
+			const contentSection = document.querySelector('#tab-content');
+			if (contentSection) {
+				// Calculate proper scroll position accounting for both navbars
+				const mainNavOffset = $navbarVisible ? 88 : 0;
+				const stickyTabNavHeight = 72; // Height of sticky tab nav with padding
+				const totalOffset = mainNavOffset + stickyTabNavHeight;
+
+				const targetY = contentSection.getBoundingClientRect().top + window.scrollY - totalOffset;
+				window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+
+				// After scroll animation, force visibility of content that should be in viewport
+				const timeout = isSameTab ? 300 : 600;
+				setTimeout(() => {
+					let elementsToShow = [];
+
+					// Common elements for all tabs
+					if (tab !== 'bio') {
+						for (let i = 0; i < 5; i++) {
+							elementsToShow.push(`${tab}-milestone-${i}`);
+						}
+						for (let i = 0; i < 6; i++) {
+							elementsToShow.push(`${tab}-skill-${i}`);
+						}
+						for (let i = 0; i < 3; i++) {
+							elementsToShow.push(`${tab}-testimonial-${i}`);
+						}
+					}
+
+					// Bio tab specific elements
+					if (tab === 'bio') {
+						elementsToShow.push('bio-image');
+						for (let i = 0; i < 10; i++) {
+							elementsToShow.push(`bio-p-${i}`);
+						}
+						for (let i = 0; i < 4; i++) {
+							elementsToShow.push(`bio-testimonial-${i}`);
+						}
+					}
+
+					// Force all elements to be visible
+					elementsToShow.forEach(key => {
+						visibleElements = new Set([...visibleElements, key]);
+					});
+
+				}, timeout);
+			}
+		}
+	}
+
+	// Called by inline tab buttons
+	function onInlineTabClick(tab) {
+		activeTab = tab;
+		aboutActiveTab.set(tab);
+		handleTabChange(tab, false);
+	}
+
+	function getActiveTheme() {
+		return tabThemes[activeTab];
+	}
+
+	function observeElement(node, key) {
+		if (!browser) return;
+		return createIntersectionObserver(node, (isVisible) => {
+			if (isVisible) {
+				visibleElements = new Set([...visibleElements, key]);
+			}
+		}, { threshold: 0.1, rootMargin: '80px' });
+	}
+
+	// Handle navigation to other sections via hash
+	function handleNavClick(section) {
+		navigateTo(section);
+	}
+</script>
+
+<!-- ============================================================================ -->
+<!-- ABOUT SECTION CONTAINER -->
+<!-- ============================================================================ -->
+<div class="about-section min-h-screen bg-gradient-to-br {getActiveTheme().gradient} transition-all duration-1000 relative">
+	<!-- Blurred Background Image -->
+	<SectionBackground section="about" opacity={0.1} />
+
+	<!-- Section Header -->
+	<div class="section-header pt-28 pb-8 text-center">
+		<h1 class="text-4xl md:text-5xl font-bold text-white mb-3">About</h1>
+		<p class="text-lg text-gray-400">Jamaal "Key Jay" Ephriam</p>
+	</div>
+
+	<!-- ============================================================================ -->
+	<!-- TAB NAVIGATION (inline version - portal takes over when sticky) -->
+	<!-- ============================================================================ -->
+	<div
+		bind:this={inlineNavRef}
+		class="bg-[var(--neu-bg)]/95 backdrop-blur-sm border-b border-gray-800 z-40 transition-opacity duration-200"
+		class:opacity-0={stickyNavActive}
+		class:pointer-events-none={stickyNavActive}
+	>
+		<div class="container mx-auto px-4">
+			<div class="flex justify-center">
+				<div class="flex gap-1 overflow-x-auto no-scrollbar neu-card-inset p-1 my-4 max-w-full">
+					{#each Object.keys(tabThemes) as tab}
+						<button
+							onclick={() => onInlineTabClick(tab)}
+							class="flex-shrink-0 px-2 xs:px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-md font-semibold transition-all duration-300 text-xs sm:text-sm md:text-base whitespace-nowrap {
+								activeTab === tab
+									? `bg-gradient-to-r ${tabThemes[tab].accent} text-white shadow-lg`
+									: 'text-gray-400 hover:text-white'
+							}"
+						>
+							<span class="hidden md:inline">{tab === 'bio' ? 'Biography' : tab === 'music' ? 'Music & Audio' : tab === 'tech' ? 'Technology' : 'Creative & Voice'}</span>
+							<span class="md:hidden">{tab === 'bio' ? 'Bio' : tab === 'music' ? 'Music' : tab === 'tech' ? 'Tech' : 'Creative'}</span>
+						</button>
+					{/each}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ============================================================================ -->
+	<!-- TAB CONTENT -->
+	<!-- ============================================================================ -->
+	<section id="tab-content" class="pb-20 relative z-10 pt-8">
+		<!-- Background image for bio section -->
+		<div
+			use:observeElement={'bio-bg'}
+			class="absolute inset-0 -z-10 transition-opacity duration-1500 {
+				visibleElements.has('bio-bg') ? 'opacity-20' : 'opacity-0'
+			}"
+			style="background-image: url('/img/keyjayside.webp'); background-size: cover; background-position: center; transition-delay: 600ms;"
+		></div>
+
+		<!-- Dark overlay for better text readability -->
+		<div class="absolute inset-0 bg-[var(--neu-bg)]/70 pointer-events-none"></div>
+
+		<div class="container mx-auto px-4 relative z-10">
+			<div class="w-full">
+				{#key activeTab}
+					{#if tabContentVisible}
+						<div in:fade={{ duration: 500 }}>
+							{#if activeTab === 'bio'}
+							<!-- Biography Section -->
+
+							<div class="text-center mb-12 relative">
+								<h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">{tabDescriptions[activeTab].title}</h2>
+								<p class="text-xl {getActiveTheme().text} mb-6">{tabDescriptions[activeTab].subtitle}</p>
+							</div>
+
+							<div bind:this={bioWrapperRef} class="bio-content-wrapper flex flex-col lg:flex-row lg:gap-12 mb-20 lg:items-start">
+								<div class="mb-8 lg:mb-0 lg:w-1/2">
+									<div
+										bind:this={bioImageRef}
+										use:observeElement={'bio-image'}
+										class="bio-image-container z-20 mx-auto w-full max-w-md transition-opacity duration-1000 {
+											visibleElements.has('bio-image') ? 'opacity-100' : 'opacity-0'
+										}"
+										style="transform: translateY({bioImageOffset}px);"
+									>
+										<img
+											src={biography.image}
+											alt="Jamaal Key Jay Ephriam"
+											class="w-full rounded-2xl shadow-2xl object-cover neu-card"
+										/>
+									</div>
+								</div>
+								<div class="lg:w-1/2 lg:flex-grow prose prose-xl prose-invert max-w-none">
+									<div class="text-gray-100 leading-relaxed space-y-6 text-lg">
+										{#each biography.content.trim().split('\n\n') as paragraph, i}
+											{#if paragraph.trim()}
+												<p
+													use:observeElement={`bio-p-${i}`}
+													class="mb-6 transition-all duration-700 transform {
+														visibleElements.has(`bio-p-${i}`) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+													}"
+													style="transition-delay: {i * 100}ms"
+												>
+													{paragraph.trim()}
+												</p>
+											{/if}
+										{/each}
+									</div>
+								</div>
+							</div>
+						{:else}
+							<div class="text-center mb-12">
+								<h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">{tabDescriptions[activeTab].title}</h2>
+								<p class="text-xl {getActiveTheme().text} mb-6">{tabDescriptions[activeTab].subtitle}</p>
+								<p class="text-gray-300 max-w-3xl mx-auto">{tabDescriptions[activeTab].description}</p>
+							</div>
+						{/if}
+
+						<!-- Journey Timeline -->
+						{#if activeTab !== 'bio'}
+						<div class="mb-20">
+							<h3 class="text-2xl font-semibold text-white mb-8 text-center">Professional Journey</h3>
+							<div class="space-y-6">
+								{#each milestones[activeTab] || [] as milestone, index}
+									<div
+										use:observeElement={`${activeTab}-milestone-${index}`}
+										class="flex items-start gap-6 transition-all duration-700 transform {
+											visibleElements.has(`${activeTab}-milestone-${index}`) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
+										}"
+										style="transition-delay: {index * 150}ms"
+									>
+										<div class="flex-shrink-0">
+											<div class="flex items-center justify-center w-14 h-14 bg-gradient-to-br {getActiveTheme().accent} text-white rounded-full neu-raised">
+												<Icon icon={milestone.icon} class="text-2xl" />
+											</div>
+										</div>
+										<div class="flex-1 neu-card p-6 hover:scale-[1.02] transition-all duration-300">
+											<div class="flex items-center gap-3 mb-2">
+												<span class="{getActiveTheme().text} font-bold text-lg">{milestone.year}</span>
+											</div>
+											<h4 class="text-xl font-semibold text-white mb-2">{milestone.title}</h4>
+											<p class="text-gray-100">{milestone.description}</p>
+										</div>
+									</div>
+								{/each}
+							</div>
+						</div>
+						{/if}
+
+						<!-- Skills & Metrics -->
+						{#if activeTab !== 'bio' && skills[activeTab] && skills[activeTab].length > 0}
+						<div class="mb-20">
+							<h3 class="text-2xl font-semibold text-white mb-8 text-center">Skills & Achievements</h3>
+							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+								{#each skills[activeTab] as skill, index}
+									<div
+										use:observeElement={`${activeTab}-skill-${index}`}
+										class="neu-card p-6 hover:scale-[1.02] transition-all duration-700 transform {
+											visibleElements.has(`${activeTab}-skill-${index}`) ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+										}"
+										style="transition-delay: {index * 100}ms"
+									>
+										<div class="flex items-center gap-4 mb-3">
+											<div class="flex items-center justify-center w-10 h-10 bg-gradient-to-br {getActiveTheme().accent} text-white rounded-lg">
+												<Icon icon={skill.icon} class="text-xl" />
+											</div>
+											<h4 class="text-lg font-semibold text-white">{skill.name}</h4>
+										</div>
+										<p class="{getActiveTheme().text} font-bold text-xl">{skill.metric}</p>
+									</div>
+								{/each}
+							</div>
+						</div>
+						{/if}
+
+						<!-- Relevant Testimonials -->
+						<div class="mb-20">
+							<h3 class="text-2xl font-semibold text-white mb-8 text-center">Client Testimonials</h3>
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+								{#each testimonials.filter(t => activeTab === 'bio' || t.category === activeTab || (activeTab === 'creative' && t.category === 'creative')) as testimonial, index}
+									<div
+										use:observeElement={`${activeTab}-testimonial-${index}`}
+										class="neu-card p-8 hover:scale-[1.02] transition-all duration-700 transform {
+											visibleElements.has(`${activeTab}-testimonial-${index}`) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+										}"
+										style="transition-delay: {index * 200}ms"
+									>
+										<div class="flex items-center mb-4">
+											{#each Array(testimonial.rating) as _}
+												<Icon icon="mdi:star" class="text-yellow-400 text-xl" />
+											{/each}
+										</div>
+										<blockquote class="text-gray-100 mb-6 italic text-lg">
+											"{testimonial.quote}"
+										</blockquote>
+										<div class="border-t border-gray-700 pt-4">
+											<div class="text-white font-semibold">{testimonial.name}</div>
+											<div class="{getActiveTheme().text} text-sm">{testimonial.role}</div>
+											<div class="text-gray-400 text-sm">{testimonial.company}</div>
+											<div class="text-gray-400 text-xs mt-1">Project: {testimonial.project}</div>
+										</div>
+									</div>
+								{/each}
+							</div>
+						</div>
+					</div>
+					{/if}
+				{/key}
+			</div>
+		</div>
+	</section>
+
+	<!-- Contact CTA -->
+	<section class="bg-[var(--neu-bg-dark)] py-20 relative z-20">
+		<div class="container mx-auto px-4 text-center">
+			<h2 class="text-3xl font-bold text-white mb-4">Let's Create Something Amazing Together</h2>
+			<p class="text-gray-400 mb-8 max-w-2xl mx-auto">
+				Whether you need music production, web development, voice work, or creative direction,
+				I bring passion and expertise to every project.
+			</p>
+
+			<div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+				<button
+					onclick={() => handleNavClick('contact')}
+					class="neu-button-primary px-8 py-4 bg-gradient-to-r {getActiveTheme().accent} text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300"
+				>
+					Start a Project
+				</button>
+				<button
+					onclick={() => handleNavClick('productions')}
+					class="neu-button px-8 py-4 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105"
+				>
+					View Services
+				</button>
+			</div>
+		</div>
+	</section>
+
+</div>
+
+<style>
+	.about-section {
+		overflow: visible;
+	}
+
+	/* Bio image positioning for large screens */
+	.bio-image-container {
+		position: relative;
+		will-change: transform;
+	}
+
+	@media (min-width: 1024px) {
+		.bio-content-wrapper {
+			align-items: flex-start;
+		}
+
+		/* JS-based sticky - transform applied via style attribute */
+		.bio-image-container {
+			position: relative;
+		}
+	}
+
+	/* Section header spacing to account for main navbar */
+	.section-header {
+		scroll-margin-top: 100px;
+	}
+
+	/* Scroll margin for tab content to account for both navbars */
+	:global(#tab-content) {
+		scroll-margin-top: 160px;
+	}
+
+	/* Neumorphic card styles (fallback if not in global CSS) */
+	.neu-card {
+		background: var(--neu-bg, #2a2d35);
+		border-radius: 16px;
+		box-shadow:
+			8px 8px 16px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+			-8px -8px 16px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	.neu-card-inset {
+		background: var(--neu-bg, #2a2d35);
+		border-radius: 12px;
+		box-shadow:
+			inset 4px 4px 8px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+			inset -4px -4px 8px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	.neu-raised {
+		box-shadow:
+			4px 4px 8px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+			-4px -4px 8px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	.neu-button {
+		background: var(--neu-bg, #2a2d35);
+		border-radius: 50px;
+		box-shadow:
+			6px 6px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+			-6px -6px 12px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+		transition: all 0.2s ease;
+	}
+
+	.neu-button:hover {
+		box-shadow:
+			4px 4px 8px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+			-4px -4px 8px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	.neu-button:active {
+		box-shadow:
+			inset 4px 4px 8px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+			inset -4px -4px 8px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	.neu-button-primary {
+		border-radius: 50px;
+		box-shadow:
+			6px 6px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+			-6px -6px 12px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+</style>

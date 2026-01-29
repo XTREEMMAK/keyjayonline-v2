@@ -390,10 +390,11 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 							<Icon icon="mdi:skip-previous" width={24} height={24} class="text-white" />
 						</button>
 						
-						<button 
+						<button
 							onclick={togglePlayPause}
 							disabled={isLoading || !$currentTrack}
-							class="p-3 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							class="play-btn p-3 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							class:playing={$isPlaying && !isLoading}
 						>
 							{#if isLoading}
 								<Icon icon="mdi:loading" width={24} height={24} class="text-white animate-spin" />
@@ -527,19 +528,20 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 			<!-- Minimized Player -->
 			<div class="flex items-center justify-between p-2 px-4" transition:slide={{ duration: 200 }}>
 				<div class="flex items-center gap-3 flex-1 min-w-0">
-					<button 
-						onclick={togglePlayPause}
-						disabled={isLoading || !$currentTrack}
-						class="p-2 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50"
-					>
-						{#if isLoading}
-							<Icon icon="mdi:loading" width={16} height={16} class="text-white animate-spin" />
-						{:else if $isPlaying}
-							<Icon icon="mdi:pause" width={16} height={16} class="text-white" />
-						{:else}
-							<Icon icon="mdi:play" width={16} height={16} class="text-white" />
-						{/if}
-					</button>
+					<button
+					onclick={togglePlayPause}
+					disabled={isLoading || !$currentTrack}
+					class="play-btn p-2 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50"
+					class:playing={$isPlaying && !isLoading}
+				>
+					{#if isLoading}
+						<Icon icon="mdi:loading" width={16} height={16} class="text-white animate-spin" />
+					{:else if $isPlaying}
+						<Icon icon="mdi:pause" width={16} height={16} class="text-white" />
+					{:else}
+						<Icon icon="mdi:play" width={16} height={16} class="text-white" />
+					{/if}
+				</button>
 					
 					{#if $currentTrack}
 						<div class="min-w-0 flex-1">
@@ -580,5 +582,43 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 <style>
 	:global(.waveform-container wave) {
 		overflow: hidden !important;
+	}
+
+	/* Pulse animation for play button when playing */
+	.play-btn {
+		position: relative;
+	}
+
+	.play-btn.playing {
+		animation: pulse-ring 2s ease-out infinite;
+	}
+
+	.play-btn.playing::before {
+		content: '';
+		position: absolute;
+		inset: -4px;
+		border-radius: 50%;
+		border: 2px solid rgba(59, 130, 246, 0.6);
+		animation: pulse-expand 2s ease-out infinite;
+	}
+
+	@keyframes pulse-ring {
+		0%, 100% {
+			box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+		}
+		50% {
+			box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+		}
+	}
+
+	@keyframes pulse-expand {
+		0% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		100% {
+			transform: scale(1.5);
+			opacity: 0;
+		}
 	}
 </style>

@@ -1,28 +1,64 @@
-import { getFeaturedWorks, getBlogPosts } from '$lib/api/index.js';
+/**
+ * SPA Main Page Server Load
+ * Loads all section data for the single-page application
+ */
+
+import { getMusicReleases, getMusicNetworks, getMusicPageHeader } from '$lib/api/index.js';
 
 export async function load({ parent }) {
 	try {
-		// Get site settings from parent layout (includes featured works relationship)
+		// Get site settings and CDN URL from parent layout
 		const parentData = await parent();
-		
-		const latestBlogPosts = await getBlogPosts(null, 6); // Fetch latest 6 blog posts
-		
-		// Use featured works from site settings if available, otherwise fallback to direct query
-		const featuredWorks = parentData.siteSettings?.featuredWorks?.length > 0 
-			? await getFeaturedWorks(parentData.siteSettings.featuredWorks)
-			: await getFeaturedWorks();
-		
+
+		// Load music data in parallel with other potential data
+		const [albums, musicNetworks, musicPageHeader] = await Promise.all([
+			getMusicReleases().catch(err => {
+				console.error('Failed to load music releases:', err);
+				return [];
+			}),
+			getMusicNetworks().catch(err => {
+				console.error('Failed to load music networks:', err);
+				return [];
+			}),
+			getMusicPageHeader().catch(err => {
+				console.error('Failed to load music page header:', err);
+				return null;
+			})
+		]);
+
 		return {
-			featuredWorks,
-			latestBlogPosts: latestBlogPosts || []
+			cdnBaseUrl: parentData.cdnBaseUrl || '',
+			siteSettings: parentData.siteSettings,
+			socialLinks: parentData.socialLinks,
+			// Music section data
+			musicData: {
+				albums: albums || [],
+				musicNetworks: musicNetworks || [],
+				musicPageHeader,
+				// Featured works from Directus kjov2_general.featured for Latest Projects section
+				featuredWorks: parentData.siteSettings?.featuredWorks || []
+			},
+			// Contact section data (form needs parent data)
+			contactData: {
+				siteSettings: parentData.siteSettings
+			}
 		};
 	} catch (error) {
-		console.error('Error loading data on homepage:', error);
-		
+		console.error('Error loading page data:', error);
+
 		// Return fallback data
 		return {
-			featuredWorks: [],
-			latestBlogPosts: []
+			cdnBaseUrl: '',
+			siteSettings: null,
+			socialLinks: [],
+			musicData: {
+				albums: [],
+				musicNetworks: [],
+				musicPageHeader: null,
+				featuredWorks: [],
+				error: error.message
+			},
+			contactData: {}
 		};
 	}
 }

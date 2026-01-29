@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fly, fade } from 'svelte/transition';
+	import { activeSection } from '$lib/stores/navigation.js';
 
 	let { cdnBaseUrl = '' } = $props();
 
@@ -10,6 +11,9 @@
 	// Build video URL based on environment (CDN in production, local in development)
 	const videoBase = $derived(cdnBaseUrl ? `${cdnBaseUrl}/videos` : '/videos');
 
+	// Show hero content only when on home section
+	const isHome = $derived($activeSection === 'home');
+
 	onMount(() => {
 		// Ensure video plays even if autoplay is blocked
 		if (videoElement) {
@@ -18,7 +22,7 @@
 				console.log('Autoplay prevented, showing poster image');
 			});
 		}
-		
+
 		// Start animations after component mounts
 		setTimeout(() => {
 			showAnimations = true;
@@ -26,227 +30,235 @@
 	});
 </script>
 
-<!-- Hero Section: Full-screen video background -->
-<header class="video-hero relative hero-triangle-clip" style="z-index: 10;">
-		<video
-			bind:this={videoElement}
-			autoplay
-			muted
-			loop
-			playsinline
-			disablepictureinpicture
-			class="pointer-events-none"
-			poster="{videoBase}/MAIN-poster-00001.jpg"
-			preload="auto">
-			<source src="{videoBase}/MAIN-transcode.webm" type="video/webm">
-			<source src="{videoBase}/MAIN-transcode.mp4" type="video/mp4">
-			Your browser does not support the video tag.
-		</video>
-		<div class="video-overlay">
-			<!-- Simplified Hero Content -->
-			<div class="hero-content">
-				<!-- Animated Text Bar - Fade in last -->
+<!-- Persistent Video Background - Fixed position, always visible -->
+<div class="video-hero-fixed">
+	<video
+		bind:this={videoElement}
+		autoplay
+		muted
+		loop
+		playsinline
+		disablepictureinpicture
+		class="pointer-events-none"
+		poster="{videoBase}/MAIN-poster-00001.jpg"
+		preload="auto"
+	>
+		<source src="{videoBase}/MAIN-transcode.webm" type="video/webm" />
+		<source src="{videoBase}/MAIN-transcode.mp4" type="video/mp4" />
+		Your browser does not support the video tag.
+	</video>
+
+	<!-- Dark overlay for readability -->
+	<div class="video-overlay"></div>
+
+	<!-- Hero Content - Only visible when on home section -->
+	{#if isHome}
+		<div class="hero-content-wrapper">
+			<div class="hero-content" transition:fade={{ duration: 400 }}>
+				<!-- Animated Text Bar -->
 				{#if showAnimations}
-					<div class="overflow-hidden w-full mb-2" transition:fade={{ duration: 800, delay: 1200 }}>
-						<div class="animated-text-bar text-xs sm:text-sm text-gray-400/60 opacity-70 whitespace-nowrap inline-flex">
-							<span class="inline-block px-2">MUSICIAN | GAMER | TECH NERD | PRODUCER | WRITER | DIYer | DOG DAD | DEVELOPER | SINGER | VOICE ACTOR</span>
-							<span class="inline-block px-2">| MUSICIAN | GAMER | TECH NERD | PRODUCER | WRITER | DIYer | DOG DAD | DEVELOPER | SINGER | VOICE ACTOR</span>
-							<span class="inline-block px-2">| MUSICIAN | GAMER | TECH NERD | PRODUCER | WRITER | DIYer | DOG DAD | DEVELOPER | SINGER | VOICE ACTOR</span>
-							<span class="inline-block px-2">| MUSICIAN | GAMER | TECH NERD | PRODUCER | WRITER | DIYer | DOG DAD | DEVELOPER | SINGER | VOICE ACTOR</span>
+					<div
+						class="overflow-hidden w-full mb-2"
+						transition:fade={{ duration: 800, delay: 1200 }}
+					>
+						<div
+							class="animated-text-bar text-xs sm:text-sm text-gray-400/60 opacity-70 whitespace-nowrap inline-flex"
+						>
+							<span class="inline-block px-2"
+								>MUSICIAN | GAMER | TECH NERD | PRODUCER | WRITER | DIYer | DOG DAD | DEVELOPER |
+								SINGER | VOICE ACTOR</span
+							>
+							<span class="inline-block px-2"
+								>| MUSICIAN | GAMER | TECH NERD | PRODUCER | WRITER | DIYer | DOG DAD | DEVELOPER |
+								SINGER | VOICE ACTOR</span
+							>
+							<span class="inline-block px-2"
+								>| MUSICIAN | GAMER | TECH NERD | PRODUCER | WRITER | DIYer | DOG DAD | DEVELOPER |
+								SINGER | VOICE ACTOR</span
+							>
+							<span class="inline-block px-2"
+								>| MUSICIAN | GAMER | TECH NERD | PRODUCER | WRITER | DIYer | DOG DAD | DEVELOPER |
+								SINGER | VOICE ACTOR</span
+							>
 						</div>
 					</div>
 				{/if}
-				
-				<!-- Title with animated spans -->
-				<h1 class="hero-title">
+
+				<!-- Title with animated spans - hidden until animation starts -->
+				<h1 class="hero-title" class:hero-title-hidden={!showAnimations}>
 					{#if showAnimations}
-						<span class="key-jay-text" transition:fly={{ x: -100, duration: 600, delay: 0 }}>KEYJAY</span>
-						<span class="online-text" transition:fly={{ x: 100, duration: 600, delay: 200 }}>ONLINE</span>
-					{:else}
-						<span class="key-jay-text">KEYJAY</span>
-						<span class="online-text">ONLINE</span>
+						<span class="key-jay-text" transition:fly={{ x: -100, duration: 600, delay: 0 }}
+							>KEYJAY</span
+						>
+						<span class="online-text" transition:fly={{ x: 100, duration: 600, delay: 200 }}
+							>ONLINE</span
+						>
 					{/if}
 				</h1>
-				
-				<!-- Subtext - Slide up and fade in -->
+
+				<!-- Subtext -->
 				{#if showAnimations}
 					<p class="hero-subtext" transition:fly={{ y: 30, duration: 500, delay: 800 }}>
 						Where Everything Key Jay Comes Together!
 					</p>
 				{/if}
-				
 			</div>
 		</div>
-	
-</header>
+	{/if}
+</div>
 
 <style>
-	/* Video hero container */
-	.video-hero {
-		height: 100vh;
-		width: 100%;
+	/* Fixed video background - always visible behind everything */
+	.video-hero-fixed {
+		position: fixed;
+		inset: 0;
+		z-index: 0;
 		overflow: hidden;
 	}
 
-	/* Triangle clip-path for seamless transition */
-	.hero-triangle-clip {
-		clip-path: polygon(0 0, 100% 0, 100% calc(100% - 120px), 50% 100%, 0 calc(100% - 120px));
-	}
-
-	/* Responsive triangle adjustments */
-	@media (max-width: 768px) {
-		.hero-triangle-clip {
-			clip-path: polygon(0 0, 100% 0, 100% calc(100% - 80px), 50% 100%, 0 calc(100% - 80px));
-		}
-	}
-
-	@media (max-width: 480px) {
-		.hero-triangle-clip {
-			clip-path: polygon(0 0, 100% 0, 100% calc(100% - 60px), 50% 100%, 0 calc(100% - 60px));
-		}
-	}
-	
-	.video-hero video {
+	.video-hero-fixed video {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		position: absolute;
-		top: 0;
-		left: 0;
 	}
-	
-	/* Simplified positioning */
+
+	/* Dark overlay */
 	.video-overlay {
+		position: absolute;
+		inset: 0;
+		background-color: rgba(0, 0, 0, 0.4);
+	}
+
+	/* Hero content wrapper - centers content */
+	.hero-content-wrapper {
 		position: absolute;
 		inset: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		padding: 1rem;
-		background-color: rgba(0, 0, 0, 0.4);
 	}
-	
+
 	.hero-content {
-		text-align: center; /* text-center */
-		width: 100vw; /* w-screen */
-		max-width: 100vw; /* max-w-screen */
-		margin-top: 20rem; /* mt-80 (mobile-first) */
+		text-align: center;
+		width: 100vw;
+		max-width: 100vw;
+		margin-top: 20rem;
 	}
-	
+
 	.hero-title {
-		font-size: clamp(2.5rem, 12vw, 4rem); /* Responsive text sizing */
-		font-weight: bold; /* font-bold */
-		text-transform: uppercase; /* uppercase */
-		line-height: 0.9; /* leading-none */
-		margin-bottom: 0.5rem; /* mb-2 */
-		color: white; /* text-white */
+		font-size: clamp(2.5rem, 12vw, 4rem);
+		font-weight: bold;
+		text-transform: uppercase;
+		line-height: 0.9;
+		margin-bottom: 0.5rem;
+		color: white;
+		min-height: 1em; /* Maintain space even when hidden */
 	}
-	
+
+	.hero-title-hidden {
+		visibility: hidden;
+	}
+
 	.hero-subtext {
 		font-size: clamp(0.875rem, 3vw, 1.5rem);
-		color: #d1d5db; /* text-gray-300 */
-		font-weight: 300; /* font-light */
-		max-width: 430px; /* Default for mobile-first */
+		color: #d1d5db;
+		font-weight: 300;
+		max-width: 430px;
 		margin: 0 auto 1rem;
 		padding: 0 1rem;
-		border-top: 1px solid #4b5563; /* border-gray-600 */
-		padding-top: 0.5rem; /* pt-2 */
+		border-top: 1px solid #4b5563;
+		padding-top: 0.5rem;
 	}
-	
-	
+
 	/* Responsive adjustments */
 	@media (max-width: 480px) {
 		.hero-title {
 			font-size: clamp(2rem, 11vw, 3rem);
 		}
-		
-		/* Stack words on very small screens */
-		.key-jay-text, .online-text {
+
+		.key-jay-text,
+		.online-text {
 			display: block;
 		}
 	}
-	
+
 	@media (max-width: 424px) {
 		.hero-subtext {
-			max-width: 330px; /* Smaller max-width for very small screens */
+			max-width: 330px;
 		}
 	}
-	
+
 	@media (max-width: 360px) {
 		.hero-title {
 			font-size: clamp(1.75rem, 10vw, 2.5rem);
 		}
 	}
-	
-	/* Large screens - Tailwind lg: breakpoint (1024px+) */
+
 	@media (min-width: 1024px) {
 		.hero-content {
-			margin-top: 24rem; /* Adjusted positioning for large screens */
+			margin-top: 24rem;
 		}
-		
+
 		.hero-subtext {
-			max-width: 600px; /* Wider subtext for large screens */
+			max-width: 600px;
 		}
 	}
-	
-	/* Extra large screens - Above 1750px resolution */
+
 	@media (min-width: 1750px) {
 		.hero-title {
-			font-size: clamp(4rem, 12vw, 8rem); /* Increased max size to 8rem */
+			font-size: clamp(4rem, 12vw, 8rem);
 		}
 	}
-	
-	/* Taller screens - push content higher */
+
 	@media (min-width: 1024px) and (min-height: 900px) {
 		.hero-content {
-			margin-top: 32rem; /* Higher positioning for tall screens */
+			margin-top: 32rem;
 		}
 	}
-	
-	/* Height-based adjustments */
+
 	@media (max-height: 800px) {
 		.hero-content {
-			margin-top: 15rem; /* Adjust positioning for smaller heights */
+			margin-top: 15rem;
 		}
 	}
-	
+
 	@media (max-height: 700px) {
 		.hero-content {
 			margin-top: 12rem;
 		}
-		
+
 		.hero-title {
-			font-size: clamp(2rem, 10vw, 5rem); /* Smaller max size for short screens */
+			font-size: clamp(2rem, 10vw, 5rem);
 		}
-		
+
 		.hero-subtext {
 			margin-bottom: 0.5rem;
 			padding-top: 0.25rem;
 		}
 	}
-	
+
 	@media (max-height: 500px) {
 		.hero-content {
 			margin-top: 8rem;
 		}
-		
+
 		.animated-text-bar {
 			display: none;
 		}
-		
+
 		.hero-title {
 			font-size: clamp(1.5rem, 8vw, 3rem);
 			margin-bottom: 0.25rem;
 		}
-		
+
 		.hero-subtext {
 			font-size: 0.75rem;
 			border: none;
 			padding-top: 0;
 		}
 	}
-	
-	
+
 	/* Text styling with animations */
 	.key-jay-text {
 		display: inline-block;
@@ -256,18 +268,20 @@
 		color: transparent;
 		position: relative;
 	}
-	
+
 	.key-jay-text::after {
 		content: 'KEYJAY';
 		position: absolute;
 		top: 0;
 		left: 0;
-		background: linear-gradient(90deg, 
-			transparent 0%, 
-			transparent 40%, 
-			rgba(255, 255, 255, 0.9) 50%, 
-			transparent 60%, 
-			transparent 100%);
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			transparent 40%,
+			rgba(255, 255, 255, 0.9) 50%,
+			transparent 60%,
+			transparent 100%
+		);
 		background-size: 200% 100%;
 		background-position: -200% 0;
 		background-clip: text;
@@ -276,58 +290,66 @@
 		animation: lightWipe 3s ease-in-out 1s 1 forwards;
 		z-index: 1;
 	}
-	
+
 	.online-text {
 		display: inline-block;
-		background: linear-gradient(90deg, 
-			transparent 0%, 
-			transparent 30%, 
-			rgba(255, 255, 255, 0.9) 40%, 
-			rgba(255, 255, 255, 1) 50%, 
-			rgba(255, 255, 255, 0.9) 60%, 
-			transparent 70%, 
-			transparent 100%);
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			transparent 30%,
+			rgba(255, 255, 255, 0.9) 40%,
+			rgba(255, 255, 255, 1) 50%,
+			rgba(255, 255, 255, 0.9) 60%,
+			transparent 70%,
+			transparent 100%
+		);
 		background-size: 200% 100%;
 		background-position: -200% 0;
 		animation: lightWipe 3s ease-in-out 2s 1 forwards;
 		background-clip: text;
 		-webkit-background-clip: text;
 	}
-	
+
 	@keyframes lightWipe {
-		0% { background-position: -200% 0; }
-		50% { background-position: 0% 0; }
-		100% { background-position: 200% 0; }
+		0% {
+			background-position: -200% 0;
+		}
+		50% {
+			background-position: 0% 0;
+		}
+		100% {
+			background-position: 200% 0;
+		}
 	}
-	
-	/* Fallback for browsers that don't support background-clip */
+
 	@supports not (background-clip: text) {
 		.key-jay-text {
 			background: none;
 			color: #667eea;
 		}
-		
+
 		.key-jay-text::after {
 			display: none;
 		}
-		
+
 		.online-text {
 			background: none;
 			color: white;
 		}
 	}
-	
+
 	/* Animated text bar */
 	.animated-text-bar {
 		animation: scrollText 40s linear infinite;
 		display: inline-flex;
 	}
-	
-	@keyframes scrollText {
-		0% { transform: translateX(0); }
-		100% { transform: translateX(-25%); }
-	}
-	
-	
 
+	@keyframes scrollText {
+		0% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(-25%);
+		}
+	}
 </style>
