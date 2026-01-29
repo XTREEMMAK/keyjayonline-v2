@@ -1,62 +1,59 @@
 <script>
 	import '../app.css';
 	import { page } from '$app/stores';
-	import { onNavigate } from '$app/navigation';
-	import Header from '$lib/components/layout/Header.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import ScrollToTop from '$lib/components/ui/ScrollToTop.svelte';
 	import PersistentMusicPlayer from '$lib/components/music/PersistentMusicPlayer.svelte';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
-	
+
 	let { children, data } = $props();
-	
+
 	// Check if we're on an error page to conditionally hide footer
 	const isErrorPage = $derived($page.status >= 400);
-	
-	onNavigate((navigation) => {
-		if (!document.startViewTransition) return;
-		
-		return new Promise((resolve) => {
-			document.startViewTransition(async () => {
-				resolve();
-				await navigation.complete;
-			});
-		});
-	});
 </script>
 
 <svelte:head>
-	<meta charset="utf-8"/>
-	<meta http-equiv="x-ua-compatible" content="IE=edge"/>
-	<meta name="author" content="Jamaal Ephriam"/>
-	<meta name="description" content="The official website of musician, composer, and producer KEY JAY!"/>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<meta charset="utf-8" />
+	<meta http-equiv="x-ua-compatible" content="IE=edge" />
+	<meta name="author" content="Jamaal Ephriam" />
+	<meta
+		name="description"
+		content="The official website of musician, composer, and producer KEY JAY!"
+	/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<!-- Facebook Meta Tags -->
-	<meta property="og:url" content={PUBLIC_SITE_URL}/>
-	<meta property="og:title" content="KEY JAY ONLINE"/>
-	<meta property="og:description" content="The official website of musician, composer, and producer KEY JAY!"/>
-	<meta property="og:image" content="/img/social_1200.jpg"/>
+	<meta property="og:url" content={PUBLIC_SITE_URL} />
+	<meta property="og:title" content="KEY JAY ONLINE" />
+	<meta
+		property="og:description"
+		content="The official website of musician, composer, and producer KEY JAY!"
+	/>
+	<meta property="og:image" content="/img/social_1200.jpg" />
 	<!-- Twitter Meta Tags -->
-	<meta name="twitter:card" content="summary_large_image"/>
-	<meta property="twitter:domain" content={PUBLIC_SITE_URL.replace('https://', '')}/>
-	<meta property="twitter:url" content={PUBLIC_SITE_URL}/>
-	<meta name="twitter:title" content="KEY JAY ONLINE"/>
-	<meta name="twitter:description" content="The official website of musician, composer, and producer KEY JAY!"/>
-	<meta name="twitter:image" content="/img/social_1200.jpg"/>
-	<link rel="icon" href="/img/kj_logo_icon.svg" type="image/svg+xml"/>
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta property="twitter:domain" content={PUBLIC_SITE_URL.replace('https://', '')} />
+	<meta property="twitter:url" content={PUBLIC_SITE_URL} />
+	<meta name="twitter:title" content="KEY JAY ONLINE" />
+	<meta
+		name="twitter:description"
+		content="The official website of musician, composer, and producer KEY JAY!"
+	/>
+	<meta name="twitter:image" content="/img/social_1200.jpg" />
+	<link rel="icon" href="/img/kj_logo_icon.svg" type="image/svg+xml" />
+	<!-- Iconify for icons -->
+	<script src="https://code.iconify.design/iconify-icon/2.0.0/iconify-icon.min.js"></script>
 </svelte:head>
 
-<!-- Global Header -->
-<Header siteSettings={data?.siteSettings} socialLinks={data?.socialLinks} />
-
 <!-- Page Content -->
-<main>
+<main class="min-h-screen">
 	{@render children?.()}
 </main>
 
-<!-- Global Footer - Hidden on error pages -->
+<!-- Global Footer - Hidden on error pages, always on top of content -->
 {#if !isErrorPage}
-	<Footer siteSettings={data?.siteSettings} socialLinks={data?.socialLinks} />
+	<div class="relative z-20">
+		<Footer siteSettings={data?.siteSettings} socialLinks={data?.socialLinks} />
+	</div>
 {/if}
 
 <!-- Scroll to Top Button -->

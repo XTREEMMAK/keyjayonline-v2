@@ -25,10 +25,15 @@
 			color: '#ffffff',
 			didOpen: () => {
 				initializeModalComponents();
-				document.body.style.overflow = 'hidden';
+				// Calculate scrollbar width for compensation
+				const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+				document.documentElement.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
+				// Lock body scroll
+				document.body.classList.add('modal-open');
 			},
 			willClose: () => {
-				document.body.style.overflow = 'auto';
+				document.body.classList.remove('modal-open');
+				document.documentElement.style.removeProperty('--scrollbar-width');
 			}
 		});
 		

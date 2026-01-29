@@ -2,29 +2,28 @@
 	import SocialIcons from '$lib/components/ui/SocialIcons.svelte';
 	import { onMount } from 'svelte';
 	import { loadVantaScripts, waitForLibrary } from '$lib/utils/loadExternalScripts.js';
-	
+	import { navigateTo, sections, sectionMeta } from '$lib/stores/navigation.js';
+
 	let {
 		siteSettings = null,
 		socialLinks = []
 	} = $props();
-	
+
 	let footerElement = $state();
 	let vantaEffect = $state();
 
-	// Temporarily hidden pages - remove this when ready to re-enable
-	const TEMPORARILY_HIDDEN_PAGES = ['tech', 'blog'];
+	// Navigation items from the navigation store (excludes hidden pages like games, tech, blog)
+	const navItems = sections.map((section) => ({
+		section,
+		label: sectionMeta[section]?.label || section
+	}));
 
-	// Navigation items - filtered to hide temporarily disabled pages
-	const navItems = [
-		{ path: '/', label: 'Home' },
-		{ path: '/music', label: 'Music' },
-		{ path: '/voice', label: 'Voice' },
-		{ path: '/tech', label: 'Tech' },
-		{ path: '/productions', label: 'Productions' },
-		{ path: '/blog', label: 'Blog' },
-		{ path: '/about', label: 'About' },
-		{ path: '/contact', label: 'Contact' }
-	].filter(item => !TEMPORARILY_HIDDEN_PAGES.includes(item.path.slice(1)));
+	function handleNavClick(e, section) {
+		e.preventDefault();
+		navigateTo(section);
+		// Scroll to top
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
 	
 	onMount(async () => {
 		// Load Vanta scripts dynamically
@@ -94,11 +93,16 @@
 			<SocialIcons layout="horizontal" size={36} gap="gap-6" className="text-white drop-shadow-lg" {socialLinks} />
 		</div>
 
-		<!-- Site Navigation -->
+		<!-- Site Navigation (SPA hash-based) -->
 		<nav class="mb-6">
 			<div class="flex flex-wrap justify-center gap-2 text-white text-sm drop-shadow-lg">
 				{#each navItems as item, index}
-					<a href={item.path} class="hover:text-blue-400 transition-colors duration-300">{item.label}</a>
+					<button
+						onclick={(e) => handleNavClick(e, item.section)}
+						class="hover:text-blue-400 transition-colors duration-300 cursor-pointer bg-transparent border-none"
+					>
+						{item.label}
+					</button>
 					{#if index < navItems.length - 1}
 						<span>|</span>
 					{/if}

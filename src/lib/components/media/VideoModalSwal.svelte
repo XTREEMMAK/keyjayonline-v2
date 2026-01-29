@@ -29,19 +29,22 @@
 			didOpen: () => {
 				// Initialize any components that need mounting
 				initializeModalComponents();
-				
+
 				// Fix HTML rendering in description
 				const descriptionElement = document.querySelector('.featured-work-description');
 				if (descriptionElement && featuredWork.description) {
 					descriptionElement.innerHTML = sanitizeHtml(featuredWork.description);
 				}
-				
-				// Disable body scroll and enable modal scroll
-				document.body.style.overflow = 'hidden';
+
+				// Calculate scrollbar width for compensation
+				const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+				document.documentElement.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
+				// Lock body scroll
+				document.body.classList.add('modal-open');
 			},
 			willClose: () => {
-				// Re-enable body scroll
-				document.body.style.overflow = 'auto';
+				document.body.classList.remove('modal-open');
+				document.documentElement.style.removeProperty('--scrollbar-width');
 			}
 		});
 		
