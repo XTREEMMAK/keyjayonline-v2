@@ -4,6 +4,10 @@
 	import Icon from '@iconify/svelte';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import { navbarVisible } from '$lib/stores/navigation.js';
+	import { letterPulse } from '$lib/actions/letterAnimation.js';
+
+	// Title letters for animation
+	const titleLetters = 'Productions'.split('');
 
 	// MixItUp state
 	let container = $state();
@@ -241,7 +245,7 @@
 <!-- ============================================================================ -->
 <!-- PRODUCTIONS SECTION CONTAINER -->
 <!-- ============================================================================ -->
-<div class="productions-section min-h-screen bg-gradient-to-br from-[var(--neu-bg)] via-orange-900/10 to-[var(--neu-bg)] relative">
+<div class="productions-section min-h-screen section-gradient-productions gradient-animated relative">
 	<!-- Blurred Background Image -->
 	<SectionBackground section="productions" opacity={0.12} />
 
@@ -249,13 +253,18 @@
 	<div class="pt-28 pb-8 text-center relative">
 		<div class="absolute inset-0 bg-gradient-to-b from-orange-600/20 via-red-500/5 to-transparent pointer-events-none"></div>
 		<h1 class="text-4xl md:text-5xl font-bold text-white mb-3 relative">
-			<span class="bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400 bg-clip-text text-transparent">Productions</span>
+			{#each titleLetters as letter, i}
+				<span
+					use:letterPulse={{ delay: i * 60 }}
+					class="bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400 bg-clip-text text-transparent inline-block"
+				>{letter}</span>
+			{/each}
 		</h1>
 		<p class="text-lg text-orange-200/70 relative">Creative works across multiple mediums</p>
 	</div>
 
 	<!-- Featured Production -->
-	<section class="bg-[var(--neu-bg-dark)]/95 backdrop-blur-sm py-16">
+	<section class="bg-gradient-to-b from-[var(--neu-bg-dark)]/95 via-orange-950/15 to-[var(--neu-bg-dark)]/95 backdrop-blur-sm py-16 relative">
 		<div class="container mx-auto px-4">
 			<div class="max-w-6xl mx-auto">
 				<div class="neu-card overflow-hidden">
@@ -356,7 +365,7 @@
 	</section>
 
 	<!-- Productions Grid -->
-	<section class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-12">
+	<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-amber-950/10 to-[var(--neu-bg)]/95 backdrop-blur-sm py-12 relative">
 		<div class="container mx-auto px-4">
 			<div bind:this={container} class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 				{#each productions as production (production.id)}
@@ -500,7 +509,7 @@
 	</section>
 
 	<!-- Newsletter / Updates CTA -->
-	<section class="bg-[var(--neu-bg-dark)] py-16">
+	<section class="subsection-gradient-dark subsection-accent-blue relative py-16">
 		<div class="container mx-auto px-4 text-center">
 			<Icon icon="mdi:bell-ring-outline" class="text-orange-400 text-5xl mb-4 mx-auto" />
 			<h2 class="text-3xl font-bold text-white mb-4">Stay Updated</h2>

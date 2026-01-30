@@ -2,11 +2,15 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import AudioPlayer from '$lib/components/music/AudioPlayer.svelte';
+	import { letterPulse } from '$lib/actions/letterAnimation.js';
 
 	let scrollY = $state(0);
 	let heroRef = $state();
 	let titleVisible = $state(true);
 	let titleAnimated = $state(false);
+
+	// Title letters for animation
+	const titleLetters = 'VOICE'.split('');
 
 	// Voice work categories
 	const voiceCategories = [
@@ -203,15 +207,15 @@
 	<meta name="description" content="Professional voice-over services including commercials, narration, and character voices" />
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900/10 to-gray-900">
+<div class="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900/20 to-gray-900">
 	<!-- Hero Section -->
 	<section bind:this={heroRef} class="relative h-[70vh] flex items-end justify-start overflow-hidden section-triangle z-20">
-		<div 
+		<div
 			class="absolute inset-0 parallax-bg"
 			style="transform: translateY({scrollY * 0.3}px)"
 		>
-			<img 
-				src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200" 
+			<img
+				src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200"
 				alt="Recording Studio"
 				class="w-full h-[120%] object-cover"
 			/>
@@ -223,7 +227,9 @@
 			{#if titleVisible}
 				<div class="hero-text-container">
 					<h1 class="voice-title hero-title-responsive font-bold text-white" class:animate={titleAnimated}>
-						VOICE
+						{#each titleLetters as letter, i}
+							<span use:letterPulse={{ delay: i * 100 }}>{letter}</span>
+						{/each}
 					</h1>
 					<p class="voice-subtitle text-lg text-gray-300 max-w-lg mt-4" class:animate={titleAnimated}>
 						Professional voice-over services bringing your projects to life with clarity and emotion
@@ -234,7 +240,7 @@
 	</section>
 
 	<!-- Voice Categories Section -->
-	<section class="bg-gray-900/95 backdrop-blur-sm py-20" style="margin-top: -60px; padding-top: 80px;">
+	<section class="relative bg-gradient-to-br from-indigo-900/30 via-purple-800/25 to-indigo-900/30 py-20" style="margin-top: -60px; padding-top: 80px;">
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Voice-Over Portfolio</h2>
@@ -275,7 +281,7 @@
 			<div class="max-w-6xl mx-auto">
 				<div bind:this={container} class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[400px]">
 					{#each allSamples as sample}
-						<div class="mix-item bg-gray-900/50 backdrop-blur-sm rounded-xl p-6 hover:bg-gray-800/50 transition-all duration-300 {sample.category}" data-category={sample.category}>
+						<div class="mix-item bg-indigo-950/40 backdrop-blur-sm rounded-xl p-6 border border-indigo-500/10 hover:bg-indigo-900/40 hover:border-indigo-500/20 transition-all duration-300 {sample.category}" data-category={sample.category}>
 							<div class="flex items-start justify-between mb-4">
 								<div>
 									<div class="flex items-center gap-2 mb-2">
@@ -307,7 +313,7 @@
 	</section>
 
 	<!-- Services Section -->
-	<section class="bg-gray-800 py-20 pb-24 section-wave-top section-curve-bottom z-10">
+	<section class="relative bg-gradient-to-tl from-purple-900/30 via-indigo-800/25 to-purple-900/30 py-20 pb-24 section-wave-top section-curve-bottom z-10">
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Voice Services</h2>
@@ -317,7 +323,7 @@
 			</div>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-				<div class="bg-gray-900/50 backdrop-blur-sm rounded-xl p-8 text-center hover:bg-gray-800/50 transition-all duration-300 hover:scale-105">
+				<div class="bg-purple-950/40 backdrop-blur-sm rounded-xl p-8 text-center border border-purple-500/10 hover:bg-purple-900/40 hover:border-purple-500/20 transition-all duration-300 hover:scale-105">
 					<iconify-icon icon="mdi:microphone" class="text-indigo-400 text-5xl mb-4"></iconify-icon>
 					<h3 class="text-xl font-semibold text-white mb-3">Commercial Voice-Over</h3>
 					<p class="text-gray-400 mb-6">Professional voice for TV, radio, and online advertisements with quick turnaround times.</p>
@@ -328,7 +334,7 @@
 					</ul>
 				</div>
 
-				<div class="bg-gray-900/50 backdrop-blur-sm rounded-xl p-8 text-center hover:bg-gray-800/50 transition-all duration-300 hover:scale-105">
+				<div class="bg-purple-950/40 backdrop-blur-sm rounded-xl p-8 text-center border border-purple-500/10 hover:bg-purple-900/40 hover:border-purple-500/20 transition-all duration-300 hover:scale-105">
 					<iconify-icon icon="mdi:book-open-page-variant" class="text-purple-400 text-5xl mb-4"></iconify-icon>
 					<h3 class="text-xl font-semibold text-white mb-3">Narration</h3>
 					<p class="text-gray-400 mb-6">Engaging narration for documentaries, e-learning, and audiobooks with clear articulation.</p>
@@ -339,7 +345,7 @@
 					</ul>
 				</div>
 
-				<div class="bg-gray-900/50 backdrop-blur-sm rounded-xl p-8 text-center hover:bg-gray-800/50 transition-all duration-300 hover:scale-105">
+				<div class="bg-purple-950/40 backdrop-blur-sm rounded-xl p-8 text-center border border-purple-500/10 hover:bg-purple-900/40 hover:border-purple-500/20 transition-all duration-300 hover:scale-105">
 					<iconify-icon icon="mdi:drama-masks" class="text-green-400 text-5xl mb-4"></iconify-icon>
 					<h3 class="text-xl font-semibold text-white mb-3">Character Voices</h3>
 					<p class="text-gray-400 mb-6">Unique character voices for animation, games, and interactive media projects.</p>
@@ -354,7 +360,7 @@
 	</section>
 
 	<!-- Testimonials Section -->
-	<section class="bg-gradient-to-br from-indigo-900/20 via-gray-900 to-purple-900/20 py-20 z-10" style="margin-top: -80px; padding-top: 100px;">
+	<section class="bg-gradient-to-br from-indigo-900/25 via-purple-900/20 to-indigo-900/25 py-20 z-10" style="margin-top: -80px; padding-top: 100px;">
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Client Testimonials</h2>
@@ -365,7 +371,7 @@
 
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 				{#each testimonials as testimonial}
-					<div class="bg-gray-900/50 backdrop-blur-sm rounded-xl p-8 hover:bg-gray-800/50 transition-all duration-300 hover:scale-105">
+					<div class="bg-indigo-950/40 backdrop-blur-sm rounded-xl p-8 border border-indigo-500/10 hover:bg-indigo-900/40 hover:border-indigo-500/20 transition-all duration-300 hover:scale-105">
 						<div class="flex items-center mb-4">
 							{#each Array(testimonial.rating) as _}
 								<iconify-icon icon="mdi:star" class="text-yellow-400 text-lg"></iconify-icon>
@@ -387,7 +393,7 @@
 	</section>
 
 	<!-- Contact CTA Section -->
-	<section class="bg-gray-800 py-20 section-curve-top z-0" style="margin-top: -80px; padding-top: 160px;">
+	<section class="bg-gradient-to-t from-indigo-950/30 via-purple-900/20 to-transparent py-20 section-curve-top z-0" style="margin-top: -80px; padding-top: 160px;">
 		<div class="container mx-auto px-4 text-center">
 			<h2 class="text-3xl font-bold text-white mb-4">Ready to Bring Your Project to Life?</h2>
 			<p class="text-gray-400 mb-8 max-w-2xl mx-auto">
@@ -443,6 +449,25 @@
 		line-clamp: 3;
 	}
 
+	/* Letter-by-letter scale animation */
+	@keyframes letterPulse {
+		0%, 100% {
+			transform: scale(1) translateY(0);
+			filter: brightness(1);
+		}
+		50% {
+			transform: scale(1.25) translateY(-5px);
+			filter: brightness(1.3);
+		}
+	}
+
+	.voice-title :global(.letter-animate) {
+		display: inline-block;
+		animation: letterPulse 2.5s ease-in-out infinite;
+		transform-origin: center bottom;
+		will-change: transform, filter;
+	}
+
 	.voice-title {
 		opacity: 0;
 		transform: translateY(50px);
@@ -464,13 +489,13 @@
 		opacity: 1;
 		transform: translateY(0);
 	}
-	
+
 	.parallax-bg {
 		will-change: transform;
 		backface-visibility: hidden;
 		perspective: 1000px;
 	}
-	
+
 	.mix-item {
 		position: relative;
 		overflow: hidden;

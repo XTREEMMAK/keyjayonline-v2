@@ -2,11 +2,15 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import SvgDivider from '$lib/components/ui/SvgDivider.svelte';
+	import { letterPulse } from '$lib/actions/letterAnimation.js';
 
 	let scrollY = $state(0);
 	let heroRef = $state();
 	let titleVisible = $state(true);
 	let titleAnimated = $state(false);
+
+	// Title letters for animation
+	const titleLetters = 'PRODUCTIONS'.split('');
 
 	// Production services data
 	const services = [
@@ -228,15 +232,15 @@
 	<meta name="description" content="Creative production services including music, video, and multimedia content creation" />
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900">
+<div class="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/20 to-gray-900">
 	<!-- Hero Section -->
 	<section bind:this={heroRef} class="relative h-[70vh] flex items-end justify-start overflow-hidden section-triangle z-20">
-		<div 
+		<div
 			class="absolute inset-0 parallax-bg"
 			style="transform: translateY({scrollY * 0.3}px)"
 		>
-			<img 
-				src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=1200" 
+			<img
+				src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=1200"
 				alt="Production Studio"
 				class="w-full h-[120%] object-cover"
 			/>
@@ -248,7 +252,9 @@
 			{#if titleVisible}
 				<div class="hero-text-container">
 					<h1 class="productions-title hero-title-responsive font-bold text-white" class:animate={titleAnimated}>
-						PRODUCTIONS
+						{#each titleLetters as letter, i}
+							<span use:letterPulse={{ delay: i * 100 }}>{letter}</span>
+						{/each}
 					</h1>
 					<p class="productions-subtitle text-lg text-gray-300 max-w-lg mt-4" class:animate={titleAnimated}>
 						Creative production services bringing your vision to life through music, video, and multimedia content
@@ -259,7 +265,7 @@
 	</section>
 
 	<!-- Services Section -->
-	<section class="bg-gray-900/95 backdrop-blur-sm py-20" style="margin-top: -60px; padding-top: 80px;">
+	<section class="relative bg-gradient-to-br from-orange-900/30 via-amber-800/25 to-orange-900/30 py-20" style="margin-top: -60px; padding-top: 80px;">
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Production Services</h2>
@@ -270,7 +276,7 @@
 
 			<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 				{#each services as service}
-					<div class="bg-gray-900/50 backdrop-blur-sm rounded-xl p-8 hover:bg-gray-800/50 transition-all duration-300 hover:scale-105">
+					<div class="bg-orange-950/40 backdrop-blur-sm rounded-xl p-8 border border-orange-500/10 hover:bg-orange-900/40 hover:border-orange-500/20 transition-all duration-300 hover:scale-105">
 						<div class="text-center mb-6">
 							<div class="inline-flex items-center justify-center w-16 h-16 bg-orange-600/20 rounded-full mb-4">
 								<iconify-icon icon={service.icon} class="text-orange-400 text-3xl"></iconify-icon>
@@ -308,7 +314,7 @@
 	</section>
 
 	<!-- Portfolio Section -->
-	<section class="bg-gray-800 py-20 section-wave-top z-10">
+	<section class="relative bg-gradient-to-tl from-amber-900/30 via-orange-800/25 to-amber-900/30 py-20 section-wave-top z-10">
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Recent Productions</h2>
@@ -319,7 +325,7 @@
 
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 				{#each portfolio as project}
-					<article class="bg-gray-900/50 backdrop-blur-sm rounded-xl overflow-hidden hover:bg-gray-800/50 transition-all duration-300 hover:scale-105 group cursor-pointer">
+					<article class="bg-amber-950/40 backdrop-blur-sm rounded-xl overflow-hidden border border-amber-500/10 hover:bg-amber-900/40 hover:border-amber-500/20 transition-all duration-300 hover:scale-105 group cursor-pointer">
 						<div class="aspect-video relative">
 							<img 
 								src={project.image} 
@@ -374,7 +380,7 @@
 	</section>
 
 	<!-- Process Section -->
-	<section class="bg-gradient-to-br from-orange-900/20 via-gray-900 to-red-900/20 py-20 section-curve-top z-0">
+	<section class="bg-gradient-to-br from-orange-900/25 via-amber-900/20 to-red-900/25 py-20 section-curve-top z-0">
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Production Process</h2>
@@ -410,7 +416,7 @@
 	</section>
 
 	<!-- Contact CTA Section -->
-	<section class="bg-gray-800 py-20 section-slant-top z-0">
+	<section class="bg-gradient-to-t from-orange-950/25 via-amber-900/15 to-transparent py-20 section-slant-top z-0">
 		<div class="container mx-auto px-4 text-center">
 			<h2 class="text-3xl font-bold text-white mb-4">Ready to Start Your Project?</h2>
 			<p class="text-gray-400 mb-8 max-w-2xl mx-auto">
@@ -471,6 +477,25 @@
 		line-clamp: 3;
 	}
 
+	/* Letter-by-letter scale animation */
+	@keyframes letterPulse {
+		0%, 100% {
+			transform: scale(1) translateY(0);
+			filter: brightness(1);
+		}
+		50% {
+			transform: scale(1.25) translateY(-5px);
+			filter: brightness(1.3);
+		}
+	}
+
+	.productions-title :global(.letter-animate) {
+		display: inline-block;
+		animation: letterPulse 2.5s ease-in-out infinite;
+		transform-origin: center bottom;
+		will-change: transform, filter;
+	}
+
 	.productions-title {
 		opacity: 0;
 		transform: translateY(50px);
@@ -492,13 +517,13 @@
 		opacity: 1;
 		transform: translateY(0);
 	}
-	
+
 	.parallax-bg {
 		will-change: transform;
 		backface-visibility: hidden;
 		perspective: 1000px;
 	}
-	
+
 	/* Divider mask styles */
 	.section-wave-top {
 		position: relative;

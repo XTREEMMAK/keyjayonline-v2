@@ -101,10 +101,10 @@
 			class="absolute inset-0 parallax-bg"
 			style="transform: translateY({scrollY * 0.3}px)"
 		>
-			<img 
-				src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1200" 
+			<img
+				src="/img/J_Header_2560.webp"
 				alt="Contact and Communication"
-				class="w-full h-[120%] object-cover"
+				class="w-full h-[120%] object-cover object-[70%_center] scale-110"
 			/>
 			<div class="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/40 to-transparent"></div>
 			<div class="absolute inset-0 bg-gradient-to-r from-gray-900/60 via-transparent to-transparent"></div>

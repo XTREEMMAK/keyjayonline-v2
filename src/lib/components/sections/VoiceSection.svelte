@@ -5,6 +5,10 @@
 	import Icon from '@iconify/svelte';
 	import { navigateTo } from '$lib/stores/navigation.js';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
+	import { letterPulse } from '$lib/actions/letterAnimation.js';
+
+	// Title letters for animation
+	const titleLetters = 'Voice'.split('');
 
 	// State
 	let container = $state();
@@ -81,27 +85,21 @@
 	// Client testimonials
 	const testimonials = [
 		{
-			name: 'Sarah Mitchell',
-			company: 'BrandVoice Studios',
-			role: 'Creative Director',
-			quote: 'Key Jay brought exactly the energy and professionalism we needed for our campaign. His vocal range is impressive.',
-			project: 'Tech Product Series',
+			name: 'Sandra Espinoza',
+			date: '05/2013',
+			quote: "Working with Jamaal has been the most fluid and easy going experience I've ever had with a director. Jamaal's highly motivated about his work and is delightfully thorough in both his marketing efforts and the acting direction provided for the project! He goes the extra mile to provide talents with the opportunity to have access to things they might not have otherwise, and it makes the project feel all the more like a community effort. I'm happy to work with him and hope to see him produce more great works in the future!",
 			rating: 5
 		},
 		{
-			name: 'Marcus Chen',
-			company: 'Indie Game Dev',
-			role: 'Game Director',
-			quote: 'Working with Key Jay was fantastic. He understood our characters immediately and delivered perfect performances.',
-			project: 'Fantasy Adventure Game',
+			name: 'Jeremiah Caudle',
+			date: '05/2012',
+			quote: "This guy has got to be one of the most talented person I have ever met. A worthy rival in writing and producing/mixing. A genius musician, and to top it all off; a freakin' amazing voice. Not only can he sing like nobodies business, but both his voices for protagonists as well as antagonists are nothing short of genius. Not to mention his evil laugh is one that will give you shivers!",
 			rating: 5
 		},
 		{
-			name: 'Lisa Rodriguez',
-			company: 'EduContent Co.',
-			role: 'Producer',
-			quote: 'Clear, engaging narration that kept our audience interested throughout the entire series.',
-			project: 'Educational Documentary',
+			name: 'Nina M.',
+			date: '05/2016',
+			quote: "I worked with Jamaal for the first time in 2011 when I was cast to play Lida Garuzo in his radio play F.L.U.R. I was a fledgling when it came to voice acting at the time, and even though I was still rough around the edges, Jamaal made sure to not only provide guidance when required, but also support and words of encouragement. It was easy to work with him because he made it clear how he wanted his characters to be portrayed and what was expected from us, making the entire production smooth sailing. The thing I like most about Jamaal is how he empowers his peers, but also gives it his all. It never feels like you're doing a job, it feels like you're part of a family, maybe something bigger. He is driven, organized, and someone I would gladly work for again.",
 			rating: 5
 		}
 	];
@@ -164,7 +162,7 @@
 <!-- ============================================================================ -->
 <!-- VOICE SECTION CONTAINER -->
 <!-- ============================================================================ -->
-<div class="voice-section min-h-screen bg-gradient-to-br from-[var(--neu-bg)] via-indigo-900/10 to-[var(--neu-bg)] relative">
+<div class="voice-section min-h-screen section-gradient-voice gradient-animated relative">
 	<!-- Blurred Background Image -->
 	<SectionBackground section="voice" opacity={0.12} />
 
@@ -172,13 +170,18 @@
 	<div class="pt-28 pb-8 text-center relative">
 		<div class="absolute inset-0 bg-gradient-to-b from-indigo-600/20 via-purple-500/5 to-transparent pointer-events-none"></div>
 		<h1 class="text-4xl md:text-5xl font-bold text-white mb-3 relative">
-			<span class="bg-gradient-to-r from-indigo-400 via-purple-300 to-violet-400 bg-clip-text text-transparent">Voice</span>
+			{#each titleLetters as letter, i}
+				<span
+					use:letterPulse={{ delay: i * 60 }}
+					class="bg-gradient-to-r from-indigo-400 via-purple-300 to-violet-400 bg-clip-text text-transparent inline-block"
+				>{letter}</span>
+			{/each}
 		</h1>
 		<p class="text-lg text-indigo-200/70 relative">Professional voice-over services</p>
 	</div>
 
 	<!-- Voice Categories Section -->
-	<section class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-20">
+	<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-indigo-950/20 to-[var(--neu-bg)]/95 backdrop-blur-sm py-20 relative">
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Voice-Over Portfolio</h2>
@@ -253,7 +256,7 @@
 	</section>
 
 	<!-- Services Section -->
-	<section class="bg-[var(--neu-bg-dark)] py-20">
+	<section class="subsection-gradient-dark subsection-accent-blue relative py-20">
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Voice Services</h2>
@@ -322,9 +325,7 @@
 						</blockquote>
 						<div class="border-t border-gray-700 pt-4">
 							<div class="text-white font-semibold">{testimonial.name}</div>
-							<div class="text-indigo-400 text-sm">{testimonial.role}</div>
-							<div class="text-gray-500 text-sm">{testimonial.company}</div>
-							<div class="text-gray-400 text-xs mt-1">Project: {testimonial.project}</div>
+							<div class="text-gray-400 text-sm">{testimonial.date}</div>
 						</div>
 					</div>
 				{/each}
@@ -333,7 +334,7 @@
 	</section>
 
 	<!-- Contact CTA Section -->
-	<section class="bg-[var(--neu-bg-dark)] py-20">
+	<section class="bg-gradient-to-b from-[var(--neu-bg-dark)] via-[#1a1d24] to-[var(--neu-bg-dark)] py-20 relative">
 		<div class="container mx-auto px-4 text-center">
 			<h2 class="text-3xl font-bold text-white mb-4">Ready to Bring Your Project to Life?</h2>
 			<p class="text-gray-400 mb-8 max-w-2xl mx-auto">

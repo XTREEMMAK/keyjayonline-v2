@@ -3,14 +3,21 @@
 	import { fade, fly } from 'svelte/transition';
 	import { togglePlayer, showPlayer, loadPlaylist, loadRandomTrack } from '$lib/stores/musicPlayer.js';
 	import { getAllTracks, audioPlaylists } from '$lib/data/audioPlaylists.js';
+	import { getLegacyWorksByYear } from '$lib/data/legacyWorks.js';
 	import AlbumCard from '$lib/components/music/AlbumCard.svelte';
 	import AlbumModalSwal from '$lib/components/music/AlbumModalSwal.svelte';
 	import AudioPlayer from '$lib/components/music/AudioPlayer.svelte';
+	import LegacyWorkCard from '$lib/components/music/LegacyWorkCard.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
 	import Icon from '@iconify/svelte';
 	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 	import SvgDivider from '$lib/components/ui/SvgDivider.svelte';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
+	import { letterPulse } from '$lib/actions/letterAnimation.js';
+
+	// Get legacy works grouped by year
+	const legacyWorksByYear = getLegacyWorksByYear();
 	
 	let { data } = $props();
 	
@@ -34,11 +41,16 @@
 	let currentProjectIndex = $state(0);
 	let isTransitioning = $state(false);
 	let visibleElements = $state(new Set());
+	let latestProjectsRef = $state();
+	let latestProjectsParallaxY = $state(0);
 	
 	// Get hero image from database or use optimized fallback
 	const heroImage = $derived.by(() => {
 		return data.musicPageHeader || '/img/J_Header_2560.webp';
 	});
+
+	// Title letters for animation
+	const titleLetters = 'MUSIC'.split('');
 	
 	// Mock data for latest projects
 	const latestProjects = [
@@ -203,9 +215,30 @@
 	];
 	
 	onMount(async () => {
+		// Check for view query parameter for shareability
+		if (browser) {
+			const viewParam = $page.url.searchParams.get('view');
+			if (viewParam === 'legacy' || viewParam === 'beats' || viewParam === 'albums') {
+				view = viewParam;
+
+				// If legacy view with year param, scroll to that year
+				if (viewParam === 'legacy') {
+					const yearParam = $page.url.searchParams.get('year');
+					if (yearParam) {
+						setTimeout(() => {
+							const yearEl = document.getElementById(`legacy-year-${yearParam}`);
+							if (yearEl) {
+								yearEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+							}
+						}, 300);
+					}
+				}
+			}
+		}
+
 		// Server-side data should already be loaded via +page.server.js
 		// No need to load albums client-side
-		
+
 		if (browser && container && view === 'albums') {
 			const { default: mixitup } = await import('mixitup');
 			mixer = mixitup(container, {
@@ -252,10 +285,21 @@
 						}
 					}
 				}
-				
+
+				// Calculate parallax for Latest Projects section
+				if (latestProjectsRef) {
+					const sectionRect = latestProjectsRef.getBoundingClientRect();
+					const viewportHeight = window.innerHeight;
+					// Calculate how far into the section we've scrolled
+					// When section top reaches viewport bottom, offset starts at 0
+					// Apply 0.3x multiplier for slower movement
+					const sectionScrollProgress = -sectionRect.top + viewportHeight;
+					latestProjectsParallaxY = Math.max(0, sectionScrollProgress * 0.15);
+				}
+
 				ticking = false;
 			}
-			
+
 			function handleScroll() {
 				if (!ticking) {
 					requestAnimationFrame(updateParallax);
@@ -426,12 +470,12 @@
 <div class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/10 to-gray-900">
 	<!-- Hero Section -->
 	<section bind:this={heroRef} class="relative h-[70vh] flex items-end justify-start overflow-hidden section-triangle z-20">
-		<div 
+		<div
 			class="absolute inset-0 parallax-bg"
 			style="transform: translateY({scrollY * 0.3}px)"
 		>
-			<img 
-				src={heroImage} 
+			<img
+				src={heroImage}
 				alt="Key Jay"
 				class="w-full h-[120%] object-cover"
 			/>
@@ -460,7 +504,9 @@
 			{#if titleVisible}
 				<div class="hero-text-container">
 					<h1 class="music-title hero-title-responsive font-bold text-white" class:animate={titleAnimated}>
-						MUSIC
+						{#each titleLetters as letter, i}
+							<span use:letterPulse={{ delay: i * 100 }}>{letter}</span>
+						{/each}
 					</h1>
 					<p class="music-subtitle text-lg text-gray-300 max-w-lg mt-4" class:animate={titleAnimated}>
 						Explore my musical journey through albums, singles, and beats available for licensing
@@ -485,18 +531,21 @@
 			</section>
 		{:else}
 			<!-- Default Featured Work Style Layout -->
-			<section 
-				class="relative w-full overflow-hidden min-h-screen"
+			<section
+				bind:this={latestProjectsRef}
+				class="relative w-full min-h-screen latest-projects-section"
 				style="margin-top: -120px; z-index: 5;">
-				
+
 				<!-- Parallax Background with fade transition -->
-				{#key currentProjectIndex}
-					<div 
-						class="absolute inset-0 bg-cover bg-center transition-all duration-1000 parallax-bg"
-						style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}'); transform: translateY({scrollY * 0.015}px) scale(1.05);"
-						transition:fade={{ duration: 800 }}>
-					</div>
-				{/key}
+				<div class="absolute inset-0 overflow-hidden">
+					{#key currentProjectIndex}
+						<div
+							class="absolute w-full h-[120%] transition-opacity duration-1000 latest-projects-parallax-bg"
+							style="top: -{latestProjectsParallaxY * 0.5}px; background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}');"
+							transition:fade={{ duration: 800 }}>
+						</div>
+					{/key}
+				</div>
 				
 				<div class="relative z-10 min-h-screen flex flex-col">
 					<!-- Section Heading -->
@@ -581,26 +630,36 @@
 		<div class="container mx-auto px-4">
 			<!-- Main view switcher row -->
 			<div class="flex items-center justify-between py-4">
-				<div class="flex gap-2">
-					<button 
+				<div class="flex gap-2 flex-wrap">
+					<button
 						onclick={() => switchView('albums')}
 						class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {
-							view === 'albums' 
-								? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25' 
+							view === 'albums'
+								? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
 								: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 hover:shadow-lg hover:shadow-gray-500/20'
 						}"
 					>
 						Albums & Singles
 					</button>
-					<button 
+					<button
 						onclick={() => switchView('beats')}
 						class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {
-							view === 'beats' 
-								? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25' 
+							view === 'beats'
+								? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
 								: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 hover:shadow-lg hover:shadow-gray-500/20'
 						}"
 					>
 						Beats for Licensing
+					</button>
+					<button
+						onclick={() => switchView('legacy')}
+						class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {
+							view === 'legacy'
+								? 'bg-amber-600 text-white shadow-lg shadow-amber-500/25'
+								: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 hover:shadow-lg hover:shadow-gray-500/20'
+						}"
+					>
+						Legacy Works
 					</button>
 				</div>
 				
@@ -714,7 +773,7 @@
 		{:else if view === 'beats'}
 			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 				{#each beats as beat, i}
-					<div 
+					<div
 						class="bg-gray-900/50 backdrop-blur-sm rounded-xl p-6 border border-gray-800"
 						in:fly={{ y: 50, duration: 400, delay: i * 100 }}
 					>
@@ -738,13 +797,13 @@
 								<p class="text-gray-400 text-sm">License</p>
 							</div>
 						</div>
-						
-						<AudioPlayer 
+
+						<AudioPlayer
 							audioUrl={beat.audio_url}
 							trackTitle={beat.title}
 							className="mb-4"
 						/>
-						
+
 						<div class="flex gap-3">
 							<button class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105">
 								License This Beat
@@ -756,6 +815,47 @@
 					</div>
 				{/each}
 			</div>
+		{:else if view === 'legacy'}
+			<!-- Legacy Works Notice -->
+			<div class="legacy-notice bg-gray-900/50 backdrop-blur-sm rounded-xl p-6 mb-12 max-w-3xl mx-auto border-l-4 border-red-500 bg-red-950/30">
+				<div class="flex items-start gap-5">
+					<div class="flex-shrink-0 notice-icon-pulse">
+						<Icon icon="mdi:alert-circle" class="text-5xl text-red-400" />
+					</div>
+					<div>
+						<h4 class="text-lg font-semibold text-red-300 mb-2">Important Notice</h4>
+						<p class="text-gray-300 italic leading-relaxed">
+							These pieces come from my early years experimenting with art and music online.
+							They don't reflect my current technical ability, but they're part of my creative
+							journey and growth.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Year-Grouped Content -->
+			{#if legacyWorksByYear.length === 0}
+				<div class="text-center py-12">
+					<Icon icon="mdi:music-note-off" class="text-6xl text-gray-600 mb-4" />
+					<h3 class="text-xl font-semibold text-white mb-2">No Legacy Works Yet</h3>
+					<p class="text-gray-400">Legacy content will be added soon.</p>
+				</div>
+			{:else}
+				{#each legacyWorksByYear as { year, works }, groupIndex}
+					<div id="legacy-year-{year}" class="mb-12" in:fly={{ y: 30, duration: 400, delay: groupIndex * 100 }}>
+						<h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+							<span class="bg-amber-600/20 text-amber-400 px-4 py-1 rounded-full border border-amber-600/30">{year}</span>
+						</h3>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+							{#each works as work, workIndex}
+								<div in:fly={{ y: 20, duration: 300, delay: (groupIndex * 100) + (workIndex * 50) }}>
+									<LegacyWorkCard {work} />
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/each}
+			{/if}
 		{/if}
 		</div>
 		
@@ -967,13 +1067,27 @@
 		opacity: 1;
 		transform: translateY(0);
 	}
-	
+
 	.parallax-bg {
 		will-change: transform;
 		backface-visibility: hidden;
 		perspective: 1000px;
 	}
-	
+
+	/* Latest Projects section - clip-path creates containing block for fixed child */
+	.latest-projects-section {
+		clip-path: inset(0);
+	}
+
+	/* Latest Projects parallax background */
+	.latest-projects-parallax-bg {
+		background-size: cover;
+		background-position: center;
+		background-repeat: no-repeat;
+		left: 0;
+		right: 0;
+	}
+
 	/* Divider mask styles */
 	.section-wave-top {
 		position: relative;
@@ -1073,6 +1187,25 @@
 		);
 	}
 	
+	/* Letter-by-letter scale animation */
+	@keyframes letterPulse {
+		0%, 100% {
+			transform: scale(1) translateY(0);
+			filter: brightness(1);
+		}
+		50% {
+			transform: scale(1.25) translateY(-5px);
+			filter: brightness(1.3);
+		}
+	}
+
+	.music-title :global(.letter-animate) {
+		display: inline-block;
+		animation: letterPulse 2.5s ease-in-out infinite;
+		transform-origin: center bottom;
+		will-change: transform, filter;
+	}
+
 	.spinning-play-container {
 		opacity: 0;
 		transform: translateX(-50px) scale(0.8);
@@ -1107,6 +1240,28 @@
 	@media (max-width: 469px) {
 		.latest-projects-container {
 			max-height: calc(100vh - 150px);
+		}
+	}
+
+	/* Legacy Notice Styles */
+	.legacy-notice {
+		box-shadow:
+			0 0 20px rgba(239, 68, 68, 0.15),
+			inset 0 0 30px rgba(239, 68, 68, 0.05);
+	}
+
+	.notice-icon-pulse {
+		animation: iconPulse 2s ease-in-out infinite;
+	}
+
+	@keyframes iconPulse {
+		0%, 100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		50% {
+			transform: scale(1.1);
+			opacity: 0.8;
 		}
 	}
 </style>

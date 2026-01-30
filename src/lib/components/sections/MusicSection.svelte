@@ -6,11 +6,17 @@
 	import AlbumModalSwal from '$lib/components/music/AlbumModalSwal.svelte';
 	import AudioPlayer from '$lib/components/music/AudioPlayer.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
+	import LegacyWorkCard from '$lib/components/music/LegacyWorkCard.svelte';
 	import Icon from '@iconify/svelte';
+	import { getLegacyWorksByYear } from '$lib/data/legacyWorks.js';
 	import { browser } from '$app/environment';
 	import { navigateTo, navbarVisible } from '$lib/stores/navigation.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
+	import { letterPulse } from '$lib/actions/letterAnimation.js';
+
+	// Title letters for animation
+	const titleLetters = 'Music'.split('');
 
 	// Accept data as props from parent (passed via SPA container)
 	let { data = {} } = $props();
@@ -32,6 +38,22 @@
 	let currentProjectIndex = $state(0);
 	let isTransitioning = $state(false);
 	let visibleElements = $state(new Set());
+
+	// Parallax state for Latest Projects
+	let latestProjectsRef = $state(null);
+	let scrollY = $state(0);
+
+	// Derived parallax transform - scrollY dependency triggers recalculation
+	const parallaxY = $derived(() => {
+		// Reference scrollY to create dependency (Svelte will re-run when scrollY changes)
+		const _scroll = scrollY;
+		if (!browser || !latestProjectsRef) return 0;
+		const rect = latestProjectsRef.getBoundingClientRect();
+		const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+		const progress = (viewportHeight - rect.top) / (viewportHeight + rect.height);
+		// Range: -100px to +100px for more noticeable parallax effect
+		return Math.max(-100, Math.min(100, (progress - 0.5) * 200));
+	});
 
 	// Use Featured Works from Directus kjov2_general.featured for Latest Projects
 	const latestProjects = $derived(() => {
@@ -122,6 +144,9 @@
 		}
 	];
 
+	// Legacy works data (grouped by year)
+	const legacyWorksByYear = $derived(getLegacyWorksByYear());
+
 	// Mock albums fallback
 	const mockAlbums = [
 		{
@@ -157,10 +182,17 @@
 			});
 		}
 
+		// Scroll listener for parallax effect
+		const handleScroll = () => {
+			scrollY = window.scrollY;
+		};
+		window.addEventListener('scroll', handleScroll, { passive: true });
+
 		return () => {
 			if (mixer) {
 				mixer.destroy();
 			}
+			window.removeEventListener('scroll', handleScroll);
 		};
 	});
 
@@ -295,7 +327,7 @@
 <!-- ============================================================================ -->
 <!-- MUSIC SECTION CONTAINER -->
 <!-- ============================================================================ -->
-<div class="music-section min-h-screen bg-gradient-to-br from-[var(--neu-bg)] via-blue-900/10 to-[var(--neu-bg)] relative">
+<div class="music-section min-h-screen section-gradient-music gradient-animated relative">
 	<!-- Blurred Background Image -->
 	<SectionBackground section="music" opacity={0.12} />
 
@@ -303,19 +335,36 @@
 	<div class="pt-28 pb-8 text-center relative">
 		<div class="absolute inset-0 bg-gradient-to-b from-blue-600/20 via-blue-500/5 to-transparent pointer-events-none"></div>
 		<h1 class="text-4xl md:text-5xl font-bold text-white mb-3 relative">
-			<span class="bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-400 bg-clip-text text-transparent">Music</span>
+			{#each titleLetters as letter, i}
+				<span
+					use:letterPulse={{ delay: i * 60 }}
+					class="bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-400 bg-clip-text text-transparent inline-block"
+				>{letter}</span>
+			{/each}
 		</h1>
 		<p class="text-lg text-blue-200/70 relative">Explore my musical journey</p>
 	</div>
 
 	<!-- Latest Projects Section -->
 	{#if !customDesignOverride}
-		<section class="relative w-full overflow-hidden py-20 bg-[var(--neu-bg-dark)]">
-			<!-- Background with fade transition -->
+		<section
+			bind:this={latestProjectsRef}
+			class="relative w-full overflow-hidden py-20 bg-[var(--neu-bg-dark)]"
+		>
+			<!-- Background with parallax effect -->
 			{#key currentProjectIndex}
 				<div
-					class="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-					style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}');"
+					class="absolute bg-cover bg-center"
+					style="
+						top: -120px;
+						left: 0;
+						right: 0;
+						bottom: -120px;
+						background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}');
+						transform: translateY({parallaxY()}px) scale(1.15);
+						transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-image 0.3s ease;
+						will-change: transform;
+					"
 					transition:fade={{ duration: 800 }}>
 				</div>
 			{/key}
@@ -340,7 +389,7 @@
 					style="transition-delay: 200ms;"
 				>
 					<div
-						class="w-full max-w-3xl aspect-video rounded-2xl overflow-hidden relative cursor-pointer group neu-card"
+						class="w-full max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl aspect-video rounded-2xl overflow-hidden relative cursor-pointer group neu-card transition-all duration-500"
 						onclick={() => handleProjectClick(currentProject)}
 						onkeydown={(e) => e.key === 'Enter' && handleProjectClick(currentProject)}
 						role="button"
@@ -401,7 +450,7 @@
 		<div class="container mx-auto px-4">
 			<!-- Main view switcher row -->
 			<div class="flex items-center justify-between py-4">
-				<div class="flex gap-2">
+				<div class="flex gap-2 flex-wrap">
 					<button
 						onclick={() => switchView('albums')}
 						class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {
@@ -421,6 +470,16 @@
 						}"
 					>
 						Beats for Licensing
+					</button>
+					<button
+						onclick={() => switchView('legacy')}
+						class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {
+							view === 'legacy'
+								? 'bg-amber-600 text-white shadow-lg shadow-amber-500/25'
+								: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+						}"
+					>
+						Legacy Works
 					</button>
 				</div>
 
@@ -570,13 +629,59 @@
 						</div>
 					{/each}
 				</div>
+			{:else if view === 'legacy'}
+				<!-- Legacy Works Notice -->
+				<div
+					class="legacy-notice neu-card p-6 mb-12 max-w-3xl mx-auto border-l-4 border-red-500 bg-red-950/30"
+					in:fly={{ y: 30, duration: 400 }}
+				>
+					<div class="flex items-start gap-5">
+						<div class="flex-shrink-0 notice-icon-pulse">
+							<Icon icon="mdi:alert-circle" class="text-5xl text-red-400" />
+						</div>
+						<div>
+							<h4 class="text-lg font-semibold text-red-300 mb-2">Important Notice</h4>
+							<p class="text-gray-300 italic leading-relaxed">
+								These pieces come from my early years experimenting with art and music online.
+								They don't reflect my current technical ability, but they're part of my creative
+								journey and growth.
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Year-Grouped Content -->
+				{#each legacyWorksByYear as { year, works }, yearIndex}
+					<div id="legacy-year-{year}" class="mb-12" in:fly={{ y: 30, duration: 400, delay: yearIndex * 100 }}>
+						<h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+							<span class="bg-amber-600/20 text-amber-400 px-4 py-1 rounded-full">{year}</span>
+						</h3>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+							{#each works as work, workIndex}
+								<div in:fly={{ y: 20, duration: 300, delay: yearIndex * 100 + workIndex * 50 }}>
+									<LegacyWorkCard {work} />
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/each}
+
+				{#if legacyWorksByYear.length === 0}
+					<div class="text-center py-20">
+						<div class="text-gray-400 mb-4">
+							<Icon icon="mdi:music-note-off" class="text-6xl mx-auto" />
+						</div>
+						<h3 class="text-xl font-semibold text-white mb-2">No Legacy Works Found</h3>
+						<p class="text-gray-400">Content coming soon!</p>
+					</div>
+				{/if}
 			{/if}
 		</div>
 	</section>
 
 	<!-- Listen On Section -->
 	{#if view === 'albums'}
-		<section class="py-20 bg-[var(--neu-bg-dark)]">
+		<section class="py-20 subsection-gradient-dark subsection-accent-blue relative">
 			<div class="container mx-auto px-4 text-center">
 				<h2 class="text-3xl font-bold text-white mb-12">Listen On</h2>
 				{#if musicNetworks && musicNetworks.length > 0}
@@ -600,7 +705,7 @@
 	{/if}
 
 	<!-- Contact CTA Section -->
-	<section class="bg-[var(--neu-bg)] py-16">
+	<section class="bg-gradient-to-b from-[var(--neu-bg)] via-[var(--neu-bg-light)]/50 to-[var(--neu-bg)] py-16 relative">
 		<div class="container mx-auto px-4">
 			<div class="max-w-2xl mx-auto text-center">
 				<h2 class="text-3xl font-bold text-white mb-4">Need Custom Music?</h2>
@@ -649,5 +754,28 @@
 		box-shadow:
 			6px 6px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
 			-6px -6px 12px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	/* Legacy Notice Styles */
+	.legacy-notice {
+		box-shadow:
+			8px 8px 16px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+			-8px -8px 16px var(--neu-shadow-light, rgba(60, 64, 72, 0.5)),
+			inset 0 0 30px rgba(239, 68, 68, 0.05);
+	}
+
+	.notice-icon-pulse {
+		animation: iconPulse 2s ease-in-out infinite;
+	}
+
+	@keyframes iconPulse {
+		0%, 100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		50% {
+			transform: scale(1.1);
+			opacity: 0.8;
+		}
 	}
 </style>

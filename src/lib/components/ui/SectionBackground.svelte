@@ -42,8 +42,9 @@
 		position: absolute;
 		inset: 0;
 		z-index: 0;
-		overflow: hidden;
 		pointer-events: none;
+		/* clip-path creates containing block that clips fixed children */
+		clip-path: inset(0);
 		/* Mask to fade out at top (header area shows video) */
 		-webkit-mask-image: linear-gradient(
 			to bottom,
@@ -62,8 +63,11 @@
 	}
 
 	.section-bg-image {
-		position: absolute;
-		inset: -10px; /* Extend beyond container to prevent blur edge artifacts */
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
 		background-size: cover;
 		background-position: center;
 		background-repeat: no-repeat;

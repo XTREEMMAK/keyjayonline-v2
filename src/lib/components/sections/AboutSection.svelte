@@ -10,6 +10,13 @@
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 
 	// ============================================================================
+	// DYNAMIC CALCULATIONS
+	// ============================================================================
+	// Born December 13, 1986, started playing at age 5 (December 13, 1991)
+	const musicStartYear = 1991;
+	const yearsOfMusicExperience = new Date().getFullYear() - musicStartYear;
+
+	// ============================================================================
 	// STATE VARIABLES
 	// ============================================================================
 	let activeTab = $state('bio');
@@ -133,8 +140,15 @@
 			bg: 'bg-cyan-600/20'
 		},
 		creative: {
-			gradient: 'from-orange-900 via-pink-900/20 to-gray-900',
-			accent: 'from-orange-600 to-pink-600',
+			gradient: 'from-purple-900 via-pink-900/20 to-gray-900',
+			accent: 'from-purple-600 to-pink-600',
+			border: 'border-purple-600',
+			text: 'text-purple-400',
+			bg: 'bg-purple-600/20'
+		},
+		productions: {
+			gradient: 'from-orange-900 via-amber-900/20 to-gray-900',
+			accent: 'from-orange-600 to-amber-600',
 			border: 'border-orange-600',
 			text: 'text-orange-400',
 			bg: 'bg-orange-600/20'
@@ -173,28 +187,64 @@
 				icon: 'mdi:piano'
 			},
 			{
-				year: '2010',
-				title: 'Musical Evolution',
-				description: 'Expanded into jazz, R&B, hip hop, and electronic music production.',
+				year: 'Late 1990s',
+				title: 'Piano Competitions',
+				description: 'Competed in various piano competitions for school winning superior rankings many years in a row.',
+				icon: 'mdi:trophy'
+			},
+			{
+				year: 'Early 2000s',
+				title: 'Local Productions',
+				description: 'Produced various productions for small acts around South Florida including Gospel acts, school jingles, and various Hip-Hop and R&B acts.',
 				icon: 'mdi:music-note'
 			},
 			{
-				year: '2011',
-				title: 'Party-Zon Project',
-				description: 'Produced, mixed, composed, and performed on dance/electronic music project.',
+				year: 'Jan 26, 2007',
+				title: 'Blak Soul Album',
+				description: 'Songwriter, composer, and co-produced first album for artist Ms.BLAK on project Blak Soul.',
 				icon: 'mdi:album'
+			},
+			{
+				year: '2009',
+				title: 'Orchestra Productions',
+				description: 'Began learning and experimenting with classical orchestra productions.',
+				icon: 'mdi:violin'
+			},
+			{
+				year: 'Dec 12, 2009',
+				title: 'Miami Music Festival',
+				description: 'Performed at the Miami Music Festival with group Soul Stank.',
+				icon: 'mdi:stadium'
+			},
+			{
+				year: '2010',
+				title: 'Dies Irae Radio Play',
+				description: 'Composed music for radio play Dies Irae for Ocean and Sky Productions.',
+				icon: 'mdi:radio'
+			},
+			{
+				year: 'Late 2010',
+				title: 'The 7th Link Band',
+				description: 'Performed various shows with The 7th Link Band from South Florida BeerFest to Haitian Relief Benefit Concert.',
+				icon: 'mdi:account-group'
+			},
+			{
+				year: 'Dec 8, 2011',
+				title: 'Frost Art Museum',
+				description: 'Performed at the Frost Art Museum at FIU.',
+				icon: 'mdi:palette'
+			},
+			{
+				year: 'Dec 12, 2013',
+				title: 'Frost Art Museum',
+				description: 'Performed at the Frost Art Museum FIU.',
+				icon: 'mdi:palette'
 			},
 			{
 				year: '2018-2019',
 				title: 'Project Kingdom XIII',
-				description: 'Created comprehensive music compilation as composer, sound designer, and mixing engineer.',
-				icon: 'mdi:microphone'
-			},
-			{
-				year: 'Present',
-				title: 'Live Performances',
-				description: 'Regular performances at Miami Music Festival, Beer Festival, Hard Rock, Transit Lounge.',
-				icon: 'mdi:stadium'
+				description: 'Created and released a music compilation as composer, vocalist, and mixing engineer based on the works of Yoko Shimomura for Kingdom Hearts.',
+				icon: 'mdi:crown'
 			}
 		],
 		tech: [
@@ -231,34 +281,72 @@
 		],
 		creative: [
 			{
-				year: '2009-2014',
-				title: 'FLUR: Blades of the Universe',
-				description: 'Created and produced original audio drama series, handling all aspects from writing to voice acting.',
-				icon: 'mdi:podcast'
-			},
-			{
-				year: '2015',
-				title: 'Voice Acting Career',
-				description: 'Began professional voice work for indie games, podcasts, and commercial projects.',
+				year: "2005's",
+				title: 'Online Radio Plays',
+				description: 'Cast in various roles for Radio Plays on VAC, VAA forums, and Newgrounds. Started voice acting career.',
 				icon: 'mdi:microphone'
 			},
 			{
-				year: '2018',
-				title: 'KJC Comix',
-				description: 'Launched original comic series with integrated audio elements and web experiences.',
-				icon: 'mdi:book-open-variant'
+				year: '2009-2011',
+				title: 'Kaiblade',
+				description: 'Starred as Jai in indie animation project Kaiblade.',
+				icon: 'mdi:movie'
 			},
 			{
-				year: '2020',
-				title: 'Video Production',
-				description: 'Expanded into full video production services, from concept to final edit.',
-				icon: 'mdi:video'
+				year: '2011',
+				title: "King's Quest III Redux",
+				description: 'Provided voice overs for fan game based on the Kings Quest franchise.',
+				icon: 'mdi:gamepad-variant'
+			},
+			{
+				year: '2012',
+				title: 'Beast Boxing Turbo',
+				description: 'Provided character voice overs for indie game by Goodhustle Studios Inc.',
+				icon: 'mdi:boxing-glove'
+			},
+			{
+				year: '2012',
+				title: 'Wing Commander Saga',
+				description: 'Voice overs for Kramm "Deathfang" Nar Caxki and Gregory "M.D" House in The Darkest Dawn fan game.',
+				icon: 'mdi:rocket'
+			},
+			{
+				year: '2013',
+				title: 'College Off the Record',
+				description: 'Starred as "The Tempting Voice" for indie animation project.',
+				icon: 'mdi:drama-masks'
+			},
+			{
+				year: '2018',
+				title: "Demon's Rise: War for the Deep",
+				description: 'Provided various voice overs for indie video game.',
+				icon: 'mdi:sword-cross'
 			},
 			{
 				year: '2024',
-				title: 'KEY JAY ONLINE',
-				description: 'Unified all creative endeavors under one platform, offering comprehensive creative services.',
-				icon: 'mdi:rocket-launch'
+				title: 'HFAA Phone Systems',
+				description: 'Provided IVR prompt voice work for medical company.',
+				icon: 'mdi:phone-voip'
+			}
+		],
+		productions: [
+			{
+				year: 'Feb 2012 - Oct 2013',
+				title: 'DRIFT Webcomic',
+				description: 'Wrote, produced and published web comic DRIFT with artist Kathan.',
+				icon: 'mdi:book-open-page-variant'
+			},
+			{
+				year: 'Aug 27, 2014',
+				title: 'F.L.U.R: Blades of the Universe',
+				description: 'Released Episode 1 of FLUR: Blades of the Universe Radio Drama, a tie-in to a work in progress comic book.',
+				icon: 'mdi:podcast'
+			},
+			{
+				year: 'Sep 13, 2018',
+				title: 'Project Kingdom XIII Music Video',
+				description: 'Produced music video for Project Kingdom XIII - Should I Stay.',
+				icon: 'mdi:video'
 			}
 		]
 	};
@@ -267,8 +355,8 @@
 	const skills = {
 		bio: [], // No skills section for bio tab
 		music: [
-			{ name: 'Music Production', metric: '15+ Years Experience', icon: 'mdi:music-note' },
-			{ name: 'Live Performance', metric: '50+ Venues', icon: 'mdi:microphone-variant' },
+			{ name: 'Music Production', metric: `${yearsOfMusicExperience}+ Years Experience`, icon: 'mdi:music-note' },
+			{ name: 'Live Performance', metric: '10+ Venues', icon: 'mdi:microphone-variant' },
 			{ name: 'Tracks Produced', metric: '100+ Original Works', icon: 'mdi:album' },
 			{ name: 'Instruments', metric: 'Piano, Keys, Vocals, Guitar', icon: 'mdi:piano' },
 			{ name: 'Genres Mastered', metric: '7 Distinct Styles', icon: 'mdi:playlist-music' },
@@ -283,52 +371,45 @@
 			{ name: 'Database Systems', metric: 'SQL, MongoDB, Firebase', icon: 'mdi:database' }
 		],
 		creative: [
-			{ name: 'Voice Acting', metric: '8+ Years Experience', icon: 'mdi:microphone' },
+			{ name: 'Voice Acting', metric: '15+ Years Experience', icon: 'mdi:microphone' },
+			{ name: 'Character Range', metric: 'Heroes to Villains', icon: 'mdi:drama-masks' },
+			{ name: 'Video Games', metric: 'Multiple Titles', icon: 'mdi:gamepad-variant' },
+			{ name: 'Animations', metric: 'Indie & Fan Projects', icon: 'mdi:movie' },
+			{ name: 'Commercial VO', metric: 'IVR & Prompts', icon: 'mdi:phone-voip' },
+			{ name: 'Radio Dramas', metric: 'Online & Fan Projects', icon: 'mdi:radio' }
+		],
+		productions: [
+			{ name: 'Webcomics', metric: 'DRIFT Series', icon: 'mdi:book-open-page-variant' },
 			{ name: 'Audio Dramas', metric: 'FLUR Series Creator', icon: 'mdi:podcast' },
-			{ name: 'Video Production', metric: '100+ Projects', icon: 'mdi:video' },
-			{ name: 'Content Creation', metric: 'Gaming, Tech, Music', icon: 'mdi:youtube' },
-			{ name: 'Sound Design', metric: 'Games & Media', icon: 'mdi:speaker' },
-			{ name: 'Creative Direction', metric: 'Brand Campaigns', icon: 'mdi:palette' }
+			{ name: 'Music Videos', metric: 'Project Kingdom XIII', icon: 'mdi:video' },
+			{ name: 'Writing', metric: 'Scripts & Stories', icon: 'mdi:script-text' },
+			{ name: 'Direction', metric: 'Cast & Production', icon: 'mdi:movie-open' },
+			{ name: 'Collaboration', metric: 'Artists & Talent', icon: 'mdi:account-group' }
 		]
 	};
 
 	// Client testimonials
 	const testimonials = [
 		{
-			name: 'Sarah Mitchell',
-			company: 'BrandVoice Studios',
-			role: 'Creative Director',
-			quote: 'Working with Key Jay has been an absolute pleasure. His versatility across music production and voice work allowed us to create a cohesive brand experience that exceeded our expectations.',
-			project: 'Brand Campaign Series',
+			name: 'Sandra Espinoza',
+			date: '05/2013',
+			quote: "Working with Jamaal has been the most fluid and easy going experience I've ever had with a director. Jamaal's highly motivated about his work and is delightfully thorough in both his marketing efforts and the acting direction provided for the project! He goes the extra mile to provide talents with the opportunity to have access to things they might not have otherwise, and it makes the project feel all the more like a community effort. I'm happy to work with him and hope to see him produce more great works in the future!",
 			rating: 5,
-			category: 'creative'
+			categories: ['creative', 'productions']
 		},
 		{
-			name: 'Marcus Rodriguez',
-			company: 'Indie Studios',
-			role: 'Game Director',
-			quote: 'Key Jay brought our characters to life with his incredible voice acting range. His understanding of gaming culture made the collaboration seamless and authentic.',
-			project: 'RPG Character Voices',
+			name: 'Jeremiah Caudle',
+			date: '05/2012',
+			quote: "This guy has got to be one of the most talented person I have ever met. A worthy rival in writing and producing/mixing. A genius musician, and to top it all off; a freakin' amazing voice. Not only can he sing like nobodies business, but both his voices for protagonists as well as antagonists are nothing short of genius. Not to mention his evil laugh is one that will give you shivers!",
 			rating: 5,
-			category: 'creative'
+			categories: ['music', 'creative']
 		},
 		{
-			name: 'Emily Chen',
-			company: 'TechFlow Media',
-			role: 'Content Producer',
-			quote: 'The combination of technical expertise and creative vision that Key Jay brings is rare. He delivered both the audio solution and the creative direction we needed.',
-			project: 'Podcast Production',
+			name: 'Nina M.',
+			date: '05/2016',
+			quote: "I worked with Jamaal for the first time in 2011 when I was cast to play Lida Garuzo in his radio play F.L.U.R. I was a fledgling when it came to voice acting at the time, and even though I was still rough around the edges, Jamaal made sure to not only provide guidance when required, but also support and words of encouragement. It was easy to work with him because he made it clear how he wanted his characters to be portrayed and what was expected from us, making the entire production smooth sailing. The thing I like most about Jamaal is how he empowers his peers, but also gives it his all. It never feels like you're doing a job, it feels like you're part of a family, maybe something bigger. He is driven, organized, and someone I would gladly work for again.",
 			rating: 5,
-			category: 'tech'
-		},
-		{
-			name: 'David Kim',
-			company: 'Miami Music Collective',
-			role: 'Event Coordinator',
-			quote: 'Key Jay\'s live performances always bring incredible energy. His ability to read the crowd and adapt his set makes him a festival favorite.',
-			project: 'Miami Music Festival',
-			rating: 5,
-			category: 'music'
+			categories: ['creative', 'productions']
 		}
 	];
 
@@ -342,7 +423,7 @@
 		music: {
 			title: 'Music & Audio Production',
 			subtitle: 'From Classical Foundations to Modern Production',
-			description: 'With over 15 years of experience in music production and performance, I bring a unique blend of classical training and modern production techniques. My journey began at age 5 with formal piano training, evolving into a multi-genre approach that spans jazz, R&B, hip hop, rock, gospel, and electronic music.'
+			description: `With over ${yearsOfMusicExperience} years of experience in music production and performance, I bring a unique blend of classical training and modern production techniques. My journey began at age 5 with formal piano training, evolving into a multi-genre approach that spans jazz, R&B, hip hop, rock, gospel, and electronic music.`
 		},
 		tech: {
 			title: 'Technology & Development',
@@ -350,9 +431,14 @@
 			description: 'A decade of web development experience combined with audio engineering expertise allows me to create unique digital solutions. From VST plugin development to full-stack web applications, I bridge the gap between creative vision and technical implementation.'
 		},
 		creative: {
-			title: 'Creative & Voice Work',
-			subtitle: 'Bringing Stories to Life',
-			description: 'As a voice actor, content creator, and multimedia producer, I specialize in crafting immersive experiences. From the FLUR audio drama series to game character voices and brand campaigns, I bring authenticity and passion to every project.'
+			title: 'Voice Acting',
+			subtitle: 'Bringing Characters to Life',
+			description: 'As a voice actor with credits spanning video games, animations, radio dramas, and commercial work, I bring authenticity and range to every character. From heroic protagonists to sinister villains, I deliver performances that connect with audiences.'
+		},
+		productions: {
+			title: 'Productions',
+			subtitle: 'Creating Original Content',
+			description: 'From webcomics to radio dramas to music videos, I bring creative visions to life. As a writer, producer, and director, I lead projects from concept to completion, collaborating with talented artists and voice actors along the way.'
 		}
 	};
 
@@ -485,8 +571,8 @@
 									: 'text-gray-400 hover:text-white'
 							}"
 						>
-							<span class="hidden md:inline">{tab === 'bio' ? 'Biography' : tab === 'music' ? 'Music & Audio' : tab === 'tech' ? 'Technology' : 'Creative & Voice'}</span>
-							<span class="md:hidden">{tab === 'bio' ? 'Bio' : tab === 'music' ? 'Music' : tab === 'tech' ? 'Tech' : 'Creative'}</span>
+							<span class="hidden md:inline">{tab === 'bio' ? 'Biography' : tab === 'music' ? 'Music & Audio' : tab === 'tech' ? 'Technology' : tab === 'creative' ? 'Voice Acting' : 'Productions'}</span>
+							<span class="md:hidden">{tab === 'bio' ? 'Bio' : tab === 'music' ? 'Music' : tab === 'tech' ? 'Tech' : tab === 'creative' ? 'Voice' : 'Prods'}</span>
 						</button>
 					{/each}
 				</div>
@@ -627,7 +713,7 @@
 						<div class="mb-20">
 							<h3 class="text-2xl font-semibold text-white mb-8 text-center">Client Testimonials</h3>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-								{#each testimonials.filter(t => activeTab === 'bio' || t.category === activeTab || (activeTab === 'creative' && t.category === 'creative')) as testimonial, index}
+								{#each testimonials.filter(t => activeTab === 'bio' || t.categories.includes(activeTab)) as testimonial, index}
 									<div
 										use:observeElement={`${activeTab}-testimonial-${index}`}
 										class="neu-card p-8 hover:scale-[1.02] transition-all duration-700 transform {
@@ -645,9 +731,7 @@
 										</blockquote>
 										<div class="border-t border-gray-700 pt-4">
 											<div class="text-white font-semibold">{testimonial.name}</div>
-											<div class="{getActiveTheme().text} text-sm">{testimonial.role}</div>
-											<div class="text-gray-400 text-sm">{testimonial.company}</div>
-											<div class="text-gray-400 text-xs mt-1">Project: {testimonial.project}</div>
+											<div class="text-gray-400 text-sm">{testimonial.date}</div>
 										</div>
 									</div>
 								{/each}

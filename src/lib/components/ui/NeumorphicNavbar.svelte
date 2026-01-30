@@ -4,6 +4,7 @@
 	import { activeSection, navigateTo, sectionMeta, sections, navbarVisible } from '$lib/stores/navigation.js';
 	import { hideMainNavbar } from '$lib/stores/stickyNav.js';
 	import { browser } from '$app/environment';
+	import { mouseGlow } from '$lib/actions/mouseGlow.js';
 
 	let isVisible = $state(true);
 	let isScrolled = $state(false);
@@ -62,35 +63,66 @@
 
 {#if shouldShow && hasInitiallyLoaded}
 	<nav
-		class="neu-navbar flex items-center gap-1 transition-all duration-300"
+		use:mouseGlow={{ color: 'rgba(59, 130, 246, 0.12)', size: 300, blur: 60 }}
+		class="neu-navbar transition-all duration-300 {isMobileMenuOpen ? 'mobile-menu-open' : ''}"
 		class:shadow-2xl={isScrolled}
 		in:fly={{ y: -100, duration: 400 }}
 		out:fly={{ y: -100, duration: 300 }}
 		aria-label="Main navigation"
 		style="--section-glow-color: {glowColor};"
 	>
-		<!-- Logo / Home button -->
-		<button
-			class="neu-navbar-logo"
-			class:active={$activeSection === 'home'}
-			class:logo-glow-active={$activeSection === 'home'}
-			onclick={goHome}
-			aria-label="Go to home"
-			aria-current={$activeSection === 'home' ? 'page' : undefined}
-			style="--item-glow-color: {sectionMeta.home.color};"
-		>
-			<img
-				src="/img/KJ_Logo_Medium_W.svg"
-				alt="KEY JAY ONLINE"
-				class="logo-img"
-			/>
-		</button>
+		<!-- Mobile Layout: Hamburger left, Logo right -->
+		<div class="flex md:hidden items-center justify-between w-full">
+			<button
+				class="hamburger-btn p-2"
+				class:open={isMobileMenuOpen}
+				onclick={() => isMobileMenuOpen = !isMobileMenuOpen}
+				aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+				aria-expanded={isMobileMenuOpen}
+			>
+				<span class="hamburger-line"></span>
+				<span class="hamburger-line"></span>
+				<span class="hamburger-line"></span>
+			</button>
 
-		<!-- Divider -->
-		<div class="w-px h-6 bg-white/10 mx-1 hidden sm:block"></div>
+			<button
+				class="neu-navbar-logo"
+				class:active={$activeSection === 'home'}
+				class:logo-glow-active={$activeSection === 'home'}
+				onclick={goHome}
+				aria-label="Go to home"
+				aria-current={$activeSection === 'home' ? 'page' : undefined}
+				style="--item-glow-color: {sectionMeta.home.color};"
+			>
+				<img
+					src="/img/KJ_Logo_Medium_W.svg"
+					alt="KEY JAY ONLINE"
+					class="logo-img"
+				/>
+			</button>
+		</div>
 
-		<!-- Desktop Navigation -->
+		<!-- Desktop Layout: Logo, Divider, Nav Items -->
 		<div class="hidden md:flex items-center gap-1">
+			<button
+				class="neu-navbar-logo"
+				class:active={$activeSection === 'home'}
+				class:logo-glow-active={$activeSection === 'home'}
+				onclick={goHome}
+				aria-label="Go to home"
+				aria-current={$activeSection === 'home' ? 'page' : undefined}
+				style="--item-glow-color: {sectionMeta.home.color};"
+			>
+				<img
+					src="/img/KJ_Logo_Medium_W.svg"
+					alt="KEY JAY ONLINE"
+					class="logo-img"
+				/>
+			</button>
+
+			<!-- Divider -->
+			<div class="w-px h-6 bg-white/10 mx-1"></div>
+
 			{#each navItems as section}
 				<button
 					class="neu-navbar-item uppercase tracking-wider"
@@ -105,30 +137,12 @@
 			{/each}
 		</div>
 
-		<!-- Mobile Navigation - Hamburger Menu -->
-		<div class="flex md:hidden items-center">
-			<button
-				class="hamburger-btn p-2"
-				class:open={isMobileMenuOpen}
-				onclick={() => isMobileMenuOpen = !isMobileMenuOpen}
-				aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-				aria-expanded={isMobileMenuOpen}
+		<!-- Mobile Menu Dropdown - Now inside nav for visual connection -->
+		{#if isMobileMenuOpen}
+			<div
+				class="mobile-menu-container md:hidden"
+				transition:fly={{ y: -10, duration: 200 }}
 			>
-				<span class="hamburger-line"></span>
-				<span class="hamburger-line"></span>
-				<span class="hamburger-line"></span>
-			</button>
-		</div>
-	</nav>
-
-	<!-- Mobile Menu Dropdown -->
-	{#if isMobileMenuOpen}
-		<div
-			class="mobile-menu-overlay md:hidden"
-			onclick={() => isMobileMenuOpen = false}
-			transition:fly={{ y: -10, duration: 200 }}
-		>
-			<div class="mobile-menu" onclick={(e) => e.stopPropagation()}>
 				{#each navItems as section}
 					<button
 						class="mobile-menu-item"
@@ -142,7 +156,16 @@
 					</button>
 				{/each}
 			</div>
-		</div>
+		{/if}
+	</nav>
+
+	<!-- Backdrop overlay when mobile menu is open -->
+	{#if isMobileMenuOpen}
+		<div
+			class="mobile-backdrop md:hidden"
+			onclick={() => isMobileMenuOpen = false}
+			transition:fly={{ duration: 200 }}
+		></div>
 	{/if}
 {/if}
 
@@ -334,32 +357,35 @@
 		transform: translateY(-6px) rotate(-45deg);
 	}
 
-	/* Mobile Menu Overlay */
-	.mobile-menu-overlay {
+	/* Mobile menu open state - expand navbar to accommodate menu */
+	.neu-navbar.mobile-menu-open {
+		border-radius: 20px;
+		flex-direction: column;
+		align-items: stretch;
+		padding-bottom: 8px;
+	}
+
+	/* Mobile menu container - inside the nav */
+	.mobile-menu-container {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 8px 4px 4px 4px;
+		margin-top: 8px;
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	/* Backdrop overlay */
+	.mobile-backdrop {
 		position: fixed;
-		top: 70px;
+		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: rgba(0, 0, 0, 0.5);
-		backdrop-filter: blur(4px);
-		-webkit-backdrop-filter: blur(4px);
-		z-index: 45;
-	}
-
-	.mobile-menu {
-		background: var(--neu-bg, #2a2d35);
-		border-radius: 0 0 20px 20px;
-		padding: 16px;
-		margin: 0 16px;
-		margin-right: auto;
-		max-width: 280px;
-		box-shadow:
-			8px 8px 16px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
-			-8px -8px 16px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
+		background: rgba(0, 0, 0, 0.4);
+		backdrop-filter: blur(2px);
+		-webkit-backdrop-filter: blur(2px);
+		z-index: 40;
 	}
 
 	.mobile-menu-item {
