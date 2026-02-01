@@ -1,8 +1,16 @@
 /* Album Modal Global Styles */
 .album-modal-popup {
-	border-radius: 16px !important;
-	backdrop-filter: blur(10px) !important;
+	max-width: 110em !important;
+	border-radius: 20px !important;
+	backdrop-filter: blur(20px) !important;
 	transition: all 0.4s ease !important;
+	border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	box-shadow:
+		0 25px 50px -12px rgba(0, 0, 0, 0.5),
+		0 0 0 1px rgba(255, 255, 255, 0.05),
+		inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+	background-size: cover !important;
+	background-position: center !important;
 }
 
 .album-modal-content {
@@ -10,7 +18,7 @@
 	max-height: 80vh !important;
 	overflow-y: auto !important;
 	transition: height 0.4s ease !important;
-	
+
 	/* Custom scrollbar styling */
 	scrollbar-width: thin;
 	scrollbar-color: rgba(59, 130, 246, 0.6) rgba(31, 41, 55, 0.5);
@@ -42,6 +50,7 @@
 	align-items: start;
 }
 
+/* Album Info Section - Glass Card */
 .album-info-section {
 	display: flex;
 	flex-direction: column;
@@ -49,13 +58,58 @@
 	text-align: center;
 	position: sticky;
 	top: 0;
+	background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+	backdrop-filter: blur(15px);
+	border-radius: 16px;
+	padding: 24px;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow:
+		0 10px 40px rgba(0, 0, 0, 0.25),
+		inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+/* Album Artwork Enhancement */
+.album-artwork {
+	margin-bottom: 20px;
+}
+
+.album-artwork img {
+	border-radius: 12px;
+	box-shadow:
+		0 20px 40px rgba(0, 0, 0, 0.4),
+		0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+	transition: transform 0.3s ease;
+}
+
+.album-artwork img:hover {
+	transform: scale(1.02);
+}
+
+/* Album Details within info section */
+.album-details {
+	width: 100%;
+}
+
+/* Streaming Links Enhancement */
+.streaming-links {
+	padding: 12px !important;
+}
+
+.streaming-links a {
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.streaming-links a:hover {
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Content Section */
 .album-content-section {
 	overflow-y: auto;
 	max-height: 70vh;
 	padding-right: 12px;
-	
+
 	/* Custom scrollbar for content section */
 	scrollbar-width: thin;
 	scrollbar-color: rgba(59, 130, 246, 0.4) rgba(31, 41, 55, 0.3);
@@ -81,71 +135,238 @@
 
 /* SweetAlert2 title override for larger size */
 .swal2-title {
-	font-size: 3rem !important;
-	font-weight: bold !important;
+	font-size: 2.5rem !important;
+	font-weight: 700 !important;
+	text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+	background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
 }
 
 /* Responsive Content Systems */
 .desktop-tabs-system {
 	display: block;
+	background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.6) 100%);
+	backdrop-filter: blur(10px);
+	border-radius: 16px;
+	padding: 24px;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	box-shadow:
+		0 4px 20px rgba(0, 0, 0, 0.15),
+		inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .mobile-accordion-system {
 	display: none;
 }
 
-/* Accordion Styles */
+/* Tab Navigation - Enhanced */
+.tab-navigation {
+	background: rgba(0, 0, 0, 0.2) !important;
+	border-radius: 12px !important;
+	padding: 8px !important;
+	margin-bottom: 24px !important;
+	border: 1px solid rgba(255, 255, 255, 0.05) !important;
+	border-bottom: none !important;
+}
+
+.tab-button {
+	border-radius: 8px !important;
+	padding: 12px 20px !important;
+	font-weight: 600 !important;
+	font-size: 0.9rem !important;
+	letter-spacing: 0.3px;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	border: none !important;
+	border-bottom: none !important;
+}
+
+.tab-button:hover:not(.active) {
+	background: rgba(59, 130, 246, 0.15) !important;
+	color: #93c5fd !important;
+}
+
+.tab-button.active {
+	background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(139, 92, 246, 0.2) 100%) !important;
+	color: #ffffff !important;
+	border-bottom: none !important;
+	box-shadow:
+		0 2px 10px rgba(59, 130, 246, 0.2),
+		inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Tab Content Panel */
+.tab-content {
+	background: rgba(0, 0, 0, 0.15);
+	border-radius: 12px;
+	padding: 20px;
+	border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tab-panel {
+	padding: 8px;
+}
+
+.tab-panel h3 {
+	color: #ffffff;
+	font-weight: 600;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Album Description Card */
+.album-description {
+	background: rgba(30, 41, 59, 0.4);
+	backdrop-filter: blur(8px);
+	border-radius: 12px;
+	padding: 20px !important;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Track List Enhancement */
+#track-list-container > div,
+.mobile-track-list-container > div {
+	background: linear-gradient(135deg, rgba(55, 65, 81, 0.4) 0%, rgba(55, 65, 81, 0.3) 100%) !important;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	transition: all 0.3s ease;
+}
+
+#track-list-container > div:hover,
+.mobile-track-list-container > div:hover {
+	background: linear-gradient(135deg, rgba(55, 65, 81, 0.6) 0%, rgba(55, 65, 81, 0.5) 100%) !important;
+	border-color: rgba(59, 130, 246, 0.3);
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Accordion Styles - Enhanced */
 .accordion-header {
-	transition: background-color 0.3s ease !important;
+	background: linear-gradient(135deg, rgba(55, 65, 81, 0.4) 0%, rgba(55, 65, 81, 0.3) 100%) !important;
+	border: 1px solid rgba(255, 255, 255, 0.06) !important;
+	transition: all 0.3s ease !important;
 }
 
 .accordion-header:hover {
-	background: rgba(55, 65, 81, 0.5) !important;
+	background: linear-gradient(135deg, rgba(55, 65, 81, 0.6) 0%, rgba(55, 65, 81, 0.5) 100%) !important;
+	border-color: rgba(59, 130, 246, 0.3) !important;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .accordion-content {
 	transition: max-height 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 	overflow: hidden;
+	background: linear-gradient(135deg, rgba(30, 41, 59, 0.3) 0%, rgba(15, 23, 42, 0.4) 100%);
+	border-radius: 0 0 12px 12px;
+	margin-top: -8px;
+	border: 1px solid rgba(255, 255, 255, 0.04);
+	border-top: none;
 }
 
 .accordion-content.collapsed {
 	max-height: 0;
+	border: none;
 }
 
 .accordion-content-inner {
-	padding: 0 16px 16px !important;
+	padding: 16px !important;
 }
 
 .accordion-arrow {
 	transition: transform 0.3s ease !important;
-	color: #9ca3af !important;
+	color: #94a3b8 !important;
 	flex-shrink: 0 !important;
+}
+
+/* Credits Section Enhancement */
+.album-content-section [style*="border-left: 3px solid #3b82f6"] {
+	background: linear-gradient(135deg, rgba(55, 65, 81, 0.4) 0%, rgba(55, 65, 81, 0.3) 100%) !important;
+	border: 1px solid rgba(255, 255, 255, 0.06) !important;
+	border-left: 3px solid #3b82f6 !important;
+}
+
+/* Video Cards Enhancement */
+.album-content-section [style*="background: rgba(55, 65, 81, 0.3)"][style*="border-radius: 12px"] {
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Section Headings */
+.album-content-section h3 {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.album-content-section h3::before {
+	content: '';
+	width: 4px;
+	height: 24px;
+	background: linear-gradient(180deg, #3b82f6 0%, #8b5cf6 100%);
+	border-radius: 2px;
 }
 
 @media (max-width: 768px) {
 	.album-modal-container {
 		grid-template-columns: 1fr;
 		gap: 24px;
+		padding: 20px;
 	}
-	
+
 	.album-info-section {
 		position: relative;
+		padding: 20px;
 	}
-	
+
 	.album-content-section {
 		max-height: none;
 	}
-	
+
 	.swal2-title {
-		font-size: 2rem !important;
+		font-size: 1.75rem !important;
 	}
-	
+
 	/* Switch to accordion system on mobile */
 	.desktop-tabs-system {
 		display: none !important;
 	}
-	
+
 	.mobile-accordion-system {
 		display: block !important;
+		background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.6) 100%);
+		backdrop-filter: blur(10px);
+		border-radius: 16px;
+		padding: 16px;
+		border: 1px solid rgba(255, 255, 255, 0.06);
+	}
+
+	.tab-navigation {
+		padding: 6px !important;
+	}
+
+	.tab-button {
+		padding: 10px 14px !important;
+		font-size: 0.85rem !important;
+	}
+}
+
+@media (max-width: 480px) {
+	.album-modal-popup {
+		border-radius: 16px !important;
+	}
+
+	.album-modal-container {
+		padding: 16px;
+	}
+
+	.album-info-section {
+		padding: 16px;
+		border-radius: 12px;
+	}
+
+	.mobile-accordion-system {
+		padding: 12px;
+		border-radius: 12px;
 	}
 }

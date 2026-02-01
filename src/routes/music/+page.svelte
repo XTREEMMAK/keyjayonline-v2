@@ -6,6 +6,7 @@
 	import { getLegacyWorksByYear } from '$lib/data/legacyWorks.js';
 	import AlbumCard from '$lib/components/music/AlbumCard.svelte';
 	import AlbumModalSwal from '$lib/components/music/AlbumModalSwal.svelte';
+	import LatestProjectModalSwal from '$lib/components/music/LatestProjectModalSwal.svelte';
 	import AudioPlayer from '$lib/components/music/AudioPlayer.svelte';
 	import LegacyWorkCard from '$lib/components/music/LegacyWorkCard.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
@@ -43,7 +44,9 @@
 	let visibleElements = $state(new Set());
 	let latestProjectsRef = $state();
 	let latestProjectsParallaxY = $state(0);
-	
+	let selectedProject = $state(null);
+	let projectModal = $state(null);
+
 	// Get hero image from database or use optimized fallback
 	const heroImage = $derived.by(() => {
 		return data.musicPageHeader || '/img/J_Header_2560.webp';
@@ -51,41 +54,10 @@
 
 	// Title letters for animation
 	const titleLetters = 'MUSIC'.split('');
-	
-	// Mock data for latest projects
-	const latestProjects = [
-		{
-			id: 1,
-			title: '"Ephemeral Echoes" - New Album',
-			description: 'My latest album exploring the intersection of organic and digital soundscapes. A deep dive into experimental production techniques and collaborative artistry.<br><br>Features 12 original tracks spanning electronic, ambient, and experimental genres with guest appearances from emerging Miami artists.',
-			backgroundImageUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200',
-			mediaUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-			mediaType: 'image',
-			tags: ['Electronic', 'Ambient', 'Experimental'],
-			link: '/music#albums'
-		},
-		{
-			id: 2,
-			title: 'Miami Music Festival 2024 - Live Performance',
-			description: 'An electrifying live performance showcasing new material and fan favorites at Miami Music Festival 2024.<br><br>This 90-minute set featured special guest appearances and improvised segments that created an unforgettable musical experience for over 5,000 attendees.',
-			backgroundImageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200',
-			mediaUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800',
-			mediaType: 'image',
-			tags: ['Live Performance', 'Festival', 'Improvisation'],
-			link: '/productions'
-		},
-		{
-			id: 3,
-			title: 'Nexus Sessions - Collaborative EP',
-			description: 'A groundbreaking collaborative project with emerging artists from the Miami music scene.<br><br>Each of the 6 tracks represents a different fusion of styles and creative perspectives, blending jazz fusion, hip hop, and R&B elements into a cohesive artistic statement.',
-			backgroundImageUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1200',
-			mediaUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800',
-			mediaType: 'image',
-			tags: ['Jazz Fusion', 'Hip Hop', 'R&B'],
-			link: '/music#albums'
-		}
-	];
-	
+
+	// Latest projects from server data
+	const latestProjects = $derived(data.latestProjects || []);
+
 	const currentProject = $derived(latestProjects[currentProjectIndex]);
 	
 	// Get unique release types from albums for dynamic filters
@@ -456,6 +428,16 @@
 		}, 600);
 	}
 
+	// Handle project click - open modal with video and details
+	async function handleProjectClick(project) {
+		if (!project) return;
+		selectedProject = project;
+		await new Promise(resolve => setTimeout(resolve, 10));
+		if (projectModal) {
+			await projectModal.showModal();
+		}
+	}
+
 	// Intersection Observer function
 	function observeElement(node, key) {
 		if (!browser) return;
@@ -529,7 +511,7 @@
 					</div>
 				</div>
 			</section>
-		{:else}
+		{:else if latestProjects.length > 0}
 			<!-- Default Featured Work Style Layout -->
 			<section
 				bind:this={latestProjectsRef}
@@ -539,17 +521,19 @@
 				<!-- Parallax Background with fade transition -->
 				<div class="absolute inset-0 overflow-hidden">
 					{#key currentProjectIndex}
-						<div
-							class="absolute w-full h-[120%] transition-opacity duration-1000 latest-projects-parallax-bg"
-							style="top: -{latestProjectsParallaxY * 0.5}px; background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}');"
-							transition:fade={{ duration: 800 }}>
-						</div>
+						{#if currentProject}
+							<div
+								class="absolute w-full h-[120%] transition-opacity duration-1000 latest-projects-parallax-bg"
+								style="top: -{latestProjectsParallaxY * 0.5}px; background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl || currentProject.coverArt}');"
+								transition:fade={{ duration: 800 }}>
+							</div>
+						{/if}
 					{/key}
 				</div>
-				
+
 				<div class="relative z-10 min-h-screen flex flex-col">
 					<!-- Section Heading -->
-					<div 
+					<div
 						use:observeElement={'latest-projects-heading'}
 						class="flex-shrink-0 text-center pt-32 sm:pt-24 lg:pt-32 xl:pt-[188px] pb-8 px-4 sm:px-8 transition-all duration-1000 transform latest-projects-header {
 							visibleElements.has('latest-projects-heading') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -557,49 +541,73 @@
 					>
 						<h2 class="font-light text-white uppercase tracking-widest text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style="line-height: 1;">Latest Projects</h2>
 					</div>
-					
+
 					<!-- Content Container -->
 					<div class="flex-1 flex items-center justify-center px-4 sm:px-8 pb-20 min-h-0 latest-projects-container">
 						<div class="container mx-auto max-w-4xl">
 							<!-- Single Centered Column - Project Media -->
-							<div 
+							<div
 								use:observeElement={'latest-projects-content'}
 								class="flex justify-center items-center w-full transition-all duration-1200 transform {
 									visibleElements.has('latest-projects-content') ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
 								}"
 								style="transition-delay: 200ms;"
 							>
-								<div class="w-full max-w-3xl aspect-video rounded-2xl overflow-hidden relative cursor-pointer group">
-									{#key currentProjectIndex}
-										<div class="w-full h-full absolute inset-0" 
-											 in:fly={{ y: 50, duration: 600, delay: 200 }}
-											 out:fly={{ y: -50, duration: 300 }}>
-											<img 
-												src={currentProject.mediaUrl}
-												alt={currentProject.title}
-												class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl shadow-2xl">
-											
-											<!-- Content Overlay -->
-											<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
-											
-											<!-- Project Title Overlay -->
-											<div class="absolute bottom-6 left-6 right-6">
-												<h3 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight text-center">
-													{currentProject.title}
-												</h3>
-											</div>
-											
-											<!-- Play button overlay -->
-											<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-												<div class="bg-black/40 backdrop-blur-sm rounded-full p-6 group-hover:bg-black/60 group-hover:scale-110 transition-all duration-300">
-													<svg width="40" height="40" viewBox="0 0 24 24" fill="white">
-														<path d="M8 5v14l11-7z"/>
-													</svg>
+								{#if currentProject}
+									<div
+										class="w-full max-w-3xl aspect-video rounded-2xl overflow-hidden relative cursor-pointer group"
+										onclick={() => handleProjectClick(currentProject)}
+										onkeydown={(e) => e.key === 'Enter' && handleProjectClick(currentProject)}
+										role="button"
+										tabindex="0"
+									>
+										{#key currentProjectIndex}
+											<div class="w-full h-full absolute inset-0"
+												 in:fly={{ y: 50, duration: 600, delay: 200 }}
+												 out:fly={{ y: -50, duration: 300 }}>
+												<img
+													src={currentProject.thumbnailUrl || currentProject.coverArt}
+													alt={currentProject.title}
+													class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl shadow-2xl">
+
+												<!-- Content Overlay -->
+												<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+
+												<!-- Release Type Badge -->
+												{#if currentProject.releaseType}
+													<div class="absolute top-4 left-4">
+														<span class="px-3 py-1 bg-blue-600/80 text-white text-sm font-medium rounded-full capitalize">
+															{currentProject.releaseType}
+														</span>
+													</div>
+												{/if}
+
+												<!-- Project Title Overlay -->
+												<div class="absolute bottom-6 left-6 right-6">
+													<h3 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight text-center">
+														{currentProject.title}
+													</h3>
+													{#if currentProject.artist}
+														<p class="text-gray-300 text-center mt-2">{currentProject.artist}</p>
+													{/if}
+												</div>
+
+												<!-- Play/View button overlay -->
+												<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+													<div class="bg-black/40 backdrop-blur-sm rounded-full p-6 group-hover:bg-black/60 group-hover:scale-110 transition-all duration-300">
+														{#if currentProject.hasVideo}
+															<svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+																<path d="M8 5v14l11-7z"/>
+															</svg>
+														{:else}
+															<Icon icon="mdi:information-outline" width="40" height="40" class="text-white" />
+														{/if}
+													</div>
 												</div>
 											</div>
-										</div>
-									{/key}
-								</div>
+										{/key}
+									</div>
+								{/if}
 							</div>
 						</div>
 					</div>
@@ -1017,9 +1025,16 @@
 </div>
 
 {#if selectedAlbum}
-	<AlbumModalSwal 
+	<AlbumModalSwal
 		album={selectedAlbum}
 		bind:this={albumModal}
+	/>
+{/if}
+
+{#if selectedProject}
+	<LatestProjectModalSwal
+		project={selectedProject}
+		bind:this={projectModal}
 	/>
 {/if}
 

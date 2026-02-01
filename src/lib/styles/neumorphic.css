@@ -1,42 +1,10 @@
 /* Neumorphic Design System for KeyJay Online v2 */
 
 /* =============================================================================
-   Global Overflow Fix
+   Global Box Sizing
    ============================================================================= */
-html, body {
-  overflow-x: hidden;
-  width: 100%;
-}
-
-/* =============================================================================
-   Modal Scroll Lock (scrollbar compensation without position:fixed)
-   ============================================================================= */
-body.modal-open {
-  overflow: hidden !important;
-  /* Scrollbar compensation to prevent layout shift */
-  padding-right: var(--scrollbar-width, 0px) !important;
-}
-
-/* Compensate fixed elements for scrollbar width */
-body.modal-open .neu-navbar {
-  padding-right: calc(16px + var(--scrollbar-width, 0px));
-}
-
-body.modal-open .fixed-play-button {
-  right: var(--scrollbar-width, 0px);
-}
-
-/* Ensure SweetAlert2 modals allow internal scrolling */
-body.modal-open .swal2-container {
-  touch-action: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-body.modal-open .swal2-html-container,
-body.modal-open .album-modal-content {
-  touch-action: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 /* =============================================================================

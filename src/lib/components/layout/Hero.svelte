@@ -141,8 +141,8 @@
 
 	.hero-content {
 		text-align: center;
-		width: 100vw;
-		max-width: 100vw;
+		width: 100%;
+		max-width: 100%;
 		margin-top: 20rem;
 	}
 

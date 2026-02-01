@@ -4,6 +4,8 @@
 	import { togglePlayer, showPlayer, loadPlaylist, loadRandomTrack } from '$lib/stores/musicPlayer.js';
 	import AlbumCard from '$lib/components/music/AlbumCard.svelte';
 	import AlbumModalSwal from '$lib/components/music/AlbumModalSwal.svelte';
+	import NewReleaseModalSwal from '$lib/components/music/NewReleaseModalSwal.svelte';
+	import LatestProjectModalSwal from '$lib/components/music/LatestProjectModalSwal.svelte';
 	import AudioPlayer from '$lib/components/music/AudioPlayer.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
 	import LegacyWorkCard from '$lib/components/music/LegacyWorkCard.svelte';
@@ -29,9 +31,13 @@
 	let view = $state('albums');
 	let albums = $state(data.albums || []);
 	let musicNetworks = $state(data.musicNetworks || []);
-	let featuredWorks = $state(data.featuredWorks || []);
+	let newReleases = $state(data.newReleases || []);
 	let loading = $state(false);
 	let error = $state(data.error || null);
+	let selectedRelease = $state(null);
+	let releaseModal = $state(null);
+	let selectedProject = $state(null);
+	let projectModal = $state(null);
 
 	// Latest Projects data and configuration
 	let customDesignOverride = $state(data.customDesignOverride || false);
@@ -55,56 +61,39 @@
 		return Math.max(-100, Math.min(100, (progress - 0.5) * 200));
 	});
 
-	// Use Featured Works from Directus kjov2_general.featured for Latest Projects
+	// Use Latest Projects from Directus kjov2_music_releases (fetched via getLatestProjects)
 	const latestProjects = $derived(() => {
-		// Use featuredWorks from Directus if available
-		if (featuredWorks && featuredWorks.length > 0) {
-			return [...featuredWorks]
-				.sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-				.map(work => ({
-					id: work.id,
-					title: work.title,
-					description: work.description || 'Featured Project',
-					backgroundImageUrl: work.backgroundImageUrl || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200',
-					mediaUrl: work.leftContent?.src || work.backgroundImageUrl || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-					mediaType: work.leftContent?.type || 'image',
-					videoId: work.leftContent?.videoId || null,
-					tags: ['Featured'],
-					link: work.link || '#',
-					// No album reference for featured works - they link externally
-					album: null
-				}));
-		}
-
-		// Fallback to albums if no featured works
-		if (albums && albums.length > 0) {
-			const featured = albums.filter(a => a.featured);
-			const recent = albums.filter(a => !a.featured).slice(0, 3 - featured.length);
-			const projectAlbums = [...featured, ...recent].slice(0, 3);
-
-			return projectAlbums.map(album => ({
-				id: album.id,
-				title: album.title,
-				description: album.description || `${album.release_type || 'Release'} by ${album.artist || 'Key Jay'}`,
-				backgroundImageUrl: album.cover_art || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200',
-				mediaUrl: album.cover_art || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-				mediaType: 'image',
-				tags: [album.release_type, album.genre].filter(Boolean),
-				album // Keep reference for modal opening
+		// Use latestProjects from API (3 most recent releases)
+		const apiProjects = data.latestProjects || [];
+		if (apiProjects.length > 0) {
+			return apiProjects.map(project => ({
+				id: project.id,
+				title: project.title,
+				artist: project.artist,
+				description: project.description,
+				richContent: project.richContent,
+				backgroundImageUrl: project.backgroundImageUrl || project.coverArt || '/img/hero-music-concert.webp',
+				mediaUrl: project.thumbnailUrl || project.coverArt || '/img/hero-music-concert.webp',
+				coverArt: project.coverArt,
+				mediaType: project.hasVideo ? 'video' : 'image',
+				hasVideo: project.hasVideo,
+				featuredVideo: project.featuredVideo,
+				videos: project.videos || [],
+				releaseType: project.releaseType,
+				releaseDate: project.releaseDate,
+				externalLinks: project.externalLinks || []
 			}));
 		}
 
-		// Final fallback - placeholder
+		// Fallback placeholder if no projects
 		return [
 			{
-				id: 1,
+				id: 'placeholder',
 				title: 'New Music Coming Soon',
 				description: 'Stay tuned for the latest releases.',
-				backgroundImageUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200',
-				mediaUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-				mediaType: 'image',
-				tags: ['Music', 'Coming Soon'],
-				album: null
+				backgroundImageUrl: '/img/hero-music-concert.webp',
+				mediaUrl: '/img/hero-music-concert.webp',
+				mediaType: 'image'
 			}
 		];
 	});
@@ -210,14 +199,16 @@
 		}
 	}
 
-	// Handle clicks on Latest Projects - either open album modal or navigate to link
-	function handleProjectClick(project) {
-		if (project.album) {
-			// It's an album - open the modal
-			openAlbumModal(project.album);
-		} else if (project.link && project.link !== '#') {
-			// It's a featured work with an external link - navigate
-			window.open(project.link, '_blank', 'noopener,noreferrer');
+	// Handle clicks on Latest Projects - open the latest project modal
+	async function handleProjectClick(project) {
+		// Ignore placeholder clicks
+		if (project.id === 'placeholder') return;
+
+		// Open the project modal with the selected project
+		selectedProject = project;
+		await new Promise(resolve => setTimeout(resolve, 10));
+		if (projectModal) {
+			await projectModal.showModal();
 		}
 	}
 
@@ -310,6 +301,35 @@
 		setTimeout(() => { isTransitioning = false; }, 600);
 	}
 
+	// Touch/Swipe handling for carousel
+	let touchStartX = 0;
+	let touchEndX = 0;
+	const swipeThreshold = 50; // Minimum distance for swipe
+
+	function handleTouchStart(e) {
+		touchStartX = e.touches[0].clientX;
+		touchEndX = touchStartX;
+	}
+
+	function handleTouchMove(e) {
+		touchEndX = e.touches[0].clientX;
+	}
+
+	function handleTouchEnd() {
+		const swipeDistance = touchStartX - touchEndX;
+		if (Math.abs(swipeDistance) > swipeThreshold) {
+			if (swipeDistance > 0) {
+				// Swiped left - go to next
+				nextProject();
+			} else {
+				// Swiped right - go to previous
+				prevProject();
+			}
+		}
+		touchStartX = 0;
+		touchEndX = 0;
+	}
+
 	function observeElement(node, key) {
 		if (!browser) return;
 		return createIntersectionObserver(node, (isVisible) => {
@@ -354,14 +374,10 @@
 			<!-- Background with parallax effect -->
 			{#key currentProjectIndex}
 				<div
-					class="absolute bg-cover bg-center"
+					class="absolute inset-0 bg-cover bg-center"
 					style="
-						top: -120px;
-						left: 0;
-						right: 0;
-						bottom: -120px;
 						background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}');
-						transform: translateY({parallaxY()}px) scale(1.15);
+						transform: translateY({parallaxY()}px);
 						transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-image 0.3s ease;
 						will-change: transform;
 					"
@@ -380,18 +396,21 @@
 					<h2 class="font-light text-white uppercase tracking-widest text-4xl md:text-5xl lg:text-6xl">Latest Projects</h2>
 				</div>
 
-				<!-- Project Media -->
+				<!-- Project Media with Arrow Navigation -->
 				<div
 					use:observeElement={'latest-projects-content'}
-					class="flex justify-center items-center w-full transition-all duration-1200 transform {
+					class="flex justify-center items-center w-full transition-all duration-1200 transform relative {
 						visibleElements.has('latest-projects-content') ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
 					}"
 					style="transition-delay: 200ms;"
 				>
 					<div
-						class="w-full max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl aspect-video rounded-2xl overflow-hidden relative cursor-pointer group neu-card transition-all duration-500"
+						class="carousel-wrapper w-full max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl aspect-video rounded-2xl overflow-hidden relative cursor-pointer group neu-card transition-all duration-500"
 						onclick={() => handleProjectClick(currentProject)}
 						onkeydown={(e) => e.key === 'Enter' && handleProjectClick(currentProject)}
+						ontouchstart={handleTouchStart}
+						ontouchmove={handleTouchMove}
+						ontouchend={handleTouchEnd}
 						role="button"
 						tabindex="0"
 					>
@@ -424,6 +443,42 @@
 								</div>
 							</div>
 						{/key}
+
+						<!-- Left Navigation Zone -->
+						{#if latestProjects().length > 1}
+							<div
+								class="carousel-nav-zone carousel-nav-left"
+								onclick={(e) => { e.stopPropagation(); prevProject(); }}
+								onkeydown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); prevProject(); } }}
+								role="button"
+								tabindex="0"
+								aria-label="Previous project"
+							>
+								<div class="carousel-nav-arrow">
+									<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+										<path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+									</svg>
+								</div>
+							</div>
+						{/if}
+
+						<!-- Right Navigation Zone -->
+						{#if latestProjects().length > 1}
+							<div
+								class="carousel-nav-zone carousel-nav-right"
+								onclick={(e) => { e.stopPropagation(); nextProject(); }}
+								onkeydown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); nextProject(); } }}
+								role="button"
+								tabindex="0"
+								aria-label="Next project"
+							>
+								<div class="carousel-nav-arrow">
+									<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+										<path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+									</svg>
+								</div>
+							</div>
+						{/if}
 					</div>
 				</div>
 
@@ -731,6 +786,20 @@
 	/>
 {/if}
 
+{#if selectedRelease}
+	<NewReleaseModalSwal
+		release={selectedRelease}
+		bind:this={releaseModal}
+	/>
+{/if}
+
+{#if selectedProject}
+	<LatestProjectModalSwal
+		project={selectedProject}
+		bind:this={projectModal}
+	/>
+{/if}
+
 <style>
 	.music-section {
 		/* Container styles */
@@ -754,6 +823,81 @@
 		box-shadow:
 			6px 6px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
 			-6px -6px 12px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	/* Carousel Wrapper */
+	.carousel-wrapper {
+		position: relative;
+	}
+
+	/* Full-height Navigation Zones */
+	.carousel-nav-zone {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 80px;
+		z-index: 20;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.carousel-nav-zone:focus {
+		outline: none;
+	}
+
+	.carousel-nav-left {
+		left: 0;
+		border-radius: 16px 0 0 16px;
+		background: linear-gradient(to right, rgba(0, 0, 0, 0.5), transparent);
+	}
+
+	.carousel-nav-right {
+		right: 0;
+		border-radius: 0 16px 16px 0;
+		background: linear-gradient(to left, rgba(0, 0, 0, 0.5), transparent);
+	}
+
+	/* Show navigation zones on hover */
+	.carousel-wrapper:hover .carousel-nav-zone {
+		opacity: 1;
+	}
+
+	/* Arrow icon inside the zone */
+	.carousel-nav-arrow {
+		color: white;
+		transition: all 0.3s ease;
+		opacity: 0.8;
+	}
+
+	.carousel-nav-zone:hover .carousel-nav-arrow {
+		opacity: 1;
+		transform: scale(1.2);
+		color: #60a5fa;
+	}
+
+	/* Responsive zone sizing */
+	@media (max-width: 1024px) {
+		.carousel-nav-zone {
+			width: 60px;
+		}
+		.carousel-nav-arrow svg {
+			width: 28px;
+			height: 28px;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.carousel-nav-zone {
+			width: 50px;
+		}
+		.carousel-nav-arrow svg {
+			width: 24px;
+			height: 24px;
+		}
 	}
 
 	/* Legacy Notice Styles */

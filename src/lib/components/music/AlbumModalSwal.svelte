@@ -50,30 +50,21 @@ import {
 			title: album.title,
 			html: modalContent,
 			width: '95%',
-			maxWidth: '1200px',
+			maxWidth: '110em',
 			showCloseButton: true,
 			showConfirmButton: false,
+			scrollbarPadding: false,
 			customClass: {
 				popup: 'album-modal-popup',
 				htmlContainer: 'album-modal-content'
 			},
-			background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
+			background: album.cover_art
+				? `linear-gradient(145deg, rgba(26, 26, 46, 0.97) 0%, rgba(22, 33, 62, 0.97) 50%, rgba(15, 23, 42, 0.97) 100%), url('${album.cover_art}')`
+				: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
 			color: '#ffffff',
 			didOpen: () => {
 				// Initialize any components that need mounting
 				initializeModalComponents();
-
-				// Calculate scrollbar width for compensation
-				const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-				document.documentElement.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
-
-				// Lock body scroll
-				document.body.classList.add('modal-open');
-			},
-			willClose: () => {
-				// Restore body scroll
-				document.body.classList.remove('modal-open');
-				document.documentElement.style.removeProperty('--scrollbar-width');
 			}
 		});
 		
@@ -268,11 +259,14 @@ import {
 								${albumCredits.length > 0 ? `
 								<div style="display: grid; gap: 16px;">
 									${albumCredits.map(/** @type {Credit} */ (credit) => `
-										<div style="display: flex; justify-content: space-between; padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px); background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease; cursor: pointer; gap: 8px; flex-wrap: wrap;" 
+										<div style="display: flex; align-items: center; gap: 12px; padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px); background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease; cursor: pointer;"
 											 onmouseover="this.style.background='rgba(55, 65, 81, 0.5)'; this.style.boxShadow='0 0 20px rgba(59, 130, 246, 0.4)'; this.style.borderLeftColor='#60a5fa'"
 											 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'">
-											<span style="color: #9ca3af; font-weight: 500; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.role}</span>
-											<span style="color: #ffffff; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.name}</span>
+											${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : ''}
+											<div style="flex: 1; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+												<span style="color: #9ca3af; font-weight: 500; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.role}</span>
+												<span style="color: #ffffff; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.name}</span>
+											</div>
 										</div>
 									`).join('')}
 								</div>
@@ -286,7 +280,7 @@ import {
 							${album.youtube_videos?.length ? `
 								<div style="margin-bottom: 32px;">
 									<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 20px; text-align: left;">Videos</h3>
-									<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; max-width: 800px;">
+									<div style="display: grid; grid-template-columns: ${album.youtube_videos.length === 1 ? '1fr' : album.youtube_videos.length === 2 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'}; gap: 16px; max-width: ${album.youtube_videos.length === 1 ? '600px' : '100%'};">
 										${album.youtube_videos.map(/** @type {Video} */ (video) => `
 											<div style="background: rgba(55, 65, 81, 0.3); border-radius: 12px; overflow: hidden; transition: transform 0.3s;" 
 												 onmouseover="this.style.transform='scale(1.02)'" 
@@ -374,11 +368,14 @@ import {
 										${albumCredits.length > 0 ? `
 										<div style="display: grid; gap: 16px;">
 											${albumCredits.map(/** @type {Credit} */ (credit) => `
-												<div style="display: flex; justify-content: space-between; padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px); background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease; cursor: pointer; gap: 8px; flex-wrap: wrap;" 
+												<div style="display: flex; align-items: center; gap: 12px; padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px); background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease; cursor: pointer;"
 													 onmouseover="this.style.background='rgba(55, 65, 81, 0.5)'; this.style.boxShadow='0 0 20px rgba(59, 130, 246, 0.4)'; this.style.borderLeftColor='#60a5fa'"
 													 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'">
-													<span style="color: #9ca3af; font-weight: 500; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.role}</span>
-													<span style="color: #ffffff; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.name}</span>
+													${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : ''}
+													<div style="flex: 1; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+														<span style="color: #9ca3af; font-weight: 500; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.role}</span>
+														<span style="color: #ffffff; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.name}</span>
+													</div>
 												</div>
 											`).join('')}
 										</div>

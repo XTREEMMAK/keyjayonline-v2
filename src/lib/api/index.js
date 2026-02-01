@@ -11,8 +11,10 @@ export { buildAssetUrl } from './core/assets.js';
 export { getDirectusInstance } from './core/client.js';
 
 // Content APIs
-export { 
-  getMusicReleases
+export {
+  getMusicReleases,
+  getMusicNewReleases,
+  getLatestProjects
   // getMusicSamples removed to avoid circular import issues - import directly from content/music.js if needed
 } from './content/music.js';
 

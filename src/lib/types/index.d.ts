@@ -75,6 +75,7 @@ export interface Credit {
 	bio?: string;
 	website_url?: string;
 	display_order?: number;
+	profile_image?: string;
 }
 
 // SweetAlert2 type declarations

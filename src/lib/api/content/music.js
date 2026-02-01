@@ -8,6 +8,7 @@
 
 import { getDirectusInstance, readItems } from '../core/client.js';
 import { buildAssetUrl } from '../core/assets.js';
+import { extractYouTubeId } from '../../utils/youtube.js';
 
 /**
  * Fetches all published music releases from Directus
@@ -41,7 +42,7 @@ export async function getMusicReleases() {
               'additional_info',
               'display_order',
               {
-                person_id: ['name', 'bio', 'website_url']
+                person_id: ['name', 'bio', 'website_url', 'profile_image.id', 'profile_image.filename_disk']
               }
             ]
           },
@@ -149,7 +150,14 @@ export async function getMusicReleases() {
         additional_info: credit.additional_info,
         bio: credit.person_id?.bio,
         website_url: credit.person_id?.website_url,
-        display_order: credit.display_order
+        display_order: credit.display_order,
+        profile_image: credit.person_id?.profile_image
+          ? buildAssetUrl(
+              typeof credit.person_id.profile_image === 'object'
+                ? credit.person_id.profile_image.filename_disk
+                : credit.person_id.profile_image
+            )
+          : null
       })),
       
       // Legacy fields for compatibility
@@ -176,4 +184,212 @@ export async function getMusicSamples(releaseId) {
   // Completely disabled - return empty array to stop Vite errors
   console.log('getMusicSamples disabled - releaseId:', releaseId);
   return [];
+}
+
+/**
+ * Fetches the latest music releases for the Latest Projects section
+ * Uses kjov2_music_releases table with background_image and thumbnail_url support
+ * @param {number} limit - Maximum number of releases to fetch (default: 3)
+ * @returns {Promise<Array>} Array of transformed latest project objects
+ */
+export async function getLatestProjects(limit = 3) {
+  try {
+    const directus = getDirectusInstance();
+
+    // Note: background_image and thumbnail_url fields may not exist yet in Directus
+    // The query will still work - missing fields just won't be returned
+    const releases = await directus.request(
+      readItems('kjov2_music_releases', {
+        filter: {
+          _or: [
+            { published_status: { _eq: 'live' } },
+            { published_status: { _null: true } }
+          ]
+        },
+        sort: ['-release_date', '-created_at'],
+        limit: limit,
+        // Use wildcard for base fields, then specify relationships
+        fields: [
+          '*',
+          'cover_art.id',
+          'cover_art.filename_disk',
+          'videos.*',
+          'external_links.*',
+          'external_links.icon_value.icon_reference_id'
+        ]
+      })
+    );
+
+    console.log('getLatestProjects - fetched', releases?.length || 0, 'releases');
+
+    return releases.map(release => {
+      // Build cover art URL - handle both object and string formats
+      let coverArtUrl = null;
+      if (release.cover_art) {
+        if (typeof release.cover_art === 'object') {
+          coverArtUrl = buildAssetUrl(release.cover_art.filename_disk || release.cover_art.id);
+        } else {
+          coverArtUrl = buildAssetUrl(release.cover_art);
+        }
+      }
+
+      // Build background image URL (fallback to cover art)
+      // This field may not exist yet in Directus
+      let backgroundImageUrl = coverArtUrl;
+      if (release.background_image) {
+        if (typeof release.background_image === 'object') {
+          backgroundImageUrl = buildAssetUrl(release.background_image.filename_disk || release.background_image.id);
+        } else {
+          backgroundImageUrl = buildAssetUrl(release.background_image);
+        }
+      }
+
+      // Build thumbnail URL (fallback to cover art)
+      // This field may not exist yet in Directus
+      let thumbnailUrl = coverArtUrl;
+      if (release.thumbnail_url) {
+        if (typeof release.thumbnail_url === 'object') {
+          thumbnailUrl = buildAssetUrl(release.thumbnail_url.filename_disk || release.thumbnail_url.id);
+        } else {
+          thumbnailUrl = buildAssetUrl(release.thumbnail_url);
+        }
+      }
+
+      // Find featured video (first with featured=true, or first by display_order)
+      const sortedVideos = [...(release.videos || [])].sort((a, b) => {
+        // Featured videos first
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        // Then by display_order
+        return (a.display_order || 0) - (b.display_order || 0);
+      });
+
+      const featuredVideo = sortedVideos[0] || null;
+      const videoId = featuredVideo?.video_url ? extractYouTubeId(featuredVideo.video_url) : null;
+
+      return {
+        id: release.id,
+        title: release.title,
+        artist: release.main_artist,
+        releaseType: release.release_type,
+        releaseDate: release.release_date,
+        description: release.description,
+        richContent: release.rich_content,
+        coverArt: coverArtUrl,
+        backgroundImageUrl: backgroundImageUrl,
+        thumbnailUrl: thumbnailUrl,
+        hasVideo: !!featuredVideo,
+        featuredVideo: featuredVideo ? {
+          id: featuredVideo.id,
+          title: featuredVideo.title,
+          description: featuredVideo.description,
+          videoType: featuredVideo.video_type,
+          videoUrl: featuredVideo.video_url,
+          videoId: videoId,
+          thumbnailUrl: featuredVideo.thumbnail_url ? buildAssetUrl(featuredVideo.thumbnail_url) : null
+        } : null,
+        videos: sortedVideos.map(video => ({
+          id: video.id,
+          title: video.title,
+          description: video.description,
+          videoType: video.video_type,
+          videoUrl: video.video_url,
+          videoId: extractYouTubeId(video.video_url),
+          thumbnailUrl: video.thumbnail_url ? buildAssetUrl(video.thumbnail_url) : null,
+          featured: video.featured
+        })),
+        externalLinks: (release.external_links || []).map(link => {
+          let iconValue = null;
+          if (link.icon_value && typeof link.icon_value === 'object') {
+            iconValue = link.icon_value.icon_reference_id;
+          } else {
+            iconValue = link.icon_value;
+          }
+          return {
+            id: link.id,
+            url: link.url,
+            label: link.label,
+            iconType: link.icon_type,
+            iconValue: iconValue,
+            displayOrder: link.display_order,
+            isPrimary: link.is_primary
+          };
+        })
+      };
+    });
+
+  } catch (error) {
+    console.error('Error fetching latest projects:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetches new music releases for the Latest Projects carousel from Directus
+ * Uses kjov2_music_new_releases collection with M2M streaming platforms
+ * @returns {Promise<Array>} Array of transformed new release objects
+ */
+export async function getMusicNewReleases() {
+  try {
+    const directus = getDirectusInstance();
+
+    const releases = await directus.request(
+      readItems('kjov2_music_new_releases', {
+        filter: {
+          status: { _eq: 'published' }
+        },
+        sort: ['sort', '-release_date'],
+        fields: [
+          'id',
+          'title',
+          'description',
+          'rich_content',
+          'release_date',
+          'release_type',
+          'video_type',
+          'video_url',
+          'project_link',
+          'project_link_label',
+          'external_links',
+          { background_image: ['id', 'filename_disk'] },
+          { thumbnail_image: ['id', 'filename_disk'] },
+          // M2M streaming platforms relationship
+          { streaming_platforms: [
+            { kjov2_music_networks_id: ['id', 'name', 'url', 'icon'] }
+          ]}
+        ]
+      })
+    );
+
+    return releases.map(release => ({
+      id: release.id,
+      title: release.title,
+      description: release.description,
+      richContent: release.rich_content,
+      releaseDate: release.release_date,
+      releaseType: release.release_type,
+      videoType: release.video_type,
+      videoUrl: release.video_url,
+      projectLink: release.project_link,
+      projectLinkLabel: release.project_link_label,
+      externalLinks: release.external_links || [],
+      // Build asset URLs for images
+      backgroundImageUrl: release.background_image
+        ? buildAssetUrl(release.background_image.filename_disk || release.background_image.id)
+        : null,
+      thumbnailUrl: release.thumbnail_image
+        ? buildAssetUrl(release.thumbnail_image.filename_disk || release.thumbnail_image.id)
+        : null,
+      // Extract YouTube video ID if applicable
+      videoId: release.video_url ? extractYouTubeId(release.video_url) : null,
+      // Flatten M2M relationship to array of streaming platforms
+      streamingPlatforms: (release.streaming_platforms || [])
+        .map(sp => sp.kjov2_music_networks_id)
+        .filter(Boolean)
+    }));
+
+  } catch (error) {
+    console.error('Error fetching new releases:', error);
+    return [];
+  }
 }

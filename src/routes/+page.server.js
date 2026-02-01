@@ -3,7 +3,13 @@
  * Loads all section data for the single-page application
  */
 
-import { getMusicReleases, getMusicNetworks, getMusicPageHeader } from '$lib/api/index.js';
+import { getMusicReleases, getMusicNetworks, getMusicPageHeader, getMusicNewReleases, getLatestProjects } from '$lib/api/index.js';
+
+// Helper to wrap promises with error handling - returns null on error
+const safePromise = (promise, name = 'Promise') => promise.catch(err => {
+	console.error(`${name} failed:`, err);
+	return null;
+});
 
 export async function load({ parent }) {
 	try {
@@ -11,19 +17,12 @@ export async function load({ parent }) {
 		const parentData = await parent();
 
 		// Load music data in parallel with other potential data
-		const [albums, musicNetworks, musicPageHeader] = await Promise.all([
-			getMusicReleases().catch(err => {
-				console.error('Failed to load music releases:', err);
-				return [];
-			}),
-			getMusicNetworks().catch(err => {
-				console.error('Failed to load music networks:', err);
-				return [];
-			}),
-			getMusicPageHeader().catch(err => {
-				console.error('Failed to load music page header:', err);
-				return null;
-			})
+		const [albums, musicNetworks, musicPageHeader, newReleases, latestProjects] = await Promise.all([
+			safePromise(getMusicReleases(), 'getMusicReleases'),
+			safePromise(getMusicNetworks(), 'getMusicNetworks'),
+			safePromise(getMusicPageHeader(), 'getMusicPageHeader'),
+			safePromise(getMusicNewReleases(), 'getMusicNewReleases'),
+			safePromise(getLatestProjects(3), 'getLatestProjects')
 		]);
 
 		return {
@@ -35,6 +34,8 @@ export async function load({ parent }) {
 				albums: albums || [],
 				musicNetworks: musicNetworks || [],
 				musicPageHeader,
+				newReleases: newReleases || [],
+				latestProjects: latestProjects || [],
 				// Featured works from Directus kjov2_general.featured for Latest Projects section
 				featuredWorks: parentData.siteSettings?.featuredWorks || []
 			},
@@ -55,6 +56,8 @@ export async function load({ parent }) {
 				albums: [],
 				musicNetworks: [],
 				musicPageHeader: null,
+				newReleases: [],
+				latestProjects: [],
 				featuredWorks: [],
 				error: error.message
 			},
