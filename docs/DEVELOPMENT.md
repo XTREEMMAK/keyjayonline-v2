@@ -4,8 +4,9 @@ This guide covers setting up the development environment for KeyJay Online v2, i
 
 ## Prerequisites
 
-- Node.js 18+ 
-- npm 8+
+- Node.js 20+
+- npm 9+
+- Docker (optional, for containerized development)
 - Access to the development database and Directus instance
 
 ## Quick Start
@@ -18,49 +19,126 @@ This guide covers setting up the development environment for KeyJay Online v2, i
    ```
 
 2. **Environment Configuration**
+
+   This project uses Vite's auto-loading for environment files. Create your local files from the example:
+
    ```bash
+   # Create base environment file
    cp .env.example .env
-   # Edit .env with your configuration
+
+   # Create development overrides
+   cp .env.example .env.development
+
+   # Create secrets file (gitignored)
+   cp .env.example .env.local
    ```
+
+   Edit each file according to the structure below.
 
 3. **Start Development Server**
    ```bash
    npm run dev
    ```
-   
+
    The site will be available at `http://localhost:5173`
 
-## Environment Variables
+## Environment File Structure
 
-### Required Variables
+Vite auto-loads environment files in this order (later files override earlier ones):
+
+```
+npm run dev:
+  .env                    → Base/Docker defaults
+  .env.development        → Local dev overrides
+  .env.local              → Your secrets (gitignored)
+```
+
+### .env (Base/Docker Defaults)
+
+Contains Docker container defaults and production-like settings:
 
 ```bash
-# Database Configuration
-DATABASE_HOST=192.168.10.156
-DATABASE_PORT=5432
-DATABASE_NAME=kjo_v2_db
-DATABASE_USER=your_username
-DATABASE_PASSWORD=your_password
+# Database (Docker container names)
+DB_HOST=kjo2_postgres
+DB_PORT=5432
+DB_DATABASE=kjo_v2_db
+DB_USER=kjo_user
 
-# Directus Configuration
-DIRECTUS_URL=http://192.168.10.24:8057
-DIRECTUS_TOKEN=your_directus_token
+# Directus (Docker internal URL)
+DIRECTUS_URL=http://kjo2_directus:8055
 
-# CDN Configuration
+# Production settings
+NODE_ENV=production
+USE_CDN_FOR_ASSETS=true
 CDN_BASE_URL=https://kjo.nyc3.cdn.digitaloceanspaces.com
 S3_BUCKET_URL=https://kjo.nyc3.digitaloceanspaces.com
 ```
 
-### Development-Specific Variables
+### .env.development (Local Dev Overrides)
+
+Overrides for local development with external services:
 
 ```bash
-# Application Configuration
-NODE_ENV=development
-USE_CDN_FOR_ASSETS=true
+# Database (external server)
+DB_HOST=192.168.10.156
+DB_USER=xtreemmak
 
-# Audio CORS Bypass (Development Only)
+# Directus (external instance)
+DIRECTUS_URL=http://192.168.10.24:8057
+
+# Development settings
+APP_PORT=3001
+NODE_ENV=development
+USE_CDN_FOR_ASSETS=false
 BYPASS_CORS_IN_DEV=true
 ```
+
+### .env.local (Secrets - Gitignored)
+
+Your actual secrets - **never commit this file**:
+
+```bash
+# Database
+DB_PASSWORD=your_database_password
+
+# Directus
+DIRECTUS_TOKEN=your_directus_api_token
+DIRECTUS_KEY=your_directus_key
+DIRECTUS_SECRET=your_directus_secret
+DIRECTUS_ADMIN_PASSWORD=your_admin_password
+
+# S3/Spaces (for Docker)
+S3_ACCESS_KEY=your_spaces_access_key
+S3_SECRET_KEY=your_spaces_secret_key
+```
+
+## Docker Development
+
+For self-contained development with Docker:
+
+```bash
+# Start all containers (PostgreSQL, Directus, App)
+npm run docker:up
+
+# View logs
+npm run docker:logs
+
+# Stop containers
+npm run docker:down
+
+# Rebuild images
+npm run docker:build
+```
+
+**Note**: Docker scripts automatically source `.env.local` for secrets.
+
+### Docker Services
+
+| Service | Container | Port |
+|---------|-----------|------|
+| SvelteKit | kjo2_app | 3000 |
+| PostgreSQL | kjo2_postgres | Internal |
+| Directus | kjo2_directus | 8055 |
 
 ## Audio CORS Bypass System
 
@@ -79,7 +157,7 @@ The development environment includes a CORS bypass system to resolve audio playb
 
 #### Enable/Disable CORS Bypass
 ```bash
-# Enable (default)
+# Enable (default in development)
 BYPASS_CORS_IN_DEV=true
 
 # Disable (for testing production-like behavior)
@@ -117,6 +195,12 @@ npm run preview
 
 # Sync SvelteKit types
 npm run prepare
+
+# Docker commands
+npm run docker:up      # Start containers
+npm run docker:down    # Stop containers
+npm run docker:logs    # View logs
+npm run docker:build   # Rebuild images
 ```
 
 ### Browser DevTools
@@ -146,10 +230,8 @@ Proxying audio request: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/sample
    ```
 
 2. **Verify Environment Variables**
-   ```bash
-   # Check if bypass is enabled
-   echo $BYPASS_CORS_IN_DEV
-   ```
+   - Check that `.env.local` contains `BYPASS_CORS_IN_DEV=true`
+   - Restart dev server after changing env files
 
 3. **Check Network Requests**
    - Audio requests should go to `/api/proxy-audio/` in development
@@ -169,8 +251,8 @@ Proxying audio request: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/sample
    ```
 
 2. **Verify Credentials**
-   - Ensure database user has proper permissions
-   - Check that database exists
+   - Ensure `DB_PASSWORD` is set in `.env.local`
+   - Check that database user has proper permissions
 
 3. **Network Access**
    - Verify database server is accessible from development machine
@@ -185,7 +267,7 @@ Proxying audio request: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/sample
    ```
 
 2. **Verify Token**
-   - Check that `DIRECTUS_TOKEN` is valid
+   - Check that `DIRECTUS_TOKEN` is valid in `.env.local`
    - Ensure token has necessary permissions
 
 ## Development Workflow
@@ -194,11 +276,12 @@ Proxying audio request: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/sample
 
 1. **Test Both Environments**
    ```bash
-   # Test with CORS bypass
-   BYPASS_CORS_IN_DEV=true npm run dev
-   
+   # Test with CORS bypass (default)
+   npm run dev
+
    # Test production-like behavior
-   BYPASS_CORS_IN_DEV=false npm run dev
+   # Edit .env.development: BYPASS_CORS_IN_DEV=false
+   npm run dev
    ```
 
 2. **Check Console Logs**
@@ -216,7 +299,7 @@ Proxying audio request: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/sample
 1. **Use Shared Utilities**
    ```javascript
    import { createWaveSurfer, getAudioUrl } from '$lib/utils/wavesurfer.js';
-   
+
    // Automatically includes CORS bypass
    const wavesurfer = await createWaveSurfer({
      container: element,
@@ -263,10 +346,10 @@ The CORS bypass system is **automatically disabled** in production:
 
 ### Safe Practices
 
-1. **Never commit sensitive tokens**
-2. **Use different database credentials for development**  
+1. **Never commit `.env.local`** - it's gitignored for a reason
+2. **Use different database credentials for development**
 3. **Regularly rotate Directus tokens**
-4. **Keep environment files out of version control**
+4. **All `.env*` files except `.env.example` are gitignored**
 
 ## Getting Help
 
@@ -285,7 +368,7 @@ The CORS bypass system is **automatically disabled** in production:
 ### Debugging Steps
 
 1. Check browser console for errors
-2. Verify environment variables are loaded
+2. Verify environment variables are loaded (check `.env.local`)
 3. Test database/Directus connectivity
 4. Compare with working production environment
 5. Review recent changes for potential issues

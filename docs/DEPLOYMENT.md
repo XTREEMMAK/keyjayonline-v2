@@ -2,15 +2,39 @@
 
 This guide covers deploying KeyJay Online v2 to production, including security considerations and the audio CORS configuration.
 
+## Deployment Overview
+
+Production deployments are handled automatically via GitHub Actions when pushing to the `main` branch.
+
+```
+Push to main branch
+        │
+        ▼
+┌─────────────────────────┐
+│ GitHub Actions          │
+│ 1. Build & Test         │
+│ 2. Build Docker Image   │
+│ 3. Push to ghcr.io      │
+│ 4. SSH to server        │
+│ 5. Generate .env        │ ← From GitHub Secrets
+│ 6. docker compose up    │
+│ 7. Health check         │
+│ 8. Backup volumes       │
+└─────────────────────────┘
+        │
+        ▼
+Production Server: /var/www/keyjayonline.com
+```
+
 ## Pre-Deployment Checklist
 
 ### Security Review
 
-- [ ] **Environment Variables**: Remove or secure sensitive development variables
-- [ ] **CORS Bypass**: Verify it's disabled in production builds
-- [ ] **API Endpoints**: Ensure development-only endpoints return 404 in production
-- [ ] **Database Credentials**: Use production database with restricted permissions
-- [ ] **Directus Token**: Use production token with minimal required permissions
+- [ ] **GitHub Secrets**: All required secrets configured in repository settings
+- [ ] **CORS Bypass**: Verify it's disabled in production builds (automatic)
+- [ ] **API Endpoints**: Development-only endpoints return 404 in production (automatic)
+- [ ] **Database Credentials**: Production secrets in GitHub Secrets
+- [ ] **Directus Token**: Production token with minimal required permissions
 
 ### Code Review
 
@@ -26,65 +50,68 @@ This guide covers deploying KeyJay Online v2 to production, including security c
 - [ ] **Cross-Origin**: Confirm no CORS errors in production environment
 - [ ] **Mobile Testing**: Verify audio works on mobile devices
 
-## Environment Configuration
+## GitHub Secrets Configuration
 
-### Production Environment Variables
+The following secrets must be configured in your GitHub repository settings:
 
-```bash
-# Application Configuration
-NODE_ENV=production
-USE_CDN_FOR_ASSETS=true
+### Build-Time Secrets (Baked into Docker Image)
 
-# IMPORTANT: Ensure CORS bypass is disabled or remove entirely
-# BYPASS_CORS_IN_DEV=false  # or omit this variable
+| Secret | Description | Example |
+|--------|-------------|---------|
+| `DIRECTUS_URL` | Internal Directus URL | `http://kjo2_directus:8055` |
+| `DIRECTUS_TOKEN` | API token for SvelteKit | `your_token` |
+| `CDN_BASE_URL` | CDN URL for assets | `https://kjo.nyc3.cdn.digitaloceanspaces.com` |
+| `S3_BUCKET_URL` | Direct S3 URL | `https://kjo.nyc3.digitaloceanspaces.com` |
+| `PUBLIC_SITE_URL` | Production site URL | `https://keyjayonline.com` |
+| `PUBLIC_CONTACT_EMAIL` | Contact email | `contact@keyjayonline.com` |
 
-# Database Configuration (Production credentials)
-DATABASE_HOST=prod-database-host
-DATABASE_PORT=5432
-DATABASE_NAME=kjo_v2_production
-DATABASE_USER=kjo_prod_user
-DATABASE_PASSWORD=secure_production_password
+### Runtime Secrets (Written to .env on Server)
 
-# Directus Configuration (Production instance)
-DIRECTUS_URL=https://cms.keyjayonline.com
-DIRECTUS_TOKEN=production_token_with_minimal_permissions
+| Secret | Description |
+|--------|-------------|
+| `DB_DATABASE` | PostgreSQL database name |
+| `DB_USER` | PostgreSQL username |
+| `DB_PASSWORD` | PostgreSQL password |
+| `DIRECTUS_KEY` | Directus encryption key |
+| `DIRECTUS_SECRET` | Directus secret key |
+| `DIRECTUS_ADMIN_EMAIL` | Directus admin email |
+| `DIRECTUS_ADMIN_PASSWORD` | Directus admin password |
+| `DIRECTUS_PUBLIC_URL` | Public Directus URL |
+| `S3_ACCESS_KEY` | DigitalOcean Spaces access key |
+| `S3_SECRET_KEY` | DigitalOcean Spaces secret key |
+| `CONTACT_FORM_WEBHOOK_URL` | n8n webhook URL |
+| `CONTACT_FORM_WEBHOOK_SECRET` | Webhook auth secret |
 
-# CDN Configuration (Production CDN with CORS headers)
-CDN_BASE_URL=https://kjo.nyc3.cdn.digitaloceanspaces.com
-S3_BUCKET_URL=https://kjo.nyc3.digitaloceanspaces.com
+### SSH/Deployment Secrets
 
-# Site Configuration
-PUBLIC_SITE_URL=https://keyjayonline.com
-PUBLIC_CONTACT_EMAIL=contact@keyjayonline.com
-PUBLIC_HELLO_EMAIL=hello@keyjayonline.com
+| Secret | Description |
+|--------|-------------|
+| `SSH_HOST` | Production server IP/hostname |
+| `SSH_USERNAME` | SSH username |
+| `SSH_KEY` | SSH private key |
+| `SSH_PORT` | SSH port (usually 22) |
 
-# Webhook Configuration (if using contact forms)
-CONTACT_FORM_WEBHOOK_URL=https://n8n.kjnet.us/webhook/kjo-contact-form
-CONTACT_FORM_WEBHOOK_SECRET=secure_webhook_secret
-```
+## Automatic .env Generation
 
-### CDN CORS Configuration
+GitHub Actions automatically generates the `.env` file on the production server during deployment. This ensures:
+
+1. **Single Source of Truth**: All secrets managed in GitHub Secrets
+2. **No Manual .env Management**: File is regenerated on each deploy
+3. **Consistent Configuration**: Same variables every deployment
+
+The generated `.env` includes:
+- Database configuration (container names, credentials)
+- Directus configuration (keys, secrets, admin credentials)
+- S3/Spaces storage configuration
+- CDN and asset URLs
+- Application settings
+- Webhook configuration
+
+## CDN CORS Configuration
 
 **Critical**: The production CDN must be configured with proper CORS headers for audio playback to work.
 
-#### DigitalOcean Spaces CORS Configuration
-
-```json
-[
-  {
-    "AllowedHeaders": ["*"],
-    "AllowedMethods": ["GET", "HEAD"],
-    "AllowedOrigins": [
-      "https://keyjayonline.com",
-      "https://www.keyjayonline.com"
-    ],
-    "ExposeHeaders": ["ETag"],
-    "MaxAgeSeconds": 3600
-  }
-]
-```
-
-#### AWS S3 CORS Configuration (if applicable)
+### DigitalOcean Spaces CORS Configuration
 
 ```json
 [
@@ -103,7 +130,18 @@ CONTACT_FORM_WEBHOOK_SECRET=secure_webhook_secret
 
 ## Build Process
 
-### Production Build
+### Automatic (Recommended)
+
+Push to the `main` branch triggers the full CI/CD pipeline:
+
+```bash
+git checkout main
+git merge feature/your-feature
+git push origin main
+# GitHub Actions handles everything
+```
+
+### Manual Build
 
 ```bash
 # Install dependencies
@@ -112,7 +150,7 @@ npm ci --only=production
 # Build the application
 npm run build
 
-# Test the production build locally (optional)
+# Test the production build locally
 npm run preview
 ```
 
@@ -121,7 +159,6 @@ npm run preview
 1. **Check Build Output**
    ```bash
    # Build should complete without errors
-   # Check that all audio components are included
    ls build/ -la
    ```
 
@@ -132,77 +169,57 @@ npm run preview
    grep -r "/api/proxy-audio" build/ || echo "Good: No proxy endpoints in production"
    ```
 
-3. **Test Production Build**
-   ```bash
-   # Start preview server
-   npm run preview
-   
-   # Test audio playback
-   # Should NOT use /api/proxy-audio/ URLs
-   # Should load directly from CDN
-   ```
+## Server Architecture
 
-## Deployment Platforms
+### Docker Containers
 
-### Node.js Server (Recommended)
+| Container | Image | Port | Purpose |
+|-----------|-------|------|---------|
+| kjo2_postgres | postgres:15-alpine | Internal | PostgreSQL database |
+| kjo2_directus | directus/directus:11 | 8055 | Headless CMS |
+| kjo2_app | ghcr.io/*/kjo2_app | 3000 | SvelteKit application |
 
-1. **Server Requirements**
-   - Node.js 18+
-   - npm 8+
-   - Process manager (PM2, systemd, etc.)
+### Docker Volumes
 
-2. **Deployment Steps**
-   ```bash
-   # On server
-   git pull origin main
-   npm ci --only=production
-   npm run build
-   
-   # Restart application
-   pm2 restart keyjayweb
-   # or
-   systemctl restart keyjayweb
-   ```
+| Volume | Contents | Backed Up |
+|--------|----------|-----------|
+| kjo2_postgres_data | PostgreSQL database | Yes |
+| kjo2_directus_uploads | Uploaded files | Yes |
+| kjo2_directus_extensions | Custom extensions | Yes |
 
-3. **Environment Setup**
-   ```bash
-   # Create .env file with production variables
-   # Ensure proper file permissions (600)
-   chmod 600 .env
-   ```
+Backups are created after each successful deployment and kept for 5 deployments.
 
-### Vercel Deployment
+### Health Checks
 
-1. **vercel.json Configuration**
-   ```json
-   {
-     "framework": "sveltekit",
-     "buildCommand": "npm run build",
-     "devCommand": "npm run dev",
-     "installCommand": "npm install"
-   }
-   ```
+| Service | Endpoint | Interval |
+|---------|----------|----------|
+| PostgreSQL | `pg_isready` | 10s |
+| Directus | `/server/health` | 15s |
+| SvelteKit | `http://localhost:3000/` | 30s |
 
-2. **Environment Variables**
-   - Configure all production environment variables in Vercel dashboard
-   - Ensure `NODE_ENV=production`
-   - Omit `BYPASS_CORS_IN_DEV` entirely
+## Manual Deployment
 
-### Netlify Deployment
+If you need to deploy manually:
 
-1. **netlify.toml Configuration**
-   ```toml
-   [build]
-     command = "npm run build"
-     publish = "build"
-   
-   [build.environment]
-     NODE_ENV = "production"
-   ```
+```bash
+# On production server
+cd /var/www/keyjayonline.com
+git pull origin main
 
-2. **Environment Variables**
-   - Set all production variables in Netlify dashboard
-   - Audio components will automatically use CDN URLs
+# Generate .env manually (or let GitHub Actions do it)
+# Ensure all required variables are set
+
+# Pull latest image
+docker pull ghcr.io/YOUR_ORG/keyjayonline.com_v2/kjo2_app:latest
+
+# Restart containers
+docker compose down --remove-orphans
+docker compose up -d
+
+# Verify health
+docker compose ps
+docker compose logs --tail=20 kjo2_app
+```
 
 ## Security Considerations
 
@@ -210,32 +227,9 @@ npm run preview
 
 The development CORS bypass system is automatically secure in production:
 
-1. **Compile-Time Removal**
-   ```javascript
-   // This code is automatically removed in production builds
-   if (dev) {  // dev = false in production
-     // Development-only proxy code
-   }
-   ```
-
-2. **Runtime Checks**
-   ```javascript
-   // Server endpoints return 404 in production
-   if (!dev) {
-     throw error(404, 'Proxy endpoint not available in production');
-   }
-   ```
-
-3. **Environment Variable Checks**
-   ```javascript
-   // Returns false if BYPASS_CORS_IN_DEV is not set or false
-   export function shouldBypassCors() {
-     if (!isDevelopment()) {
-       return false;  // Always false in production
-     }
-     // ... rest of logic
-   }
-   ```
+1. **Compile-Time Removal**: Production builds don't include proxy code
+2. **Runtime Checks**: Server endpoints return 404 in production
+3. **Environment Detection**: Multiple checks prevent production activation
 
 ### Additional Security Measures
 
@@ -263,7 +257,7 @@ The development CORS bypass system is automatically secure in production:
    // In browser console on production site
    // Check that URLs are NOT transformed
    console.log('Audio URLs should be CDN URLs, not proxy URLs');
-   
+
    // Look for direct CDN requests in Network tab
    // Should see: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/...
    // Should NOT see: /api/proxy-audio/...
@@ -275,35 +269,30 @@ The development CORS bypass system is automatically secure in production:
    - Safari (especially on iOS)
    - Mobile browsers
 
-3. **Network Conditions**
-   - Test with slow connections
-   - Test with intermittent connectivity
-   - Verify graceful degradation
-
 ### Common Issues and Solutions
 
 #### Audio Not Playing in Production
 
 1. **CORS Configuration Missing**
    ```
-   Error: "Access to fetch at 'https://kjo.nyc3.cdn.digitaloceanspaces.com/...' 
+   Error: "Access to fetch at 'https://kjo.nyc3.cdn.digitaloceanspaces.com/...'
           from origin 'https://keyjayonline.com' has been blocked by CORS policy"
-   
+
    Solution: Configure CDN CORS headers (see above)
    ```
 
 2. **Incorrect CDN URLs**
    ```
    Error: "Failed to load resource: the server responded with a status of 404"
-   
+
    Solution: Verify audio files exist in CDN and URLs are correct
    ```
 
 3. **Mixed Content Issues**
    ```
-   Error: "Mixed Content: The page at 'https://keyjayonline.com' was loaded over HTTPS, 
+   Error: "Mixed Content: The page at 'https://keyjayonline.com' was loaded over HTTPS,
           but requested an insecure resource 'http://...' This request has been blocked"
-   
+
    Solution: Ensure all CDN URLs use HTTPS
    ```
 
@@ -326,10 +315,10 @@ The development CORS bypass system is automatically secure in production:
 1. **Server Logs**
    ```bash
    # Monitor application logs
-   tail -f /var/log/keyjayweb/app.log
-   
+   docker compose logs -f kjo2_app
+
    # Look for audio-related errors
-   grep -i "wavesurfer\|audio\|cors" /var/log/keyjayweb/app.log
+   docker compose logs kjo2_app | grep -i "wavesurfer\|audio\|cors"
    ```
 
 2. **CDN Access Logs**
@@ -339,16 +328,18 @@ The development CORS bypass system is automatically secure in production:
 
 ### Backup and Recovery
 
-1. **Database Backups**
-   ```bash
-   # Regular database backups
-   pg_dump -h prod-database-host kjo_v2_production > backup_$(date +%Y%m%d).sql
-   ```
+Backups are automatically created after each successful deployment:
 
-2. **CDN Content Backup**
-   - Backup audio files separately
-   - Test restore procedures
-   - Document recovery processes
+```bash
+# Backup location
+/var/backups/keyjayonline/YYYYMMDD_HHMMSS/
+
+# Contents
+├── postgres_data.tar.gz
+└── directus_uploads.tar.gz
+
+# Retention: Last 5 deployments
+```
 
 ## Rollback Procedures
 
@@ -357,14 +348,16 @@ The development CORS bypass system is automatically secure in production:
 1. **Revert to Previous Version**
    ```bash
    git checkout previous-stable-tag
-   npm run build
-   pm2 restart keyjayweb
+   git push origin main
+   # GitHub Actions will redeploy
    ```
 
-2. **Environment Variable Rollback**
+2. **Manual Image Rollback**
    ```bash
-   # Restore previous .env file
-   cp .env.backup .env
+   # On production server
+   docker pull ghcr.io/YOUR_ORG/keyjayonline.com_v2/kjo2_app:previous-sha
+   docker compose down
+   docker compose up -d
    ```
 
 ### Rollback Verification
@@ -385,10 +378,10 @@ The development CORS bypass system is automatically secure in production:
 1. **Application Logs**
    ```bash
    # Check for WaveSurfer initialization errors
-   grep "WaveSurfer" logs/
-   
+   docker compose logs kjo2_app | grep "WaveSurfer"
+
    # Look for CORS-related issues
-   grep -i "cors\|cross-origin" logs/
+   docker compose logs kjo2_app | grep -i "cors\|cross-origin"
    ```
 
 2. **Browser Developer Tools**

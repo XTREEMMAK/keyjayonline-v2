@@ -5,6 +5,7 @@
 	import { hideMainNavbar } from '$lib/stores/stickyNav.js';
 	import { browser } from '$app/environment';
 	import { mouseGlow } from '$lib/actions/mouseGlow.js';
+	import { prefetchSection } from '$lib/stores/sectionData.js';
 
 	let isVisible = $state(true);
 	let isScrolled = $state(false);
@@ -128,6 +129,7 @@
 					class="neu-navbar-item uppercase tracking-wider"
 					class:active={$activeSection === section}
 					class:glow-active={$activeSection === section}
+					onmouseenter={() => prefetchSection(section)}
 					onclick={() => handleNavClick(section)}
 					aria-current={$activeSection === section ? 'page' : undefined}
 					style="--item-glow-color: {sectionMeta[section].color};"
@@ -147,6 +149,7 @@
 					<button
 						class="mobile-menu-item"
 						class:active={$activeSection === section}
+						onmouseenter={() => prefetchSection(section)}
 						onclick={() => handleNavClick(section)}
 						aria-current={$activeSection === section ? 'page' : undefined}
 						style="--item-glow-color: {sectionMeta[section].color};"

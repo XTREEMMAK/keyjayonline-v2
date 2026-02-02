@@ -107,11 +107,11 @@
 			{#key $activeSection}
 				<div
 					class="section-transition-container"
-					in:fly={{ x: 50, duration: 300, delay: 100, easing: cubicOut }}
+					in:fly={{ x: 50, duration: 300, easing: cubicOut }}
 					out:sectionOut
 				>
 					{#if $activeSection === 'music'}
-						<MusicSection data={data.musicData} />
+						<MusicSection />
 					{:else if $activeSection === 'voice'}
 						<VoiceSection />
 					{:else if $activeSection === 'productions'}
@@ -119,7 +119,7 @@
 					{:else if $activeSection === 'about'}
 						<AboutSection bind:this={aboutSectionRef} />
 					{:else if $activeSection === 'contact'}
-						<ContactSection data={data.contactData} />
+						<ContactSection />
 					{/if}
 				</div>
 			{/key}
@@ -151,7 +151,12 @@
 		pointer-events: none;
 	}
 
-	/* Section transition container - prevent overflow:hidden from breaking sticky */
+	/* Section transition wrapper - grid stacking for smooth crossfade */
+	.neu-content-container > :global(*) {
+		grid-area: 1 / 1;
+	}
+
+	/* Section transition container */
 	.section-transition-container {
 		overflow: visible !important;
 	}

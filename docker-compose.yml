@@ -1,5 +1,18 @@
 # docker-compose.yml for KeyJay Online v2
 # Container prefix: kjo2_
+#
+# Usage:
+#   npm run docker:up     - Start containers (loads secrets from .env.local)
+#   npm run docker:down   - Stop containers
+#   npm run docker:logs   - View logs
+#   npm run docker:build  - Rebuild images
+#
+# Environment Files:
+#   .env        - Base configuration (Docker defaults)
+#   .env.local  - Your secrets (gitignored, required for Docker)
+#
+# Note: The npm scripts automatically source .env.local before running docker compose.
+# If running docker compose directly, ensure secrets are in your shell environment.
 
 services:
   # ==========================================================================
@@ -60,6 +73,16 @@ services:
       # CORS
       CORS_ENABLED: "true"
       CORS_ORIGIN: "true"
+
+      # S3 Storage Configuration (DigitalOcean Spaces)
+      STORAGE_LOCATIONS: "s3"
+      STORAGE_S3_DRIVER: "s3"
+      STORAGE_S3_KEY: ${S3_ACCESS_KEY:?S3 access key required}
+      STORAGE_S3_SECRET: ${S3_SECRET_KEY:?S3 secret key required}
+      STORAGE_S3_BUCKET: ${S3_BUCKET:-kjo}
+      STORAGE_S3_REGION: ${S3_REGION:-nyc3}
+      STORAGE_S3_ENDPOINT: "https://${S3_ENDPOINT:-nyc3.digitaloceanspaces.com}"
+      STORAGE_S3_ACL: "public-read"
     volumes:
       - kjo2_directus_uploads:/directus/uploads
       - kjo2_directus_extensions:/directus/extensions

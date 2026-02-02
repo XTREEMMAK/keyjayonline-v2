@@ -244,11 +244,13 @@ const cdnUrl = `https://kjo.nyc3.cdn.digitaloceanspaces.com/${safePath}`;
 
 1. **Environment Variable Management**
    ```bash
-   # Production .env should NOT include:
+   # .env.local should only include BYPASS_CORS_IN_DEV for development
+   # Production uses GitHub Secrets - no manual .env management needed
+
+   # In .env.development (for local dev):
    BYPASS_CORS_IN_DEV=true
-   
-   # Or explicitly disable:
-   BYPASS_CORS_IN_DEV=false
+
+   # Production doesn't need this variable - it's automatically false
    ```
 
 2. **Pre-deployment Verification**
@@ -436,7 +438,7 @@ function selectCDN(environment) {
 ### Common Issues
 
 1. **Audio still not loading in development**
-   - Check `BYPASS_CORS_IN_DEV=true` in .env
+   - Check `BYPASS_CORS_IN_DEV=true` in `.env.development`
    - Verify dev server restarted after config changes
    - Check browser console for proxy request status
 

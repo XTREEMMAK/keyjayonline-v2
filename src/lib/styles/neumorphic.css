@@ -344,6 +344,8 @@
   /* Note: backdrop-filter moved to pseudo-element to not break sticky positioning */
   border-top: 1px solid var(--neu-border);
   position: relative;
+  /* Grid for smooth section crossfade transitions */
+  display: grid;
   /* Ensure overflow doesn't break sticky positioning in children */
   overflow: visible;
 }

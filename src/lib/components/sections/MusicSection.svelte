@@ -16,12 +16,22 @@
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
+	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
 
 	// Title letters for animation
 	const titleLetters = 'Music'.split('');
 
-	// Accept data as props from parent (passed via SPA container)
-	let { data = {} } = $props();
+	// Get section data from store (reactive using Svelte 5 runes)
+	const sectionState = $derived($sectionData.music);
+	const sectionLoaded = $derived(sectionState.status === 'loaded');
+	const sectionLoading = $derived(sectionState.status === 'loading');
+	const sectionError = $derived(sectionState.status === 'error' ? sectionState.error : null);
+
+	// Extract data from section state when loaded
+	const musicData = $derived(sectionState.data || {});
+	const albums = $derived(musicData.albums || []);
+	const musicNetworks = $derived(musicData.musicNetworks || []);
+	const newReleases = $derived(musicData.newReleases || []);
 
 	let container = $state();
 	let mixer = $state(null);
@@ -29,18 +39,13 @@
 	let albumModal = $state(null);
 	let activeFilter = $state('all');
 	let view = $state('albums');
-	let albums = $state(data.albums || []);
-	let musicNetworks = $state(data.musicNetworks || []);
-	let newReleases = $state(data.newReleases || []);
-	let loading = $state(false);
-	let error = $state(data.error || null);
 	let selectedRelease = $state(null);
 	let releaseModal = $state(null);
 	let selectedProject = $state(null);
 	let projectModal = $state(null);
 
 	// Latest Projects data and configuration
-	let customDesignOverride = $state(data.customDesignOverride || false);
+	let customDesignOverride = $state(false);
 	let currentProjectIndex = $state(0);
 	let isTransitioning = $state(false);
 	let visibleElements = $state(new Set());
@@ -64,7 +69,7 @@
 	// Use Latest Projects from Directus kjov2_music_releases (fetched via getLatestProjects)
 	const latestProjects = $derived(() => {
 		// Use latestProjects from API (3 most recent releases)
-		const apiProjects = data.latestProjects || [];
+		const apiProjects = musicData.latestProjects || [];
 		if (apiProjects.length > 0) {
 			return apiProjects.map(project => ({
 				id: project.id,
@@ -153,12 +158,12 @@
 	];
 
 	onMount(async () => {
-		// Initialize with fallback if no data
-		if (albums.length === 0 && !error) {
-			albums = mockAlbums;
+		// Load section data if not already loaded
+		if (sectionState.status === 'idle') {
+			loadSection('music');
 		}
 
-		if (browser && container && view === 'albums') {
+		if (browser && container && view === 'albums' && sectionLoaded) {
 			const { default: mixitup } = await import('mixitup');
 			mixer = mixitup(container, {
 				selectors: {
@@ -603,20 +608,33 @@
 	<section class="container mx-auto px-4 py-12">
 		<div class="content-container" style="transition: opacity 0.3s ease-in-out;">
 			{#if view === 'albums'}
-				{#if loading}
+				{#if sectionLoading}
 					<div class="flex justify-center items-center py-20">
 						<div class="text-center">
 							<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
 							<p class="text-gray-400">Loading music releases...</p>
 						</div>
 					</div>
-				{:else if error}
+				{:else if sectionError}
 					<div class="text-center py-20">
 						<div class="text-red-400 mb-4">
 							<Icon icon="mdi:alert-circle" class="text-6xl mx-auto" />
 						</div>
 						<h3 class="text-xl font-semibold text-white mb-2">Failed to Load Albums</h3>
-						<p class="text-gray-400 mb-4">{error}</p>
+						<p class="text-gray-400 mb-4">{sectionError}</p>
+						<button
+							onclick={() => loadSection('music')}
+							class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+						>
+							Try Again
+						</button>
+					</div>
+				{:else if !sectionLoaded}
+					<div class="flex justify-center items-center py-20">
+						<div class="text-center">
+							<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+							<p class="text-gray-400">Loading...</p>
+						</div>
 					</div>
 				{:else if albums.length === 0}
 					<div class="text-center py-20">

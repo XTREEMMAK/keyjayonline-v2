@@ -7,7 +7,11 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''"
+		"prepare": "svelte-kit sync || echo ''",
+		"docker:up": "set -a && . ./.env.local && set +a && docker compose up -d",
+		"docker:down": "docker compose down",
+		"docker:logs": "docker compose logs -f",
+		"docker:build": "set -a && . ./.env.local && set +a && docker compose build --no-cache"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.2.12",
