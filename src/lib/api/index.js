@@ -61,6 +61,13 @@ export {
 } from './content/voice.js';
 
 export {
+  getProductions,
+  getProductionsCategories,
+  getProductionPages,
+  getProductionById
+} from './content/productions.js';
+
+export {
   getMusicPageHeader,
   getTechPageHeader,
   getGamesPageHeader

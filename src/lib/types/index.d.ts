@@ -68,8 +68,14 @@ export interface ExternalLink {
 	is_primary?: boolean;
 }
 
+export interface CreditRole {
+	title: string;
+	category: string;
+}
+
 export interface Credit {
 	role: string;
+	roles?: CreditRole[];
 	name: string;
 	additional_info?: string;
 	bio?: string;

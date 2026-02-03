@@ -6,6 +6,7 @@
 	import { fade } from 'svelte/transition';
 	import { formatTime } from '$lib/utils/time.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
+	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
 import { 
 	getTrackPlayerConfig, 
 	setupTrackPlayerEvents, 
@@ -43,9 +44,34 @@ import {
 		} catch (error) {
 			console.error('Error fetching music samples:', error);
 		}
-		
+
+		// Generate share URL for this album
+		const shareUrl = generateShareUrl('album', album.id);
+
+		// Set up global share function that can be called from HTML
+		window.handleAlbumShare = async () => {
+			const shareBtn = document.getElementById('album-share-btn');
+			const shareIcon = document.getElementById('album-share-icon');
+
+			if (shareBtn && shareIcon) {
+				const success = await copyShareUrl(shareUrl);
+
+				if (success) {
+					// Update icon to checkmark
+					shareIcon.setAttribute('icon', 'mdi:check');
+					shareBtn.style.color = '#22c55e';
+
+					// Reset after 2 seconds
+					setTimeout(() => {
+						shareIcon.setAttribute('icon', 'mdi:share-variant');
+						shareBtn.style.color = '#9ca3af';
+					}, 2000);
+				}
+			}
+		};
+
 		const modalContent = createModalContent(samples);
-		
+
 		const result = await Swal.fire({
 			title: album.title,
 			html: modalContent,
@@ -65,9 +91,13 @@ import {
 			didOpen: () => {
 				// Initialize any components that need mounting
 				initializeModalComponents();
+			},
+			willClose: () => {
+				// Clean up global function when modal closes
+				delete window.handleAlbumShare;
 			}
 		});
-		
+
 		return result;
 	}
 	
@@ -146,6 +176,98 @@ import {
 		return platformColors[platform] || { bg: 'rgba(59, 130, 246, 0.2)', bgHover: 'rgba(59, 130, 246, 0.3)', color: '#3b82f6' };
 	}
 
+	/**
+	 * Generate grouped credits HTML with collapsible sections
+	 * @param {Credit[]} credits - Array of credit objects
+	 * @param {string} idPrefix - Prefix for unique IDs (desktop/mobile)
+	 * @returns {string} HTML string for grouped credits
+	 */
+	function generateGroupedCreditsHtml(credits, idPrefix = '') {
+		if (!credits || credits.length === 0) {
+			return '<p style="color: #9ca3af; text-align: center; padding: 40px;">No credits available for this album.</p>';
+		}
+
+		// Group credits by category
+		const groupedCredits = {};
+		credits.forEach(credit => {
+			// Get all unique categories from roles
+			const categories = new Set();
+			if (credit.roles && Array.isArray(credit.roles)) {
+				credit.roles.forEach(role => {
+					categories.add(role.category || 'Other');
+				});
+			} else {
+				categories.add('Other');
+			}
+
+			// Add credit to each category it belongs to
+			categories.forEach(category => {
+				if (!groupedCredits[category]) {
+					groupedCredits[category] = [];
+				}
+				// Get roles for this category
+				const rolesInCategory = credit.roles?.filter(r => (r.category || 'Other') === category) || [{ title: credit.role }];
+				groupedCredits[category].push({
+					...credit,
+					displayRoles: rolesInCategory.map(r => r.title).join(', ')
+				});
+			});
+		});
+
+		// Sort categories by priority - keyboards/roles in specific order
+		const priorityOrder = ['Creator', 'Producer', 'Composer', 'Song Writer', 'Vocalists', 'Rapper', 'Mixing', 'Mastering'];
+		const sortedCategories = Object.keys(groupedCredits).sort((a, b) => {
+			const aIndex = priorityOrder.indexOf(a);
+			const bIndex = priorityOrder.indexOf(b);
+
+			// If both are in priority list, sort by that order
+			if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+			// Priority categories come first
+			if (aIndex !== -1) return -1;
+			if (bIndex !== -1) return 1;
+			// Otherwise sort alphabetically
+			return a.localeCompare(b);
+		});
+
+		// Generate HTML for each category group
+		return sortedCategories.map((category, index) => {
+			const categoryCredits = groupedCredits[category];
+			const uniqueId = `${idPrefix}credit-group-${index}`;
+
+			return `
+				<div class="credit-group" style="margin-bottom: 16px;">
+					<button onclick="toggleCreditGroup('${uniqueId}')"
+						style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; color: #ffffff; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.3s ease;"
+						onmouseover="this.style.background='rgba(59, 130, 246, 0.25)'"
+						onmouseout="this.style.background='rgba(59, 130, 246, 0.15)'">
+						<span style="display: flex; align-items: center; gap: 8px;">
+							<iconify-icon icon="mdi:account-group" width="18" height="18" style="color: #3b82f6;"></iconify-icon>
+							${category} <span style="color: #9ca3af; font-weight: 400;">(${categoryCredits.length})</span>
+						</span>
+						<iconify-icon id="${uniqueId}-arrow" icon="mdi:chevron-down" width="20" height="20" style="color: #9ca3af; transition: transform 0.3s ease; transform: rotate(180deg);"></iconify-icon>
+					</button>
+					<div id="${uniqueId}" class="credit-group-content" style="max-height: 2000px; overflow: hidden; transition: max-height 0.4s ease; padding-top: 12px;">
+						<div style="display: grid; gap: 8px;">
+							${categoryCredits.map(credit => `
+								<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease; cursor: pointer;"
+									 onmouseover="this.style.background='rgba(55, 65, 81, 0.5)'; this.style.boxShadow='0 0 20px rgba(59, 130, 246, 0.3)'; this.style.borderLeftColor='#60a5fa'"
+									 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'"
+									 ${credit.website_url ? `onclick="window.open('${credit.website_url}', '_blank')"` : ''}>
+									${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : `<div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><iconify-icon icon="mdi:account" width="24" height="24" style="color: #3b82f6;"></iconify-icon></div>`}
+									<div style="flex: 1; min-width: 0;">
+										<div style="color: #ffffff; font-weight: 500; font-size: 0.9rem; margin-bottom: 2px;">${credit.name}</div>
+										<div style="color: #9ca3af; font-size: 0.8rem;">${credit.displayRoles || credit.role}</div>
+										${credit.website_url ? `<div style="color: #3b82f6; font-size: 0.75rem; margin-top: 2px; display: flex; align-items: center; gap: 4px;"><iconify-icon icon="mdi:open-in-new" width="12" height="12"></iconify-icon>View Profile</div>` : ''}
+									</div>
+								</div>
+							`).join('')}
+						</div>
+					</div>
+				</div>
+			`;
+		}).join('');
+	}
+
 	function createModalContent(samples = []) {
 		// Use real credits from album data, or empty array if none
 		const albumCredits = album.credits || [];
@@ -163,7 +285,12 @@ import {
 							 style="width: 100%; max-width: 350px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);" />
 					</div>
 					<div class="album-details">
-						<h2 class="album-modal-title" style="font-size: clamp(1.25rem, 4vw, 2rem); font-weight: bold; margin-bottom: 8px; color: #ffffff; line-height: 1.2;">${album.title}</h2>
+						<div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;">
+							<h2 class="album-modal-title" style="font-size: clamp(1.25rem, 4vw, 2rem); font-weight: bold; color: #ffffff; line-height: 1.2; margin: 0;">${album.title}</h2>
+							<button id="album-share-btn" onclick="handleAlbumShare()" title="Share album" style="padding: 8px; background: transparent; border: none; color: #9ca3af; cursor: pointer; transition: all 0.3s ease; border-radius: 50%;" onmouseover="this.style.background='rgba(156, 163, 175, 0.1)'; this.style.color='#ffffff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'">
+								<iconify-icon id="album-share-icon" icon="mdi:share-variant" width="24" height="24" style="display: block;"></iconify-icon>
+							</button>
+						</div>
 						${album.artist ? `<p style="font-size: clamp(1rem, 3vw, 1.2rem); color: #d1d5db; margin-bottom: 16px;">${album.artist}</p>` : ''}
 						
 						<div class="streaming-links" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: nowrap; justify-content: center; overflow-x: auto; padding: 4px; min-width: 0; will-change: transform; scrollbar-width: none; -ms-overflow-style: none;">
@@ -256,22 +383,7 @@ import {
 						<div id="content-credits" class="tab-panel" style="opacity: 0; position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto; pointer-events: none; transition: opacity 0.3s ease;">
 							<div style="margin-bottom: 32px;">
 								<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 20px; text-align: left;">Album Credits</h3>
-								${albumCredits.length > 0 ? `
-								<div style="display: grid; gap: 16px;">
-									${albumCredits.map(/** @type {Credit} */ (credit) => `
-										<div style="display: flex; align-items: center; gap: 12px; padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px); background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease; cursor: pointer;"
-											 onmouseover="this.style.background='rgba(55, 65, 81, 0.5)'; this.style.boxShadow='0 0 20px rgba(59, 130, 246, 0.4)'; this.style.borderLeftColor='#60a5fa'"
-											 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'">
-											${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : ''}
-											<div style="flex: 1; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-												<span style="color: #9ca3af; font-weight: 500; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.role}</span>
-												<span style="color: #ffffff; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.name}</span>
-											</div>
-										</div>
-									`).join('')}
-								</div>
-								` : '<p style="color: #9ca3af; text-align: center; padding: 40px;">No credits available for this album.</p>'}
-								
+								${generateGroupedCreditsHtml(albumCredits, 'desktop-')}
 							</div>
 						</div>
 						
@@ -365,21 +477,7 @@ import {
 								<div class="accordion-content-inner" style="padding: 0 16px 16px;">
 									<div style="margin-bottom: 32px;">
 										<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 20px; text-align: left;">Album Credits</h3>
-										${albumCredits.length > 0 ? `
-										<div style="display: grid; gap: 16px;">
-											${albumCredits.map(/** @type {Credit} */ (credit) => `
-												<div style="display: flex; align-items: center; gap: 12px; padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px); background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease; cursor: pointer;"
-													 onmouseover="this.style.background='rgba(55, 65, 81, 0.5)'; this.style.boxShadow='0 0 20px rgba(59, 130, 246, 0.4)'; this.style.borderLeftColor='#60a5fa'"
-													 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'">
-													${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : ''}
-													<div style="flex: 1; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-														<span style="color: #9ca3af; font-weight: 500; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.role}</span>
-														<span style="color: #ffffff; font-size: clamp(0.75rem, 2.5vw, 0.875rem);">${credit.name}</span>
-													</div>
-												</div>
-											`).join('')}
-										</div>
-										` : '<p style="color: #9ca3af; text-align: center; padding: 40px;">No credits available for this album.</p>'}
+										${generateGroupedCreditsHtml(albumCredits, 'mobile-')}
 									</div>
 								</div>
 							</div>
@@ -596,7 +694,27 @@ import {
 			}
 		});
 	};
-	
+
+	/** @param {string} groupId */
+	window.toggleCreditGroup = function(groupId) {
+		const content = document.getElementById(groupId);
+		const arrow = document.getElementById(`${groupId}-arrow`);
+
+		if (!content) return;
+
+		const isCollapsed = content.style.maxHeight === '0px';
+
+		if (isCollapsed) {
+			// Expand
+			content.style.maxHeight = '2000px';
+			if (arrow) arrow.style.transform = 'rotate(180deg)';
+		} else {
+			// Collapse
+			content.style.maxHeight = '0px';
+			if (arrow) arrow.style.transform = 'rotate(0deg)';
+		}
+	};
+
 	/** @param {string} trackId */
 	window.togglePlay = function(trackId) {
 		// Try to get WaveSurfer instances (both desktop and mobile)

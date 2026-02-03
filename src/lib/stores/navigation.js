@@ -3,11 +3,24 @@
  * Manages active section and hash-based navigation
  */
 
-import { writable, get } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 
 // Available sections
 export const sections = ['home', 'music', 'voice', 'productions', 'about', 'contact'];
+
+// Disabled pages configuration (set from server data)
+export const disabledPages = writable({});
+
+// Enabled sections (filters out disabled pages)
+export const enabledSections = derived(disabledPages, ($disabledPages) => {
+	return sections.filter(section => {
+		// Home is never disabled
+		if (section === 'home') return true;
+		// Check if section is disabled
+		return !$disabledPages[section]?.disabled;
+	});
+});
 
 // Current active section
 export const activeSection = writable('home');
@@ -35,12 +48,28 @@ export const sectionMeta = {
 let hideContentTimeout = null;
 
 /**
+ * Check if a section is disabled
+ * @param {string} section - Section ID to check
+ * @returns {boolean} True if section is disabled
+ */
+export function isSectionDisabled(section) {
+	const disabled = get(disabledPages);
+	return disabled[section]?.disabled === true;
+}
+
+/**
  * Navigate to a section
  * @param {string} section - Section ID to navigate to
  */
 export function navigateTo(section) {
 	if (!sections.includes(section)) {
 		console.warn(`Unknown section: ${section}`);
+		return;
+	}
+
+	// Block navigation to disabled sections
+	if (isSectionDisabled(section)) {
+		console.warn(`Section ${section} is disabled`);
 		return;
 	}
 
@@ -85,9 +114,17 @@ export function initFromHash() {
 	const hash = window.location.hash.replace('#', '') || 'home';
 
 	if (sections.includes(hash)) {
-		activeSection.set(hash);
-		// Set initial content visibility based on section
-		isContentVisible.set(hash !== 'home');
+		// Check if the section is disabled
+		if (isSectionDisabled(hash)) {
+			console.warn(`Section ${hash} is disabled, redirecting to home`);
+			activeSection.set('home');
+			isContentVisible.set(false);
+			window.location.hash = '';
+		} else {
+			activeSection.set(hash);
+			// Set initial content visibility based on section
+			isContentVisible.set(hash !== 'home');
+		}
 	} else {
 		// Invalid hash, default to home
 		activeSection.set('home');
@@ -116,6 +153,15 @@ function handleHashChange() {
 	const hash = window.location.hash.replace('#', '') || 'home';
 
 	if (sections.includes(hash)) {
+		// Check if the section is disabled
+		if (isSectionDisabled(hash)) {
+			console.warn(`Section ${hash} is disabled, redirecting to home`);
+			window.location.hash = '';
+			activeSection.set('home');
+			isContentVisible.set(false);
+			return;
+		}
+
 		// Clear any pending hide timeout
 		if (hideContentTimeout) {
 			clearTimeout(hideContentTimeout);

@@ -1,8 +1,9 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import { activeSection, navigateTo, sectionMeta, sections, navbarVisible } from '$lib/stores/navigation.js';
+	import { activeSection, navigateTo, sectionMeta, enabledSections, navbarVisible } from '$lib/stores/navigation.js';
 	import { hideMainNavbar } from '$lib/stores/stickyNav.js';
+	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { browser } from '$app/environment';
 	import { mouseGlow } from '$lib/actions/mouseGlow.js';
 	import { prefetchSection } from '$lib/stores/sectionData.js';
@@ -14,13 +15,14 @@
 	let hasInitiallyLoaded = $state(false);
 
 	// Navigation items (exclude home from visible nav, it's the default)
-	const navItems = sections.filter((s) => s !== 'home');
+	// Uses enabledSections to filter out disabled pages
+	const navItems = $derived($enabledSections.filter((s) => s !== 'home'));
 
 	// Get the glow color for the current active section
 	const glowColor = $derived(sectionMeta[$activeSection]?.color || '#667eea');
 
-	// Combined visibility - hide if scroll hidden OR if section subnav takes over
-	const shouldShow = $derived(isVisible && !$hideMainNavbar);
+	// Combined visibility - hide if scroll hidden OR if section subnav takes over OR if content viewer is open
+	const shouldShow = $derived(isVisible && !$hideMainNavbar && !$contentViewerOpen);
 
 	onMount(() => {
 		if (!browser) return;

@@ -42,9 +42,29 @@
 		}
 	});
 
+	// Fetch milestones from API
+	async function fetchMilestones() {
+		try {
+			const response = await fetch('/api/sections/about');
+			if (!response.ok) {
+				throw new Error('Failed to fetch milestones');
+			}
+			const data = await response.json();
+			if (data.milestones) {
+				milestones = data.milestones;
+			}
+		} catch (error) {
+			console.error('Error fetching milestones:', error);
+			// Keep empty arrays if fetch fails
+		}
+	}
+
 	// Scroll detection for sticky nav portal and bio image sticky
 	onMount(() => {
 		if (!browser) return;
+
+		// Fetch milestones on mount
+		fetchMilestones();
 
 		function handleScroll() {
 			if (!inlineNavRef) return;
@@ -177,179 +197,13 @@
 		`
 	};
 
-	// Professional journey milestones by category
-	const milestones = {
-		music: [
-			{
-				year: '1990s',
-				title: 'Classical Foundation',
-				description: 'Started formal piano training at age 5, nurtured by parents who were musicians themselves.',
-				icon: 'mdi:piano'
-			},
-			{
-				year: 'Late 1990s',
-				title: 'Piano Competitions',
-				description: 'Competed in various piano competitions for school winning superior rankings many years in a row.',
-				icon: 'mdi:trophy'
-			},
-			{
-				year: 'Early 2000s',
-				title: 'Local Productions',
-				description: 'Produced various productions for small acts around South Florida including Gospel acts, school jingles, and various Hip-Hop and R&B acts.',
-				icon: 'mdi:music-note'
-			},
-			{
-				year: 'Jan 26, 2007',
-				title: 'Blak Soul Album',
-				description: 'Songwriter, composer, and co-produced first album for artist Ms.BLAK on project Blak Soul.',
-				icon: 'mdi:album'
-			},
-			{
-				year: '2009',
-				title: 'Orchestra Productions',
-				description: 'Began learning and experimenting with classical orchestra productions.',
-				icon: 'mdi:violin'
-			},
-			{
-				year: 'Dec 12, 2009',
-				title: 'Miami Music Festival',
-				description: 'Performed at the Miami Music Festival with group Soul Stank.',
-				icon: 'mdi:stadium'
-			},
-			{
-				year: '2010',
-				title: 'Dies Irae Radio Play',
-				description: 'Composed music for radio play Dies Irae for Ocean and Sky Productions.',
-				icon: 'mdi:radio'
-			},
-			{
-				year: 'Late 2010',
-				title: 'The 7th Link Band',
-				description: 'Performed various shows with The 7th Link Band from South Florida BeerFest to Haitian Relief Benefit Concert.',
-				icon: 'mdi:account-group'
-			},
-			{
-				year: 'Dec 8, 2011',
-				title: 'Frost Art Museum',
-				description: 'Performed at the Frost Art Museum at FIU.',
-				icon: 'mdi:palette'
-			},
-			{
-				year: 'Dec 12, 2013',
-				title: 'Frost Art Museum',
-				description: 'Performed at the Frost Art Museum FIU.',
-				icon: 'mdi:palette'
-			},
-			{
-				year: '2018-2019',
-				title: 'Project Kingdom XIII',
-				description: 'Created and released a music compilation as composer, vocalist, and mixing engineer based on the works of Yoko Shimomura for Kingdom Hearts.',
-				icon: 'mdi:crown'
-			}
-		],
-		tech: [
-			{
-				year: '2005-2010',
-				title: 'Early Web Development',
-				description: 'Became finalist in 5-hour live website design scholarship competition during high school.',
-				icon: 'mdi:code-tags'
-			},
-			{
-				year: '2010-2016',
-				title: 'Florida International University',
-				description: 'Studied professional audio recording and expanded into programming and web technologies.',
-				icon: 'mdi:school'
-			},
-			{
-				year: '2016',
-				title: 'Game Development',
-				description: 'Composed music for "Dies Irae" video game and developed supporting websites.',
-				icon: 'mdi:gamepad-variant'
-			},
-			{
-				year: '2020',
-				title: 'Audio Tech Integration',
-				description: 'Developed custom audio plugins and tools, merging music production with programming.',
-				icon: 'mdi:waveform'
-			},
-			{
-				year: 'Present',
-				title: '4 Media Central, LLC',
-				description: 'Leading technical projects combining web development, audio engineering, and creative production.',
-				icon: 'mdi:briefcase'
-			}
-		],
-		creative: [
-			{
-				year: "2005's",
-				title: 'Online Radio Plays',
-				description: 'Cast in various roles for Radio Plays on VAC, VAA forums, and Newgrounds. Started voice acting career.',
-				icon: 'mdi:microphone'
-			},
-			{
-				year: '2009-2011',
-				title: 'Kaiblade',
-				description: 'Starred as Jai in indie animation project Kaiblade.',
-				icon: 'mdi:movie'
-			},
-			{
-				year: '2011',
-				title: "King's Quest III Redux",
-				description: 'Provided voice overs for fan game based on the Kings Quest franchise.',
-				icon: 'mdi:gamepad-variant'
-			},
-			{
-				year: '2012',
-				title: 'Beast Boxing Turbo',
-				description: 'Provided character voice overs for indie game by Goodhustle Studios Inc.',
-				icon: 'mdi:boxing-glove'
-			},
-			{
-				year: '2012',
-				title: 'Wing Commander Saga',
-				description: 'Voice overs for Kramm "Deathfang" Nar Caxki and Gregory "M.D" House in The Darkest Dawn fan game.',
-				icon: 'mdi:rocket'
-			},
-			{
-				year: '2013',
-				title: 'College Off the Record',
-				description: 'Starred as "The Tempting Voice" for indie animation project.',
-				icon: 'mdi:drama-masks'
-			},
-			{
-				year: '2018',
-				title: "Demon's Rise: War for the Deep",
-				description: 'Provided various voice overs for indie video game.',
-				icon: 'mdi:sword-cross'
-			},
-			{
-				year: '2024',
-				title: 'HFAA Phone Systems',
-				description: 'Provided IVR prompt voice work for medical company.',
-				icon: 'mdi:phone-voip'
-			}
-		],
-		productions: [
-			{
-				year: 'Feb 2012 - Oct 2013',
-				title: 'DRIFT Webcomic',
-				description: 'Wrote, produced and published web comic DRIFT with artist Kathan.',
-				icon: 'mdi:book-open-page-variant'
-			},
-			{
-				year: 'Aug 27, 2014',
-				title: 'F.L.U.R: Blades of the Universe',
-				description: 'Released Episode 1 of FLUR: Blades of the Universe Radio Drama, a tie-in to a work in progress comic book.',
-				icon: 'mdi:podcast'
-			},
-			{
-				year: 'Sep 13, 2018',
-				title: 'Project Kingdom XIII Music Video',
-				description: 'Produced music video for Project Kingdom XIII - Should I Stay.',
-				icon: 'mdi:video'
-			}
-		]
-	};
+	// Professional journey milestones by category - fetched from API
+	let milestones = $state({
+		music: [],
+		tech: [],
+		creative: [],
+		productions: []
+	});
 
 	// Skills and expertise with quantifiable metrics
 	const skills = {

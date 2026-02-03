@@ -12,7 +12,8 @@
 		isNavigatingToHome,
 		initFromHash,
 		cleanupNavigation,
-		sectionMeta
+		sectionMeta,
+		disabledPages
 	} from '$lib/stores/navigation.js';
 
 	// Custom transition that uses fade when going to home, fly otherwise
@@ -40,6 +41,12 @@
 	let aboutSectionRef = $state(null);
 
 	onMount(() => {
+		// Initialize disabled pages from server data before hash navigation
+		if (data?.siteSettings?.pages) {
+			disabledPages.set(data.siteSettings.pages);
+		}
+
+		// Normal hash-based navigation
 		initFromHash();
 	});
 
@@ -69,6 +76,18 @@
 			: `${sectionMeta[$activeSection]?.label || ''} | KEY JAY ONLINE`
 	);
 
+	// Dynamic meta descriptions per section
+	const sectionDescriptions = {
+		home: 'KEY JAY ONLINE - The official website of musician, composer, and producer KEY JAY. Music, voice acting, productions, and creative works.',
+		music: 'Explore KEY JAY\'s music catalog including original compositions, albums, and beats. Listen to samples and discover new releases.',
+		voice: 'Professional voice acting services by KEY JAY. Animation, video games, audio dramas, and commercial voice work portfolio.',
+		productions: 'Creative productions by KEY JAY including webcomics, audio dramas, video content, and interactive media projects.',
+		about: 'Learn about KEY JAY\'s professional journey in music, technology, and creative arts. Skills, experience, and achievements.',
+		contact: 'Get in touch with KEY JAY for collaborations, commissions, and project inquiries. Start your creative project today.'
+	};
+
+	const pageDescription = $derived(sectionDescriptions[$activeSection] || sectionDescriptions.home);
+
 	// Show play button when on music section AND player is not visible
 	const showPlayButton = $derived($activeSection === 'music' && !$playerVisible);
 
@@ -81,7 +100,7 @@
 <svelte:head>
 	<title>{pageTitle}</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<meta name="description" content="KEY JAY ONLINE - Music | Voice | Productions | Creative Works" />
+	<meta name="description" content={pageDescription} />
 </svelte:head>
 
 <!-- Floating Neumorphic Navbar -->

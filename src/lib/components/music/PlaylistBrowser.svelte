@@ -1,21 +1,61 @@
 <script>
+	import { onMount } from 'svelte';
 	import { fly, slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import Icon from '@iconify/svelte';
 	import { audioPlaylists } from '$lib/data/audioPlaylists.js';
 	import { loadPlaylist, showPlayer, currentTrack, isPlaying } from '$lib/stores/musicPlayer.js';
 	import { getCachedCoverArt } from '$lib/utils/coverArtExtractor.js';
-	
+	import { groupSamplesByLibrary, getLibraryMetadata } from '$lib/api/content/musicLibrary.js';
+
 	let currentView = $state('folders'); // 'folders' or 'tracks'
 	let selectedGenre = $state(null);
 	let isExpanded = $state(false);
 	let transitionDirection = $state('forward'); // 'forward' or 'backward'
 	let thumbnailErrors = $state(new Set()); // Track which thumbnails have failed to load
-	
+	let libraries = $state({}); // Libraries fetched from API
+	let loading = $state(true);
+	let usingDirectus = $state(false);
+
 	// Get ordered genres (descending by name)
 	const genres = $derived(
-		Object.keys(audioPlaylists).sort((a, b) => b.localeCompare(a))
+		Object.keys(libraries).sort((a, b) => b.localeCompare(a))
 	);
+
+	// Fetch libraries from API on mount
+	onMount(async () => {
+		try {
+			const response = await fetch('/api/music-samples');
+			if (response.ok) {
+				const samples = await response.json();
+
+				if (samples && samples.length > 0) {
+					// Group samples by library
+					libraries = groupSamplesByLibrary(samples);
+					usingDirectus = true;
+					console.log('Loaded music libraries from Directus');
+				} else {
+					throw new Error('No samples returned from API');
+				}
+			} else {
+				throw new Error('API request failed');
+			}
+		} catch (error) {
+			console.log('Failed to load from Directus, using static audioPlaylists:', error.message);
+
+			// Fallback to static audioPlaylists
+			libraries = Object.entries(audioPlaylists).reduce((acc, [key, playlist]) => {
+				acc[key] = {
+					...playlist,
+					key
+				};
+				return acc;
+			}, {});
+			usingDirectus = false;
+		} finally {
+			loading = false;
+		}
+	});
 	
 	function selectGenre(genreKey) {
 		transitionDirection = 'forward';
@@ -32,9 +72,9 @@
 	}
 	
 	function playGenrePlaylist(genreKey) {
-		const playlist = audioPlaylists[genreKey];
-		if (playlist && playlist.tracks.length > 0) {
-			loadPlaylist(playlist.tracks, 0);
+		const library = libraries[genreKey];
+		if (library && library.tracks.length > 0) {
+			loadPlaylist(library.tracks, 0);
 			showPlayer();
 		}
 	}
@@ -72,95 +112,101 @@
 	
 	{#if isExpanded}
 		<div class="p-4" transition:slide={{ duration: 300 }}>
-			{#key currentView}
-				{#if currentView === 'folders'}
-					<!-- Genre/Folder List -->
-					<div 
-						class="space-y-2" 
-						in:fly={{ 
-							x: transitionDirection === 'backward' ? -300 : 300, 
-							duration: 400,
-							easing: cubicOut
-						}}
-						out:fly={{ 
-							x: transitionDirection === 'forward' ? -300 : 300, 
-							duration: 300,
-							easing: cubicOut
-						}}
-					>
-					{#each genres as genreKey}
-						{@const playlist = audioPlaylists[genreKey]}
-						<div class="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors group">
-							<button 
-								onclick={() => selectGenre(genreKey)}
-								class="flex items-center gap-3 flex-1 text-left"
-							>
-								<Icon icon={playlist.icon} width={24} height={24} class="text-blue-400" />
-								<div>
-									<div class="text-white font-medium">{playlist.name}</div>
-									<div class="text-gray-400 text-sm">{playlist.tracks.length} tracks</div>
+			{#if loading}
+				<!-- Loading state -->
+				<div class="flex items-center justify-center py-8">
+					<div class="text-gray-400">Loading music library...</div>
+				</div>
+			{:else}
+				{#key currentView}
+					{#if currentView === 'folders'}
+						<!-- Genre/Folder List -->
+						<div
+							class="space-y-2"
+							in:fly={{
+								x: transitionDirection === 'backward' ? -300 : 300,
+								duration: 400,
+								easing: cubicOut
+							}}
+							out:fly={{
+								x: transitionDirection === 'forward' ? -300 : 300,
+								duration: 300,
+								easing: cubicOut
+							}}
+						>
+						{#each genres as genreKey}
+							{@const library = libraries[genreKey]}
+							<div class="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors group">
+								<button
+									onclick={() => selectGenre(genreKey)}
+									class="flex items-center gap-3 flex-1 text-left"
+								>
+									<Icon icon={library.icon} width={24} height={24} class="text-blue-400" />
+									<div>
+										<div class="text-white font-medium">{library.name}</div>
+										<div class="text-gray-400 text-sm">{library.tracks.length} tracks</div>
+									</div>
+								</button>
+								<button
+									onclick={() => playGenrePlaylist(genreKey)}
+									class="p-2 bg-blue-600 hover:bg-blue-700 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
+									title="Play all"
+								>
+									<Icon icon="mdi:play" width={16} height={16} class="text-white" />
+								</button>
 								</div>
-							</button>
-							<button 
-								onclick={() => playGenrePlaylist(genreKey)}
-								class="p-2 bg-blue-600 hover:bg-blue-700 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
-								title="Play all"
-							>
-								<Icon icon="mdi:play" width={16} height={16} class="text-white" />
-							</button>
-							</div>
-					{/each}
-					</div>
+						{/each}
+						</div>
 			
 				{:else if currentView === 'tracks' && selectedGenre}
 					<!-- Track List -->
-					<div 
+					<div
 						class="space-y-2"
-						in:fly={{ 
-							x: transitionDirection === 'forward' ? 300 : -300, 
+						in:fly={{
+							x: transitionDirection === 'forward' ? 300 : -300,
 							duration: 400,
 							easing: cubicOut
 						}}
-						out:fly={{ 
-							x: transitionDirection === 'backward' ? 300 : -300, 
+						out:fly={{
+							x: transitionDirection === 'backward' ? 300 : -300,
 							duration: 300,
 							easing: cubicOut
 						}}
 					>
 					<!-- Back button -->
-					<button 
+					<button
 						onclick={backToFolders}
 						class="flex items-center gap-2 p-2 hover:bg-gray-700/50 rounded-lg transition-colors text-gray-400 hover:text-white mb-4"
 					>
 						<Icon icon="mdi:arrow-left" width={20} height={20} />
 						<span>Back to folders</span>
 					</button>
-					
+
 					{#if selectedGenre}
-						{@const playlist = audioPlaylists[selectedGenre]}
+						{@const library = libraries[selectedGenre]}
 						<!-- Genre header -->
 						<div class="flex items-center justify-between mb-4">
 							<div class="flex items-center gap-3">
-								<Icon icon={playlist.icon} width={32} height={32} class="text-blue-400" />
+								<Icon icon={library.icon} width={32} height={32} class="text-blue-400" />
 								<div>
-									<h3 class="text-white font-semibold text-lg">{playlist.name}</h3>
-									<p class="text-gray-400 text-sm">{playlist.tracks.length} tracks</p>
+									<h3 class="text-white font-semibold text-lg">{library.name}</h3>
+									<p class="text-gray-400 text-sm">{library.tracks.length} tracks</p>
 								</div>
 							</div>
-							<button 
+							<button
 								onclick={() => playGenrePlaylist(selectedGenre)}
 								class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors"
 							>
 								Play All
 							</button>
 						</div>
-						
+
 						<!-- Track list -->
 						<div class="max-h-64 overflow-y-auto space-y-1">
-							{#each playlist.tracks as track, index}
+							{#each library.tracks as track, index}
 								{@const cachedArtwork = getCachedCoverArt(track.audioUrl)}
 								<button
-									onclick={() => playTrack(playlist.tracks, index)}
+									onclick={() => playTrack(library.tracks, index)}
 									class="w-full text-left p-3 hover:bg-gray-700/50 rounded-lg transition-colors flex items-center gap-3 {
 										$currentTrack?.audioUrl === track.audioUrl ? 'bg-gray-700/70 text-blue-400' : 'text-gray-300'
 									}"
@@ -210,6 +256,7 @@
 					</div>
 				{/if}
 			{/key}
+			{/if}
 		</div>
 	{/if}
 </div>

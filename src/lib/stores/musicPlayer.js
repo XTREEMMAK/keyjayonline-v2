@@ -1,5 +1,15 @@
 import { writable } from 'svelte/store';
 import { extractCoverArt, preloadCoverArt } from '$lib/utils/coverArtExtractor.js';
+import { getAudioUrl } from '$lib/utils/environment.js';
+
+// Transform track URLs from Directus to proxy URLs for CORS handling
+function transformTrackUrls(track) {
+	return {
+		...track,
+		audioUrl: track.audioUrl ? getAudioUrl(track.audioUrl) : null,
+		thumbnail: track.thumbnail ? getAudioUrl(track.thumbnail) : null
+	};
+}
 
 // Player state
 export const playerVisible = writable(false);
@@ -30,33 +40,133 @@ export function togglePlayer() {
 }
 
 export function loadPlaylist(tracks, startIndex = 0) {
-	playlist.set(tracks);
+	// Transform URLs from Directus to proxy URLs
+	const transformedTracks = tracks.map(transformTrackUrls);
+
+	playlist.set(transformedTracks);
 	currentTrackIndex.set(startIndex);
-	if (tracks[startIndex]) {
-		currentTrack.set(tracks[startIndex]);
+	if (transformedTracks[startIndex]) {
+		currentTrack.set(transformedTracks[startIndex]);
 		// Extract artwork for the current track
-		extractTrackArtwork(tracks[startIndex]);
-		
+		extractTrackArtwork(transformedTracks[startIndex]);
+
 		// Preload artwork for other tracks in background
-		preloadPlaylistArtwork(tracks);
+		preloadPlaylistArtwork(transformedTracks);
 	}
 }
 
-export function loadRandomTrack() {
-	// Import audioPlaylists and create a shuffled playlist starting with a random track
-	import('../data/audioPlaylists.js').then(module => {
-		const { getAllTracks } = module;
-		const allTracks = getAllTracks();
-		if (allTracks.length > 0) {
-			// Shuffle all tracks
-			const shuffledTracks = [...allTracks].sort(() => Math.random() - 0.5);
-			
-			// Load the shuffled playlist
-			playlist.set(shuffledTracks);
-			currentTrackIndex.set(0);
-			currentTrack.set(shuffledTracks[0]);
+export async function loadRandomTrack() {
+	try {
+		// Try to fetch from Directus API
+		const response = await fetch('/api/music-samples?shuffle=true');
+
+		if (response.ok) {
+			const tracks = await response.json();
+
+			if (tracks && tracks.length > 0) {
+				// Transform URLs from Directus to proxy URLs
+				const transformedTracks = tracks.map(transformTrackUrls);
+
+				// Load the shuffled playlist from Directus
+				playlist.set(transformedTracks);
+				currentTrackIndex.set(0);
+				currentTrack.set(transformedTracks[0]);
+
+				// Extract artwork for the current track
+				extractTrackArtwork(transformedTracks[0]);
+
+				// Preload artwork for other tracks in background
+				preloadPlaylistArtwork(transformedTracks);
+				return;
+			}
 		}
-	});
+
+		// If API fails or returns no tracks, fall back to static files
+		throw new Error('API returned no tracks or failed');
+
+	} catch (error) {
+		console.log('Loading from static audioPlaylists (Directus unavailable):', error.message);
+
+		// Fallback: Import audioPlaylists and create a shuffled playlist
+		import('../data/audioPlaylists.js').then(module => {
+			const { getAllTracks } = module;
+			const allTracks = getAllTracks();
+			if (allTracks.length > 0) {
+				// Shuffle all tracks
+				const shuffledTracks = [...allTracks].sort(() => Math.random() - 0.5);
+
+				// Transform URLs (static tracks may also need transformation)
+				const transformedTracks = shuffledTracks.map(transformTrackUrls);
+
+				// Load the shuffled playlist
+				playlist.set(transformedTracks);
+				currentTrackIndex.set(0);
+				currentTrack.set(transformedTracks[0]);
+
+				// Extract artwork for the current track
+				extractTrackArtwork(transformedTracks[0]);
+
+				// Preload artwork for other tracks in background
+				preloadPlaylistArtwork(transformedTracks);
+			}
+		});
+	}
+}
+
+export async function loadLibraryPlaylist(libraryKey) {
+	try {
+		// Fetch library-specific tracks from Directus API
+		const response = await fetch(`/api/music-samples?library=${libraryKey}`);
+
+		if (response.ok) {
+			const tracks = await response.json();
+
+			if (tracks && tracks.length > 0) {
+				// Transform URLs from Directus to proxy URLs
+				const transformedTracks = tracks.map(transformTrackUrls);
+
+				// Load the library playlist
+				playlist.set(transformedTracks);
+				currentTrackIndex.set(0);
+				currentTrack.set(transformedTracks[0]);
+
+				// Extract artwork for the current track
+				extractTrackArtwork(transformedTracks[0]);
+
+				// Preload artwork for other tracks in background
+				preloadPlaylistArtwork(transformedTracks);
+				return;
+			}
+		}
+
+		// If API fails, fall back to static files
+		throw new Error('API returned no tracks or failed');
+
+	} catch (error) {
+		console.log(`Loading ${libraryKey} from static audioPlaylists (Directus unavailable):`, error.message);
+
+		// Fallback: Import audioPlaylists and get tracks by genre
+		import('../data/audioPlaylists.js').then(module => {
+			const { getTracksByGenre } = module;
+			const libraryTracks = getTracksByGenre(libraryKey);
+
+			if (libraryTracks && libraryTracks.length > 0) {
+				// Transform URLs (static tracks may also need transformation)
+				const transformedTracks = libraryTracks.map(transformTrackUrls);
+
+				// Load the library playlist
+				playlist.set(transformedTracks);
+				currentTrackIndex.set(0);
+				currentTrack.set(transformedTracks[0]);
+
+				// Extract artwork for the current track
+				extractTrackArtwork(transformedTracks[0]);
+
+				// Preload artwork for other tracks in background
+				preloadPlaylistArtwork(transformedTracks);
+			}
+		});
+	}
 }
 
 export function playTrack(trackIndex) {

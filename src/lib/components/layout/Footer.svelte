@@ -1,12 +1,14 @@
 <script>
 	import SocialIcons from '$lib/components/ui/SocialIcons.svelte';
+	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
 	import { loadVantaScripts, waitForLibrary } from '$lib/utils/loadExternalScripts.js';
 	import { navigateTo, sections, sectionMeta } from '$lib/stores/navigation.js';
 
 	let {
 		siteSettings = null,
-		socialLinks = []
+		socialLinks = [],
+		supportPlatforms = []
 	} = $props();
 
 	let footerElement = $state();
@@ -92,6 +94,24 @@
 			<div class="flex justify-center mt-4 mb-2">
 				<SocialIcons layout="horizontal" size={32} gap="gap-5" className="text-white/80 hover:text-white drop-shadow-lg" {socialLinks} />
 			</div>
+
+			<!-- Support Platforms (Ko-Fi, Patreon, etc.) - Subtle placement -->
+			{#if supportPlatforms && supportPlatforms.length > 0}
+				<div class="flex justify-center gap-3 mt-3">
+					{#each supportPlatforms as platform}
+						<a
+							href={platform.url}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-white/70 hover:text-white text-sm transition-all duration-300 hover:scale-105"
+							title="Support on {platform.name}"
+						>
+							<Icon icon={platform.icon || 'mdi:heart'} class="text-lg" />
+							<span class="text-xs font-medium">{platform.name}</span>
+						</a>
+					{/each}
+				</div>
+			{/if}
 		</div>
 
 		<!-- Site Navigation (SPA hash-based) -->

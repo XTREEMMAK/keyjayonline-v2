@@ -3,8 +3,12 @@
 	import { browser } from '$app/environment';
 	import Icon from '@iconify/svelte';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
+	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
+	import ProductionDetailModal from '$lib/components/ui/ProductionDetailModal.svelte';
 	import { navbarVisible } from '$lib/stores/navigation.js';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
+	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
+	import { getAudioUrl } from '$lib/utils/environment.js';
 
 	// Title letters for animation
 	const titleLetters = 'Productions'.split('');
@@ -14,8 +18,40 @@
 	let mixer = $state(null);
 	let activeFilter = $state('all');
 
-	// Production categories
-	const categories = [
+	// Content viewer state (for comic pages)
+	let viewerOpen = $state(false);
+	let viewerPages = $state([]);
+	let viewerTitle = $state('');
+	let viewerLoading = $state(false);
+
+	// Production detail modal state
+	let detailModalOpen = $state(false);
+	let selectedProduction = $state(null);
+
+	// Derived state from store
+	const sectionState = $derived($sectionData.productions);
+	const productionsData = $derived(sectionState.data || {});
+	const productions = $derived(productionsData.productions || []);
+	const dbCategories = $derived(productionsData.categories || []);
+	const socialLinks = $derived(productionsData.socialLinks || []);
+	const isLoading = $derived(sectionState.status === 'loading');
+	const isLoaded = $derived(sectionState.status === 'loaded');
+	const hasError = $derived(sectionState.status === 'error');
+
+	// Build categories from database + default "All"
+	const categories = $derived([
+		{ id: 'all', label: 'All', icon: 'mdi:view-grid', slug: 'all' },
+		...dbCategories.map(cat => ({
+			id: cat.slug,
+			label: cat.name,
+			icon: cat.icon || getCategoryIconBySlug(cat.slug),
+			slug: cat.slug,
+			color: cat.color
+		}))
+	]);
+
+	// Fallback categories if database is empty
+	const fallbackCategories = [
 		{ id: 'all', label: 'All', icon: 'mdi:view-grid' },
 		{ id: 'video', label: 'Videos', icon: 'mdi:video' },
 		{ id: 'comic', label: 'Comics', icon: 'mdi:book-open-page-variant' },
@@ -23,150 +59,27 @@
 		{ id: 'audio', label: 'Audio Dramas', icon: 'mdi:headphones' }
 	];
 
-	// Productions data - actual creative works
-	const productions = [
-		// Audio Dramas
-		{
-			id: 1,
-			title: 'FLUR: Blades of the Universe',
-			category: 'audio',
-			type: 'Audio Drama Series',
-			status: 'In Production',
-			description: 'An epic sci-fi audio drama series following warriors across the cosmos in a battle for universal balance.',
-			image: '/img/productions/flur-cover.jpg',
-			fallbackImage: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=600',
-			year: '2024',
-			episodes: '12 Episodes',
-			tags: ['Sci-Fi', 'Action', 'Original Score'],
-			featured: true,
-			links: {
-				listen: '#',
-				info: '#'
-			}
-		},
-		// Comics
-		{
-			id: 2,
-			title: 'KJC Comix: Origins',
-			category: 'comic',
-			type: 'Comic Series',
-			status: 'Ongoing',
-			description: 'The flagship comic series exploring interconnected stories of heroes, villains, and everything in between.',
-			image: '/img/productions/kjc-comix-cover.jpg',
-			fallbackImage: 'https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=600',
-			year: '2023',
-			issues: '8 Issues',
-			tags: ['Action', 'Adventure', 'Original Characters'],
-			featured: true,
-			links: {
-				read: '#',
-				store: '#'
-			}
-		},
-		{
-			id: 3,
-			title: 'Midnight Tales',
-			category: 'comic',
-			type: 'Comic Mini-Series',
-			status: 'Complete',
-			description: 'A dark anthology series featuring standalone horror and supernatural stories.',
-			image: '/img/productions/midnight-tales-cover.jpg',
-			fallbackImage: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600',
-			year: '2022',
-			issues: '4 Issues',
-			tags: ['Horror', 'Anthology', 'Supernatural'],
-			links: {
-				read: '#'
-			}
-		},
-		// Games
-		{
-			id: 4,
-			title: 'Dies Irae',
-			category: 'game',
-			type: 'Video Game',
-			status: 'In Development',
-			description: 'A dark fantasy action RPG where choices shape the fate of a dying world.',
-			image: '/img/productions/dies-irae-cover.jpg',
-			fallbackImage: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=600',
-			year: '2025',
-			platform: 'PC / Console',
-			tags: ['RPG', 'Dark Fantasy', 'Action'],
-			featured: true,
-			links: {
-				wishlist: '#',
-				devlog: '#'
-			}
-		},
-		{
-			id: 5,
-			title: 'Pixel Runners',
-			category: 'game',
-			type: 'Mobile Game',
-			status: 'Released',
-			description: 'A fast-paced endless runner with retro pixel art aesthetics and synthwave soundtrack.',
-			image: '/img/productions/pixel-runners-cover.jpg',
-			fallbackImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600',
-			year: '2023',
-			platform: 'iOS / Android',
-			tags: ['Arcade', 'Retro', 'Mobile'],
-			links: {
-				play: '#'
-			}
-		},
-		// Videos
-		{
-			id: 6,
-			title: 'The Making of FLUR',
-			category: 'video',
-			type: 'Documentary',
-			status: 'Released',
-			description: 'Behind-the-scenes look at the creation of the FLUR audio drama series.',
-			image: '/img/productions/making-of-flur.jpg',
-			fallbackImage: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=600',
-			year: '2024',
-			duration: '45 min',
-			tags: ['Documentary', 'Behind the Scenes'],
-			links: {
-				watch: '#'
-			}
-		},
-		{
-			id: 7,
-			title: 'KJC Universe Explained',
-			category: 'video',
-			type: 'Video Series',
-			status: 'Ongoing',
-			description: 'Deep dives into the lore, characters, and connections within the KJC comic universe.',
-			image: '/img/productions/kjc-explained.jpg',
-			fallbackImage: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600',
-			year: '2024',
-			episodes: '15 Episodes',
-			tags: ['Lore', 'Explainer', 'Animation'],
-			links: {
-				watch: '#'
-			}
-		},
-		{
-			id: 8,
-			title: 'Short Film Collection',
-			category: 'video',
-			type: 'Short Films',
-			status: 'Complete',
-			description: 'A collection of original short films spanning multiple genres and styles.',
-			image: '/img/productions/short-films.jpg',
-			fallbackImage: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=600',
-			year: '2021-2024',
-			count: '6 Films',
-			tags: ['Drama', 'Experimental', 'Narrative'],
-			links: {
-				watch: '#'
-			}
-		}
-	];
+	// Use fallback if no categories from DB
+	const displayCategories = $derived(categories.length > 1 ? categories : fallbackCategories);
 
 	// Get featured production
-	const featuredProduction = productions.find(p => p.featured && p.status === 'In Production') || productions[0];
+	const featuredProduction = $derived(
+		productions.find(p => p.featured && (p.productionStatus === 'in_production' || p.productionStatus === 'in_development')) ||
+		productions.find(p => p.featured) ||
+		productions[0] ||
+		null
+	);
+
+	// Helper to get icon by slug
+	function getCategoryIconBySlug(slug) {
+		const icons = {
+			video: 'mdi:video',
+			comic: 'mdi:book-open-page-variant',
+			game: 'mdi:gamepad-variant',
+			audio: 'mdi:headphones'
+		};
+		return icons[slug] || 'mdi:folder';
+	}
 
 	// Filter productions with MixItUp
 	function filterProductions(category) {
@@ -180,18 +93,31 @@
 		}
 	}
 
-	// Initialize MixItUp (matching Music page implementation)
+	// Initialize MixItUp and load data
 	onMount(async () => {
-		if (browser && container) {
-			const { default: mixitup } = await import('mixitup');
-			mixer = mixitup(container, {
-				selectors: {
-					target: '.mix-item'
-				},
-				animation: {
-					duration: 300,
-					effects: 'fade scale(0.5)'
-				}
+		// Load section data
+		if (browser) {
+			try {
+				await loadSection('productions');
+			} catch (err) {
+				console.error('Failed to load productions:', err);
+			}
+		}
+	});
+
+	// Initialize MixItUp when data is loaded
+	$effect(() => {
+		if (browser && container && isLoaded && productions.length > 0 && !mixer) {
+			import('mixitup').then(({ default: mixitup }) => {
+				mixer = mixitup(container, {
+					selectors: {
+						target: '.mix-item'
+					},
+					animation: {
+						duration: 300,
+						effects: 'fade scale(0.5)'
+					}
+				});
 			});
 		}
 	});
@@ -201,6 +127,34 @@
 			mixer.destroy();
 		}
 	});
+
+	// Open content viewer for comic pages
+	async function openContentViewer(production) {
+		if (production.contentType !== 'comic_pages') return;
+
+		viewerTitle = production.title;
+		viewerLoading = true;
+		viewerOpen = true;
+
+		try {
+			const response = await fetch(`/api/productions/${production.id}/pages`);
+			if (response.ok) {
+				const data = await response.json();
+				viewerPages = data.pages || [];
+			}
+		} catch (err) {
+			console.error('Failed to load pages:', err);
+			viewerPages = [];
+		} finally {
+			viewerLoading = false;
+		}
+	}
+
+	function closeContentViewer() {
+		viewerOpen = false;
+		viewerPages = [];
+		viewerTitle = '';
+	}
 
 	function getStatusColor(status) {
 		switch(status) {
@@ -233,14 +187,53 @@
 		}
 	}
 
-	function handleImageError(event) {
+	function handleImageError(event, production) {
 		const img = event.target;
-		const production = productions.find(p => p.image === img.src || p.fallbackImage === img.src);
-		if (production && img.src !== production.fallbackImage) {
+		if (production?.fallbackImage && img.src !== production.fallbackImage) {
 			img.src = production.fallbackImage;
 		}
 	}
+
+	// Get image URL with fallback
+	function getImageUrl(production) {
+		return production.image || production.fallbackImage || 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=600';
+	}
+
+	// Handle card click - open detail modal
+	function handleCardClick(production) {
+		selectedProduction = production;
+		detailModalOpen = true;
+	}
+
+	// Close detail modal
+	function closeDetailModal() {
+		detailModalOpen = false;
+		selectedProduction = null;
+	}
+
+	// Handle view pages from detail modal (for comics)
+	function handleViewPagesFromDetail(production) {
+		closeDetailModal();
+		openContentViewer(production);
+	}
 </script>
+
+<!-- Production Detail Modal -->
+<ProductionDetailModal
+	isOpen={detailModalOpen}
+	production={selectedProduction}
+	onClose={closeDetailModal}
+	onViewPages={handleViewPagesFromDetail}
+/>
+
+<!-- Content Viewer Modal (for comic pages) -->
+<ContentViewerModal
+	isOpen={viewerOpen}
+	pages={viewerPages}
+	title={viewerTitle}
+	loading={viewerLoading}
+	onClose={closeContentViewer}
+/>
 
 <!-- ============================================================================ -->
 <!-- PRODUCTIONS SECTION CONTAINER -->
@@ -263,276 +256,344 @@
 		<p class="text-lg text-orange-200/70 relative">Creative works across multiple mediums</p>
 	</div>
 
-	<!-- Featured Production -->
-	<section class="bg-gradient-to-b from-[var(--neu-bg-dark)]/95 via-orange-950/15 to-[var(--neu-bg-dark)]/95 backdrop-blur-sm py-16 relative">
-		<div class="container mx-auto px-4">
-			<div class="max-w-6xl mx-auto">
-				<div class="neu-card overflow-hidden">
-					<div class="grid grid-cols-1 lg:grid-cols-2">
-						<!-- Featured Image -->
-						<div class="aspect-video lg:aspect-auto relative">
-							<img
-								src={featuredProduction.image}
-								alt={featuredProduction.title}
-								onerror={handleImageError}
-								class="w-full h-full object-cover"
-							/>
-							<div class="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent lg:bg-gradient-to-t lg:from-black/40 lg:via-transparent lg:to-transparent"></div>
-							<div class="absolute top-4 left-4">
-								<span class="px-3 py-1 text-xs font-semibold rounded-full {getStatusColor(featuredProduction.status)}">
-									{featuredProduction.status}
-								</span>
-							</div>
-						</div>
-
-						<!-- Featured Content -->
-						<div class="p-8 lg:p-12 flex flex-col justify-center">
-							<div class="flex items-center gap-3 mb-4">
-								<Icon icon={getCategoryIcon(featuredProduction.category)} class="text-orange-400 text-2xl" />
-								<span class="text-orange-400 font-semibold uppercase tracking-wider text-sm">{featuredProduction.type}</span>
-							</div>
-
-							<h2 class="text-3xl lg:text-4xl font-bold text-white mb-4">{featuredProduction.title}</h2>
-							<p class="text-gray-300 text-lg mb-6 leading-relaxed">{featuredProduction.description}</p>
-
-							<div class="flex flex-wrap gap-2 mb-6">
-								{#each featuredProduction.tags as tag}
-									<span class="bg-gray-700/50 text-gray-300 px-3 py-1 text-sm rounded-full">{tag}</span>
-								{/each}
-							</div>
-
-							<div class="flex items-center gap-6 text-gray-400 text-sm mb-8">
-								<span class="flex items-center gap-2">
-									<Icon icon="mdi:calendar" class="text-lg" />
-									{featuredProduction.year}
-								</span>
-								{#if featuredProduction.episodes}
-									<span class="flex items-center gap-2">
-										<Icon icon="mdi:playlist-play" class="text-lg" />
-										{featuredProduction.episodes}
-									</span>
-								{/if}
-								{#if featuredProduction.platform}
-									<span class="flex items-center gap-2">
-										<Icon icon="mdi:devices" class="text-lg" />
-										{featuredProduction.platform}
-									</span>
-								{/if}
-							</div>
-
-							<div class="flex flex-wrap gap-4">
-								{#if featuredProduction.links.listen}
-									<button class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
-										<Icon icon="mdi:headphones" class="text-xl" />
-										Listen Now
-									</button>
-								{/if}
-								{#if featuredProduction.links.info}
-									<button class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
-										<Icon icon="mdi:information-outline" class="text-xl" />
-										Learn More
-									</button>
-								{/if}
-							</div>
-						</div>
-					</div>
-				</div>
+	<!-- Loading State -->
+	{#if isLoading}
+		<div class="flex items-center justify-center py-32">
+			<div class="text-center">
+				<Icon icon="mdi:loading" class="text-orange-400 text-5xl animate-spin mb-4 mx-auto" />
+				<p class="text-gray-400">Loading productions...</p>
 			</div>
 		</div>
-	</section>
-
-	<!-- Filter Navigation -->
-	<section
-		class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-8 sticky z-30 transition-[top] duration-300"
-		style="top: {$navbarVisible ? '88px' : '0px'}"
-	>
-		<div class="container mx-auto px-4">
-			<div class="flex flex-wrap justify-center gap-3">
-				{#each categories as category}
-					<button
-						onclick={() => filterProductions(category.id)}
-						class="px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2
-							{activeFilter === category.id
-								? 'bg-gradient-to-r from-orange-600 to-red-600 text-white scale-105'
-								: 'neu-filter-button text-gray-300 hover:text-white hover:scale-105'}"
-					>
-						<Icon icon={category.icon} class="text-lg" />
-						{category.label}
-					</button>
-				{/each}
+	{:else if hasError}
+		<div class="flex items-center justify-center py-32">
+			<div class="text-center">
+				<Icon icon="mdi:alert-circle" class="text-red-400 text-5xl mb-4 mx-auto" />
+				<p class="text-gray-400">Failed to load productions. Please try again later.</p>
 			</div>
 		</div>
-	</section>
+	{:else}
+		<!-- Featured Production -->
+		{#if featuredProduction}
+			<section class="bg-gradient-to-b from-[var(--neu-bg-dark)]/95 via-orange-950/15 to-[var(--neu-bg-dark)]/95 backdrop-blur-sm py-16 relative">
+				<div class="container mx-auto px-4">
+					<div class="max-w-6xl mx-auto">
+						<div class="neu-card overflow-hidden">
+							<div class="grid grid-cols-1 lg:grid-cols-2">
+								<!-- Featured Image -->
+								<div class="aspect-video lg:aspect-auto relative">
+									<img
+										src={getImageUrl(featuredProduction)}
+										alt={featuredProduction.title}
+										onerror={(e) => handleImageError(e, featuredProduction)}
+										class="w-full h-full object-cover"
+									/>
+									<div class="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent lg:bg-gradient-to-t lg:from-black/40 lg:via-transparent lg:to-transparent"></div>
+									<div class="absolute top-4 left-4">
+										<span class="px-3 py-1 text-xs font-semibold rounded-full {getStatusColor(featuredProduction.status)}">
+											{featuredProduction.status}
+										</span>
+									</div>
+								</div>
 
-	<!-- Productions Grid -->
-	<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-amber-950/10 to-[var(--neu-bg)]/95 backdrop-blur-sm py-12 relative">
-		<div class="container mx-auto px-4">
-			<div bind:this={container} class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-				{#each productions as production (production.id)}
-					<div class="mix-item {production.category}">
-						<article class="neu-card overflow-hidden hover:scale-[1.02] transition-all duration-300 group cursor-pointer">
-						<!-- Card Image -->
-						<div class="aspect-video relative">
-							<img
-								src={production.image}
-								alt={production.title}
-								onerror={handleImageError}
-								class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-							/>
-							<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+								<!-- Featured Content -->
+								<div class="p-8 lg:p-12 flex flex-col justify-center">
+									<div class="flex items-center gap-3 mb-4">
+										<Icon icon={getCategoryIcon(featuredProduction.category)} class="text-orange-400 text-2xl" />
+										<span class="text-orange-400 font-semibold uppercase tracking-wider text-sm">{featuredProduction.type}</span>
+									</div>
 
-							<!-- Category Badge -->
-							<div class="absolute top-4 left-4">
-								<span class="px-2 py-1 text-xs rounded-full border {getCategoryColor(production.category)} flex items-center gap-1">
-									<Icon icon={getCategoryIcon(production.category)} class="text-sm" />
-									{production.type}
-								</span>
-							</div>
+									<h2 class="text-3xl lg:text-4xl font-bold text-white mb-4">{featuredProduction.title}</h2>
+									<p class="text-gray-300 text-lg mb-6 leading-relaxed">{featuredProduction.description}</p>
 
-							<!-- Status Badge -->
-							<div class="absolute top-4 right-4">
-								<span class="px-2 py-1 text-xs rounded-full {getStatusColor(production.status)}">{production.status}</span>
-							</div>
-
-							<!-- Play/View Overlay -->
-							<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-								<div class="bg-white/10 backdrop-blur-sm rounded-full p-4">
-									{#if production.category === 'video' || production.category === 'audio'}
-										<Icon icon="mdi:play" class="text-white text-3xl" />
-									{:else if production.category === 'comic'}
-										<Icon icon="mdi:book-open-variant" class="text-white text-3xl" />
-									{:else}
-										<Icon icon="mdi:gamepad-variant" class="text-white text-3xl" />
+									{#if featuredProduction.tags && featuredProduction.tags.length > 0}
+										<div class="flex flex-wrap gap-2 mb-6">
+											{#each featuredProduction.tags as tag}
+												<span class="bg-gray-700/50 text-gray-300 px-3 py-1 text-sm rounded-full">{tag}</span>
+											{/each}
+										</div>
 									{/if}
+
+									<div class="flex items-center gap-6 text-gray-400 text-sm mb-8">
+										{#if featuredProduction.year}
+											<span class="flex items-center gap-2">
+												<Icon icon="mdi:calendar" class="text-lg" />
+												{featuredProduction.year}
+											</span>
+										{/if}
+										{#if featuredProduction.episodes}
+											<span class="flex items-center gap-2">
+												<Icon icon="mdi:playlist-play" class="text-lg" />
+												{featuredProduction.episodes}
+											</span>
+										{/if}
+										{#if featuredProduction.platform}
+											<span class="flex items-center gap-2">
+												<Icon icon="mdi:devices" class="text-lg" />
+												{featuredProduction.platform}
+											</span>
+										{/if}
+									</div>
+
+									<div class="flex flex-wrap gap-4">
+										{#if featuredProduction.links?.listen}
+											<a href={featuredProduction.links.listen} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<Icon icon="mdi:headphones" class="text-xl" />
+												Listen Now
+											</a>
+										{/if}
+										{#if featuredProduction.links?.watch}
+											<a href={featuredProduction.links.watch} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<Icon icon="mdi:play" class="text-xl" />
+												Watch Now
+											</a>
+										{/if}
+										{#if featuredProduction.links?.read}
+											<a href={featuredProduction.links.read} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<Icon icon="mdi:book-open-variant" class="text-xl" />
+												Read Now
+											</a>
+										{/if}
+										{#if featuredProduction.contentType === 'comic_pages'}
+											<button onclick={() => openContentViewer(featuredProduction)} class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<Icon icon="mdi:book-open-variant" class="text-xl" />
+												View Pages
+											</button>
+										{/if}
+										{#if featuredProduction.externalLinks && featuredProduction.externalLinks.length > 0}
+											<a href={featuredProduction.externalLinks[0].url} target="_blank" rel="noopener noreferrer" class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
+												<Icon icon="mdi:information-outline" class="text-xl" />
+												Learn More
+											</a>
+										{/if}
+									</div>
 								</div>
 							</div>
 						</div>
-
-						<!-- Card Content -->
-						<div class="p-6">
-							<div class="flex items-start justify-between mb-2">
-								<h3 class="text-lg font-semibold text-white line-clamp-2 flex-1">
-									{production.title}
-								</h3>
-								<span class="text-gray-500 text-xs ml-2 flex-shrink-0">{production.year}</span>
-							</div>
-
-							<p class="text-gray-400 text-sm mb-4 line-clamp-2">
-								{production.description}
-							</p>
-
-							<!-- Meta Info -->
-							<div class="flex items-center gap-4 text-gray-500 text-xs mb-4">
-								{#if production.episodes}
-									<span class="flex items-center gap-1">
-										<Icon icon="mdi:playlist-play" />
-										{production.episodes}
-									</span>
-								{/if}
-								{#if production.issues}
-									<span class="flex items-center gap-1">
-										<Icon icon="mdi:book-multiple" />
-										{production.issues}
-									</span>
-								{/if}
-								{#if production.platform}
-									<span class="flex items-center gap-1">
-										<Icon icon="mdi:devices" />
-										{production.platform}
-									</span>
-								{/if}
-								{#if production.duration}
-									<span class="flex items-center gap-1">
-										<Icon icon="mdi:clock-outline" />
-										{production.duration}
-									</span>
-								{/if}
-								{#if production.count}
-									<span class="flex items-center gap-1">
-										<Icon icon="mdi:folder-multiple" />
-										{production.count}
-									</span>
-								{/if}
-							</div>
-
-							<!-- Tags -->
-							<div class="flex flex-wrap gap-1">
-								{#each production.tags.slice(0, 3) as tag}
-									<span class="bg-gray-700/50 text-gray-300 px-2 py-1 text-xs rounded">{tag}</span>
-								{/each}
-							</div>
-						</div>
-					</article>
 					</div>
-				{/each}
-			</div>
-
-			<!-- Empty State - MixItUp handles visibility, this shows when all items filtered out -->
-			{#if productions.length === 0}
-				<div class="text-center py-16">
-					<Icon icon="mdi:folder-open-outline" class="text-gray-600 text-6xl mb-4 mx-auto" />
-					<h3 class="text-xl text-gray-400 mb-2">No productions found</h3>
-					<p class="text-gray-500">Check back soon for new content in this category.</p>
 				</div>
-			{/if}
-		</div>
-	</section>
+			</section>
+		{/if}
 
-	<!-- Coming Soon / In Development -->
-	<section class="bg-gradient-to-br from-orange-900/20 via-[var(--neu-bg)] to-red-900/20 py-16">
-		<div class="container mx-auto px-4">
-			<div class="text-center mb-12">
-				<h2 class="text-3xl font-bold text-white mb-4">On the Horizon</h2>
-				<p class="text-gray-400 max-w-2xl mx-auto">
-					Upcoming projects and works in progress
-				</p>
+		<!-- Filter Navigation -->
+		<section
+			class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-8 sticky z-30 transition-[top] duration-300"
+			style="top: {$navbarVisible ? '88px' : '0px'}"
+		>
+			<div class="container mx-auto px-4">
+				<div class="flex flex-wrap justify-center gap-3">
+					{#each displayCategories as category}
+						<button
+							onclick={() => filterProductions(category.id)}
+							class="px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2
+								{activeFilter === category.id
+									? 'bg-gradient-to-r from-orange-600 to-red-600 text-white scale-105'
+									: 'neu-filter-button text-gray-300 hover:text-white hover:scale-105'}"
+						>
+							<Icon icon={category.icon} class="text-lg" />
+							{category.label}
+						</button>
+					{/each}
+				</div>
 			</div>
+		</section>
 
-			<div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-				{#each productions.filter(p => p.status === 'In Development' || p.status === 'In Production') as project}
-					<div class="neu-card p-6 flex items-start gap-4">
-						<div class="flex-shrink-0 w-12 h-12 rounded-full bg-orange-600/20 flex items-center justify-center">
-							<Icon icon={getCategoryIcon(project.category)} class="text-orange-400 text-2xl" />
-						</div>
-						<div class="flex-1">
-							<div class="flex items-center gap-2 mb-1">
-								<h3 class="text-lg font-semibold text-white">{project.title}</h3>
-								<span class="px-2 py-0.5 text-xs rounded-full {getStatusColor(project.status)}">{project.status}</span>
-							</div>
-							<p class="text-gray-400 text-sm mb-2">{project.type}</p>
-							<p class="text-gray-500 text-sm">{project.description}</p>
-						</div>
+		<!-- Productions Grid -->
+		<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-amber-950/10 to-[var(--neu-bg)]/95 backdrop-blur-sm py-12 relative">
+			<div class="container mx-auto px-4">
+				{#if productions.length === 0}
+					<div class="text-center py-16">
+						<Icon icon="mdi:folder-open-outline" class="text-gray-600 text-6xl mb-4 mx-auto" />
+						<h3 class="text-xl text-gray-400 mb-2">No productions yet</h3>
+						<p class="text-gray-500">Check back soon for new content.</p>
 					</div>
-				{/each}
-			</div>
-		</div>
-	</section>
+				{:else}
+					<div bind:this={container} class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+						{#each productions as production (production.id)}
+							<div class="mix-item {production.categorySlugs || production.category}">
+								<article
+									class="neu-card overflow-hidden hover:scale-[1.02] transition-all duration-300 group cursor-pointer"
+									onclick={() => handleCardClick(production)}
+									role="button"
+									tabindex="0"
+									onkeypress={(e) => e.key === 'Enter' && handleCardClick(production)}
+								>
+									<!-- Card Image -->
+									<div class="aspect-video relative">
+										<img
+											src={getImageUrl(production)}
+											alt={production.title}
+											onerror={(e) => handleImageError(e, production)}
+											class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+										/>
+										<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent group-hover:scale-110 transition-transform duration-500"></div>
 
-	<!-- Newsletter / Updates CTA -->
-	<section class="subsection-gradient-dark subsection-accent-blue relative py-16">
-		<div class="container mx-auto px-4 text-center">
-			<Icon icon="mdi:bell-ring-outline" class="text-orange-400 text-5xl mb-4 mx-auto" />
-			<h2 class="text-3xl font-bold text-white mb-4">Stay Updated</h2>
-			<p class="text-gray-400 mb-8 max-w-2xl mx-auto">
-				Be the first to know when new productions drop. Follow for updates on releases, behind-the-scenes content, and exclusive previews.
-			</p>
+										<!-- Category Badge -->
+										<div class="absolute top-4 left-4">
+											<span class="px-2 py-1 text-xs rounded-full border {getCategoryColor(production.category)} flex items-center gap-1">
+												<Icon icon={getCategoryIcon(production.category)} class="text-sm" />
+												{production.type}
+											</span>
+										</div>
 
-			<div class="flex flex-wrap justify-center gap-4">
-				<a href="#" class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
-					<Icon icon="mdi:youtube" class="text-xl text-red-500" />
-					YouTube
-				</a>
-				<a href="#" class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
-					<Icon icon="mdi:twitter" class="text-xl text-blue-400" />
-					Twitter
-				</a>
-				<a href="#" class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
-					<Icon icon="mdi:instagram" class="text-xl text-pink-500" />
-					Instagram
-				</a>
+										<!-- Status Badge -->
+										<div class="absolute top-4 right-4">
+											<span class="px-2 py-1 text-xs rounded-full {getStatusColor(production.status)}">{production.status}</span>
+										</div>
+
+										<!-- Play/View Overlay -->
+										<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+											<div class="bg-white/10 backdrop-blur-sm rounded-full p-4">
+												{#if production.category === 'video' || production.category === 'audio'}
+													<Icon icon="mdi:play" class="text-white text-3xl" />
+												{:else if production.category === 'comic'}
+													<Icon icon="mdi:book-open-variant" class="text-white text-3xl" />
+												{:else}
+													<Icon icon="mdi:gamepad-variant" class="text-white text-3xl" />
+												{/if}
+											</div>
+										</div>
+									</div>
+
+									<!-- Card Content -->
+									<div class="p-6">
+										<div class="flex items-start justify-between mb-2">
+											<h3 class="text-lg font-semibold text-white line-clamp-2 flex-1">
+												{production.title}
+											</h3>
+											{#if production.year}
+												<span class="text-gray-500 text-xs ml-2 flex-shrink-0">{production.year}</span>
+											{/if}
+										</div>
+
+										<p class="text-gray-400 text-sm mb-4 line-clamp-2">
+											{production.description}
+										</p>
+
+										<!-- Meta Info -->
+										<div class="flex items-center gap-4 text-gray-500 text-xs mb-4">
+											{#if production.episodes}
+												<span class="flex items-center gap-1">
+													<Icon icon="mdi:playlist-play" />
+													{production.episodes}
+												</span>
+											{/if}
+											{#if production.issues}
+												<span class="flex items-center gap-1">
+													<Icon icon="mdi:book-multiple" />
+													{production.issues}
+												</span>
+											{/if}
+											{#if production.platform}
+												<span class="flex items-center gap-1">
+													<Icon icon="mdi:devices" />
+													{production.platform}
+												</span>
+											{/if}
+											{#if production.duration}
+												<span class="flex items-center gap-1">
+													<Icon icon="mdi:clock-outline" />
+													{production.duration}
+												</span>
+											{/if}
+											{#if production.count}
+												<span class="flex items-center gap-1">
+													<Icon icon="mdi:folder-multiple" />
+													{production.count}
+												</span>
+											{/if}
+										</div>
+
+										<!-- Tags -->
+										{#if production.tags && production.tags.length > 0}
+											<div class="flex flex-wrap gap-1">
+												{#each production.tags.slice(0, 3) as tag}
+													<span class="bg-gray-700/50 text-gray-300 px-2 py-1 text-xs rounded">{tag}</span>
+												{/each}
+											</div>
+										{/if}
+									</div>
+								</article>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			</div>
-		</div>
-	</section>
+		</section>
+
+		<!-- Coming Soon / In Development -->
+		{@const upcomingProductions = productions.filter(p => p.productionStatus === 'in_development' || p.productionStatus === 'in_production')}
+		{#if upcomingProductions.length > 0}
+			<section class="bg-gradient-to-br from-orange-900/20 via-[var(--neu-bg)] to-red-900/20 py-16">
+				<div class="container mx-auto px-4">
+					<div class="text-center mb-12">
+						<h2 class="text-3xl font-bold text-white mb-4">On the Horizon</h2>
+						<p class="text-gray-400 max-w-2xl mx-auto">
+							Upcoming projects and works in progress
+						</p>
+					</div>
+
+					<div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+						{#each upcomingProductions as project}
+							<div class="neu-card p-6 flex items-start gap-4">
+								<div class="flex-shrink-0 w-12 h-12 rounded-full bg-orange-600/20 flex items-center justify-center">
+									<Icon icon={getCategoryIcon(project.category)} class="text-orange-400 text-2xl" />
+								</div>
+								<div class="flex-1">
+									<div class="flex items-center gap-2 mb-1">
+										<h3 class="text-lg font-semibold text-white">{project.title}</h3>
+										<span class="px-2 py-0.5 text-xs rounded-full {getStatusColor(project.status)}">{project.status}</span>
+									</div>
+									<p class="text-gray-400 text-sm mb-2">{project.type}</p>
+									<p class="text-gray-500 text-sm">{project.description}</p>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			</section>
+		{/if}
+
+		<!-- Newsletter / Updates CTA with Dynamic Social Links -->
+		<section class="subsection-gradient-dark subsection-accent-blue relative py-16">
+			<div class="container mx-auto px-4 text-center">
+				<Icon icon="mdi:bell-ring-outline" class="text-orange-400 text-5xl mb-4 mx-auto" />
+				<h2 class="text-3xl font-bold text-white mb-4">Stay Updated</h2>
+				<p class="text-gray-400 mb-8 max-w-2xl mx-auto">
+					Be the first to know when new productions drop. Follow for updates on releases, behind-the-scenes content, and exclusive previews.
+				</p>
+
+				<div class="flex flex-wrap justify-center gap-4">
+					{#if socialLinks.length > 0}
+						{#each socialLinks as social}
+							<a
+								href={social.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
+							>
+								<Icon icon={social.icon} class="text-xl" style="color: {social.color}" />
+								{social.name}
+							</a>
+						{/each}
+					{:else}
+						<!-- Fallback static links -->
+						<a href="#" class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
+							<Icon icon="mdi:youtube" class="text-xl text-red-500" />
+							YouTube
+						</a>
+						<a href="#" class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
+							<Icon icon="mdi:twitter" class="text-xl text-blue-400" />
+							Twitter
+						</a>
+						<a href="#" class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
+							<Icon icon="mdi:instagram" class="text-xl text-pink-500" />
+							Instagram
+						</a>
+					{/if}
+				</div>
+			</div>
+		</section>
+	{/if}
 </div>
 
 <style>

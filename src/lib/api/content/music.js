@@ -144,21 +144,65 @@ export async function getMusicReleases() {
           is_primary: link.is_primary
         };
       }),
-      credits: (release.credits || []).map(credit => ({
-        role: credit.role,
-        name: credit.person_id?.name || 'Unknown',
-        additional_info: credit.additional_info,
-        bio: credit.person_id?.bio,
-        website_url: credit.person_id?.website_url,
-        display_order: credit.display_order,
-        profile_image: credit.person_id?.profile_image
-          ? buildAssetUrl(
-              typeof credit.person_id.profile_image === 'object'
-                ? credit.person_id.profile_image.filename_disk
-                : credit.person_id.profile_image
-            )
-          : null
-      })),
+      credits: (release.credits || []).map(credit => {
+        // Parse role field - can be string, JSON string, JSON object, or array
+        let roles = [];
+        if (credit.role) {
+          if (typeof credit.role === 'string') {
+            // Try to parse as JSON first
+            try {
+              const parsed = JSON.parse(credit.role);
+              // If parsed is an array, use it; if object with roles array, use that
+              if (Array.isArray(parsed)) {
+                roles = parsed;
+              } else if (parsed.roles && Array.isArray(parsed.roles)) {
+                roles = parsed.roles;
+              } else if (typeof parsed === 'object') {
+                // Single role object with category/title
+                roles = [parsed];
+              }
+            } catch {
+              // Not valid JSON, treat as single role string
+              // Use the role itself as both title and category
+              roles = [{ title: credit.role, category: credit.role }];
+            }
+          } else if (Array.isArray(credit.role)) {
+            roles = credit.role;
+          } else if (typeof credit.role === 'object') {
+            roles = [credit.role];
+          }
+        }
+
+        // Normalize roles to have category and title
+        const normalizedRoles = roles.map(role => {
+          if (typeof role === 'string') {
+            // If it's just a string, use it as both title and category
+            return { title: role, category: role };
+          }
+          const title = role.title || role.name || role.role || 'Unknown Role';
+          // If no category is specified, use the title as the category
+          const category = role.category || role.group || title;
+          return { title, category };
+        });
+
+        return {
+          roles: normalizedRoles,
+          // Keep legacy role field for backward compatibility (first role title)
+          role: normalizedRoles[0]?.title || 'Unknown Role',
+          name: credit.person_id?.name || 'Unknown',
+          additional_info: credit.additional_info,
+          bio: credit.person_id?.bio,
+          website_url: credit.person_id?.website_url,
+          display_order: credit.display_order,
+          profile_image: credit.person_id?.profile_image
+            ? buildAssetUrl(
+                typeof credit.person_id.profile_image === 'object'
+                  ? credit.person_id.profile_image.filename_disk
+                  : credit.person_id.profile_image
+              )
+            : null
+        };
+      }),
       
       // Legacy fields for compatibility
       spotify_url: undefined,

@@ -22,6 +22,7 @@ export async function getSiteSettings() {
     const directus = getDirectusInstance();
     
     // Fetch general settings with explicit fields that exist in Directus
+    // Note: Only fetching fields that actually exist in the kjov2_general table
     console.log('Fetching kjov2_general...');
     const settings = await directus.request(
       readItems('kjov2_general', {
@@ -29,18 +30,13 @@ export async function getSiteSettings() {
           'id',
           'status',
           'music_page_disabled',
-          'music_page_header',
           'games_page_disabled',
-          'games_page_header',
-          'tech_page_disabled',
-          'tech_page_header',
-          'blog_page_disabled',
-          'blog_page_header'
+          'tech_page_disabled'
         ],
         limit: 1
       })
     );
-    console.log('kjov2_general fetched successfully');
+    console.log('kjov2_general fetched successfully:', settings);
 
     // Fetch socials from separate table with icon reference expanded
     let socials = [];
@@ -56,6 +52,24 @@ export async function getSiteSettings() {
     } catch (socialsError) {
       console.error('Error fetching socials:', socialsError);
       // Continue with empty socials array
+    }
+
+    // Fetch support platforms (Ko-Fi, Patreon, etc.)
+    let supportPlatforms = [];
+    try {
+      console.log('Fetching support platforms from kjov2_support_platforms...');
+      supportPlatforms = await directus.request(
+        readItems('kjov2_support_platforms', {
+          fields: ['id', 'name', 'url', 'icon', 'enabled', 'display_order'],
+          filter: { enabled: { _eq: true } },
+          sort: ['display_order', 'id']
+        })
+      );
+      console.log('Support platforms fetched:', supportPlatforms?.length || 0);
+    } catch (supportError) {
+      // Table may not exist yet - this is expected
+      console.log('Support platforms table not available (this is OK if not yet created)');
+      // Continue with empty array
     }
 
     // Handle the case where settings is an object (single record) instead of array
@@ -144,42 +158,45 @@ export async function getSiteSettings() {
     // Debug: Log processed socialLinks
     console.log('Processed socialLinks:', JSON.stringify(socialLinks, null, 2));
 
+    // Process support platforms
+    const processedSupportPlatforms = supportPlatforms.map(platform => ({
+      id: platform.id,
+      name: platform.name,
+      url: platform.url,
+      icon: platform.icon || 'mdi:heart',
+      display_order: platform.display_order || 0
+    }));
+
     const result = {
       status: siteConfig.status?.toLowerCase() || 'live', // Normalize to lowercase: 'live' or 'maintenance'
       featuredWorks,
       socialLinks,
+      supportPlatforms: processedSupportPlatforms,
       pages: {
+        // Only music, games, and tech have disable flags in the database currently
         music: {
-          disabled: siteConfig.music_page_disabled || false,
-          header_background: siteConfig.music_page_header || null
+          disabled: siteConfig.music_page_disabled || false
         },
         games: {
-          disabled: siteConfig.games_page_disabled || false,
-          header_background: siteConfig.games_page_header || null
+          disabled: siteConfig.games_page_disabled || false
         },
         voice: {
-          disabled: siteConfig.voice_page_disabled || false,
-          header_background: siteConfig.voice_page_header || null
+          disabled: false // Not yet in database
         },
         tech: {
-          disabled: siteConfig.tech_page_disabled || false,
-          header_background: siteConfig.tech_page_header || null
+          disabled: siteConfig.tech_page_disabled || false
         },
         productions: {
-          disabled: siteConfig.productions_page_disabled || false,
-          header_background: siteConfig.productions_page_header || null
+          disabled: false // Not yet in database
         },
         blog: {
-          disabled: siteConfig.blog_page_disabled || false,
-          header_background: siteConfig.blog_page_header || null
+          disabled: false // Not yet in database
         },
         about: {
-          disabled: siteConfig.about_page_disabled || false,
-          header_background: siteConfig.about_page_header || null
+          disabled: false // Not yet in database
         },
         contact: {
-          disabled: siteConfig.contact_page_disabled || false,
-          header_background: siteConfig.contact_page_header || null
+          disabled: false // Not yet in database
         }
       }
     };
@@ -194,6 +211,7 @@ export async function getSiteSettings() {
       status: 'live',
       featuredWorks: [], // Empty array if database is unavailable
       socialLinks: [], // Empty array if database is unavailable
+      supportPlatforms: [], // Empty array if database is unavailable
       pages: {
         music: { disabled: false, header_background: null },
         games: { disabled: false, header_background: null },

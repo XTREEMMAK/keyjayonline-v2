@@ -169,6 +169,8 @@
 		padding: 0 1rem;
 		border-top: 1px solid #4b5563;
 		padding-top: 0.5rem;
+		font-variant: all-small-caps;
+		letter-spacing: 2px;
 	}
 
 	/* Responsive adjustments */

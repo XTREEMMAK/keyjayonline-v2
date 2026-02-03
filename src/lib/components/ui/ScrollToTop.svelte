@@ -3,6 +3,7 @@
 	import { browser } from '$app/environment';
 	import { fly } from 'svelte/transition';
 	import { playerVisible } from '$lib/stores/musicPlayer.js';
+	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 
 	let visible = $state(false);
 	let scrollY = $state(0);
@@ -32,7 +33,7 @@
 	}
 </script>
 
-{#if visible}
+{#if visible && !$contentViewerOpen}
 	<button
 		onclick={scrollToTop}
 		class="fixed right-8 z-30 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 hover:shadow-blue-500/25 focus:outline-none focus:ring-4 focus:ring-blue-500/50 {
