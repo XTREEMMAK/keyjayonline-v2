@@ -21,46 +21,46 @@ export async function getSiteSettings() {
   try {
     const directus = getDirectusInstance();
     
+    // Fetch general settings with explicit fields that exist in Directus
+    console.log('Fetching kjov2_general...');
     const settings = await directus.request(
       readItems('kjov2_general', {
         fields: [
-          '*',
-          {
-            featured: [
-              'id',
-              'header',
-              'details',
-              'hosted_type',
-              'left_remote_content',
-              'project_link',
-              'sort',
-              {
-                thumbnail_image: ['id', 'filename_disk', 'filename_download']
-              },
-              {
-                background: ['id', 'filename_disk', 'filename_download', 'type']
-              }
-            ]
-          },
-          {
-            socials: [
-              'id',
-              'name',
-              'url',
-              'icon_selector_name',
-              {
-                icon_selector_name: ['icon_reference_id']
-              }
-            ]
-          }
+          'id',
+          'status',
+          'music_page_disabled',
+          'music_page_header',
+          'games_page_disabled',
+          'games_page_header',
+          'tech_page_disabled',
+          'tech_page_header',
+          'blog_page_disabled',
+          'blog_page_header'
         ],
         limit: 1
       })
     );
+    console.log('kjov2_general fetched successfully');
+
+    // Fetch socials from separate table with icon reference expanded
+    let socials = [];
+    try {
+      console.log('Fetching socials from kjov2_socials...');
+      socials = await directus.request(
+        readItems('kjov2_socials', {
+          fields: ['id', 'name', 'url', 'sort', 'icon_selector_name.icon_reference_id'],
+          sort: ['sort', 'id']
+        })
+      );
+      console.log('Raw socials from kjov2_socials:', JSON.stringify(socials, null, 2));
+    } catch (socialsError) {
+      console.error('Error fetching socials:', socialsError);
+      // Continue with empty socials array
+    }
 
     // Handle the case where settings is an object (single record) instead of array
     const siteConfig = Array.isArray(settings) ? settings[0] : settings;
-    
+
     // Check if we got valid data from the database
     if (!siteConfig || Object.keys(siteConfig).length === 0) {
       throw new Error('No data from database, using fallback');
@@ -94,16 +94,43 @@ export async function getSiteSettings() {
       link: work.project_link || '#'
     })) : [];
 
-    // Process social links if they exist
-    const socialLinks = siteConfig.socials ? siteConfig.socials.map(social => {
-      // Handle icon field - check if icon_selector_name is an object with icon_reference_id
+    // Process social links if they exist (from kjov2_socials table)
+    const socialLinks = socials && socials.length > 0 ? socials.map(social => {
+      // Handle icon field - check various possible formats from Directus
       let iconName = null;
-      if (social.icon_selector_name && typeof social.icon_selector_name === 'object') {
-        iconName = social.icon_selector_name.icon_reference_id;
-      } else {
-        iconName = social.icon_selector_name || `mdi:${(social.name || '').toLowerCase()}`;
+
+      if (social.icon_selector_name) {
+        if (typeof social.icon_selector_name === 'object') {
+          // If it's a relation object, try to get the icon reference
+          iconName = social.icon_selector_name.icon_reference_id || social.icon_selector_name.icon || social.icon_selector_name.name;
+        } else if (typeof social.icon_selector_name === 'string') {
+          // If it's a string, use it directly
+          iconName = social.icon_selector_name;
+        }
       }
-      
+
+      // Fallback: generate icon name from social platform name
+      if (!iconName && social.name) {
+        const platformName = social.name.toLowerCase();
+        // Map common platform names to Iconify icons
+        const iconMap = {
+          'youtube': 'line-md:youtube-filled',
+          'instagram': 'line-md:instagram',
+          'twitter': 'mdi:twitter',
+          'x': 'ri:twitter-x-fill',
+          'bluesky': 'line-md:bluesky',
+          'facebook': 'mdi:facebook',
+          'tiktok': 'ic:baseline-tiktok',
+          'spotify': 'mdi:spotify',
+          'bandcamp': 'fa7-brands:bandcamp',
+          'soundcloud': 'mdi:soundcloud',
+          'twitch': 'mdi:twitch',
+          'linkedin': 'mdi:linkedin',
+          'github': 'mdi:github'
+        };
+        iconName = iconMap[platformName] || `mdi:${platformName}`;
+      }
+
       return {
         id: social.id,
         name: social.name,
@@ -113,6 +140,9 @@ export async function getSiteSettings() {
         display_order: 0 // Default since display_order field doesn't exist
       };
     }) : [];
+
+    // Debug: Log processed socialLinks
+    console.log('Processed socialLinks:', JSON.stringify(socialLinks, null, 2));
 
     const result = {
       status: siteConfig.status?.toLowerCase() || 'live', // Normalize to lowercase: 'live' or 'maintenance'

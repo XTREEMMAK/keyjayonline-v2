@@ -56,6 +56,11 @@ export {
 } from './content/photos.js';
 
 export {
+  getVoiceProjects,
+  getVoiceCategories
+} from './content/voice.js';
+
+export {
   getMusicPageHeader,
   getTechPageHeader,
   getGamesPageHeader

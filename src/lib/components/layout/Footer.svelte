@@ -86,12 +86,12 @@
 				<img src="/img/KJ_Logo_Medium_W.svg" alt="KEY JAY Logo" class="w-auto h-auto footer-logo drop-shadow-xl">
 			</div>
 
-			<!-- Social Media Icons - Centered under logo -->
+			<span class="text-white text-4xl font-light tracking-wider mt-2 opacity-90 drop-shadow-lg">KEYJAY ONLINE</span>
+
+			<!-- Social Media Icons - Centered below KEYJAY ONLINE -->
 			<div class="flex justify-center mt-4 mb-2">
 				<SocialIcons layout="horizontal" size={32} gap="gap-5" className="text-white/80 hover:text-white drop-shadow-lg" {socialLinks} />
 			</div>
-
-			<span class="text-white text-4xl font-light tracking-wider mt-2 opacity-90 drop-shadow-lg">KEYJAY ONLINE</span>
 		</div>
 
 		<!-- Site Navigation (SPA hash-based) -->

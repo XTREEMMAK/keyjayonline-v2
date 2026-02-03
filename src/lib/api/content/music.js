@@ -209,8 +209,10 @@ export async function getLatestProjects(limit = 3) {
         sort: ['-release_date', '-created_at'],
         limit: limit,
         // Use wildcard for base fields, then specify relationships
+        // Note: liner_notes explicitly included to ensure it's fetched
         fields: [
           '*',
+          'liner_notes',
           'cover_art.id',
           'cover_art.filename_disk',
           'videos.*',
@@ -275,6 +277,7 @@ export async function getLatestProjects(limit = 3) {
         releaseDate: release.release_date,
         description: release.description,
         richContent: release.rich_content,
+        linerNotes: release.liner_notes,
         coverArt: coverArtUrl,
         backgroundImageUrl: backgroundImageUrl,
         thumbnailUrl: thumbnailUrl,

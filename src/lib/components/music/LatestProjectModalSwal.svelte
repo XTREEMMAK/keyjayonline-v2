@@ -94,12 +94,13 @@
 
 				<!-- Content Section -->
 				<div class="project-content-section">
-					<!-- Description -->
-					${project.richContent || project.description ? `
+					<!-- Description and Liner Notes -->
+					${project.richContent || project.description || project.linerNotes ? `
 						<div class="project-description">
 							${project.richContent ?
 								sanitizeHtml(project.richContent) :
-								`<p>${project.description}</p>`}
+								project.description ? `<p>${project.description}</p>` : ''}
+							${project.linerNotes ? `<br/>${sanitizeHtml(project.linerNotes)}` : ''}
 						</div>
 					` : ''}
 

@@ -6,6 +6,8 @@
 	import { navigateTo } from '$lib/stores/navigation.js';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
+	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
+	import { getAudioUrl } from '$lib/utils/environment.js';
 
 	// Title letters for animation
 	const titleLetters = 'Voice'.split('');
@@ -14,75 +16,21 @@
 	let container = $state();
 	let mixer = $state();
 	let activeCategory = $state('all');
+	let openDropdownId = $state(null);
 
-	// Voice work categories
-	const voiceCategories = [
-		{
-			id: 'commercial',
-			name: 'Commercial',
-			description: 'Professional voice-overs for advertisements and marketing',
-			samples: [
-				{
-					title: 'Tech Product Launch',
-					description: 'Energetic commercial for new smartphone',
-					audio_url: '/audio/commercial-tech.mp3',
-					duration: '0:30',
-					style: 'Energetic, Professional'
-				},
-				{
-					title: 'Coffee Brand Ad',
-					description: 'Warm, inviting voice for premium coffee',
-					audio_url: '/audio/commercial-coffee.mp3',
-					duration: '0:45',
-					style: 'Warm, Conversational'
-				}
-			]
-		},
-		{
-			id: 'narration',
-			name: 'Narration',
-			description: 'Documentary and educational content narration',
-			samples: [
-				{
-					title: 'Nature Documentary',
-					description: 'Calm narration for wildlife documentary',
-					audio_url: '/audio/narration-nature.mp3',
-					duration: '1:20',
-					style: 'Calm, Authoritative'
-				},
-				{
-					title: 'Historical Timeline',
-					description: 'Educational content about ancient civilizations',
-					audio_url: '/audio/narration-history.mp3',
-					duration: '2:15',
-					style: 'Educational, Clear'
-				}
-			]
-		},
-		{
-			id: 'character',
-			name: 'Character Voices',
-			description: 'Animation and video game character performances',
-			samples: [
-				{
-					title: 'Fantasy RPG Hero',
-					description: 'Heroic character for fantasy game',
-					audio_url: '/audio/character-hero.mp3',
-					duration: '0:25',
-					style: 'Heroic, Determined'
-				},
-				{
-					title: 'Animated Sidekick',
-					description: 'Quirky companion character',
-					audio_url: '/audio/character-sidekick.mp3',
-					duration: '0:35',
-					style: 'Playful, Energetic'
-				}
-			]
-		}
-	];
+	// Derived state from store
+	const sectionState = $derived($sectionData.voice);
+	const voiceData = $derived(sectionState.data || {});
+	const projects = $derived(voiceData.projects || []);
+	const categories = $derived(voiceData.categories || []);
+	const isLoading = $derived(sectionState.status === 'loading');
+	const isLoaded = $derived(sectionState.status === 'loaded');
+	const hasError = $derived(sectionState.status === 'error');
 
-	// Client testimonials
+	// Projects are ready for MixItUp - categorySlugs provides space-separated class names
+	const allSamples = $derived(projects);
+
+	// Client testimonials (static for now)
 	const testimonials = [
 		{
 			name: 'Sandra Espinoza',
@@ -104,37 +52,45 @@
 		}
 	];
 
-	// Flatten all samples for MixItUp
-	const allSamples = voiceCategories.flatMap(category =>
-		category.samples.map(sample => ({
-			...sample,
-			category: category.id,
-			categoryName: category.name
-		}))
-	);
-
 	onMount(async () => {
 		if (!browser) return;
 
-		// Initialize MixItUp
-		if (container) {
-			const { default: mixitup } = await import('mixitup');
-			mixer = mixitup(container, {
-				selectors: {
-					target: '.mix-item'
-				},
-				animation: {
-					duration: 300,
-					effects: 'fade scale(0.5)'
-				}
-			});
+		// Load voice data if not already loaded
+		if (sectionState.status === 'idle') {
+			await loadSection('voice');
 		}
 
+		// Close dropdown when clicking outside
+		const handleClickOutside = (e) => {
+			if (openDropdownId && !e.target.closest('.external-links-dropdown')) {
+				openDropdownId = null;
+			}
+		};
+		document.addEventListener('click', handleClickOutside);
+
 		return () => {
+			document.removeEventListener('click', handleClickOutside);
 			if (mixer) {
 				mixer.destroy();
 			}
 		};
+	});
+
+	// Initialize MixItUp when data is loaded
+	$effect(() => {
+		if (browser && isLoaded && container && allSamples.length > 0 && !mixer) {
+			import('mixitup').then(({ default: mixitup }) => {
+				mixer = mixitup(container, {
+					selectors: {
+						target: '.mix-item'
+					},
+					animation: {
+						duration: 300,
+						effects: 'fade scale(0.5)'
+					}
+				});
+			});
+		}
 	});
 
 	onDestroy(() => {
@@ -157,6 +113,11 @@
 	function handleContactClick() {
 		navigateTo('contact');
 	}
+
+	function toggleDropdown(projectId, e) {
+		e.stopPropagation();
+		openDropdownId = openDropdownId === projectId ? null : projectId;
+	}
 </script>
 
 <!-- ============================================================================ -->
@@ -168,20 +129,25 @@
 
 	<!-- Section Header with Indigo Accent -->
 	<div class="pt-28 pb-8 text-center relative">
-		<div class="absolute inset-0 bg-gradient-to-b from-indigo-600/20 via-purple-500/5 to-transparent pointer-events-none"></div>
+		<div
+			class="absolute inset-0 bg-gradient-to-b from-indigo-600/20 via-purple-500/5 to-transparent pointer-events-none"
+		></div>
 		<h1 class="text-4xl md:text-5xl font-bold text-white mb-3 relative">
 			{#each titleLetters as letter, i}
 				<span
 					use:letterPulse={{ delay: i * 60 }}
 					class="bg-gradient-to-r from-indigo-400 via-purple-300 to-violet-400 bg-clip-text text-transparent inline-block"
-				>{letter}</span>
+					>{letter}</span
+				>
 			{/each}
 		</h1>
 		<p class="text-lg text-indigo-200/70 relative">Professional voice-over services</p>
 	</div>
 
 	<!-- Voice Categories Section -->
-	<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-indigo-950/20 to-[var(--neu-bg)]/95 backdrop-blur-sm py-20 relative">
+	<section
+		class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-indigo-950/20 to-[var(--neu-bg)]/95 backdrop-blur-sm py-20 relative"
+	>
 		<div class="container mx-auto px-4">
 			<div class="text-center mb-12">
 				<h2 class="text-3xl font-bold text-white mb-4">Voice-Over Portfolio</h2>
@@ -190,68 +156,156 @@
 				</p>
 			</div>
 
-			<!-- Category Tabs -->
-			<div class="flex justify-center mb-12">
-				<div class="flex gap-2 neu-card-inset p-2 rounded-xl">
-					<button
-						onclick={() => setActiveCategory('all')}
-						class="px-6 py-3 rounded-lg font-medium transition-all duration-300 {
-							activeCategory === 'all'
-								? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
-								: 'bg-transparent text-gray-400 hover:text-white'
-						}"
-					>
-						All
-					</button>
-					{#each voiceCategories as category}
-						<button
-							onclick={() => setActiveCategory(category.id)}
-							class="px-6 py-3 rounded-lg font-medium transition-all duration-300 {
-								activeCategory === category.id
-									? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
-									: 'bg-transparent text-gray-400 hover:text-white'
-							}"
-						>
-							{category.name}
-						</button>
-					{/each}
+			<!-- Loading State -->
+			{#if isLoading}
+				<div class="flex justify-center items-center py-20">
+					<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
 				</div>
-			</div>
+			{:else if hasError}
+				<div class="text-center py-20">
+					<Icon icon="mdi:alert-circle" class="text-red-400 text-5xl mb-4 mx-auto" />
+					<p class="text-gray-400">Failed to load voice projects. Please try again later.</p>
+				</div>
+			{:else if isLoaded}
+				<!-- Category Tabs -->
+				<div class="flex justify-center mb-12">
+					<div class="flex flex-wrap gap-2 neu-card-inset p-2 rounded-xl">
+						<button
+							onclick={() => setActiveCategory('all')}
+							class="px-6 py-3 rounded-lg font-medium transition-all duration-300 {activeCategory ===
+							'all'
+								? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
+								: 'bg-transparent text-gray-400 hover:text-white'}"
+						>
+							All
+						</button>
+						{#each categories as category}
+							<button
+								onclick={() => setActiveCategory(category.slug)}
+								class="px-6 py-3 rounded-lg font-medium transition-all duration-300 {activeCategory ===
+								category.slug
+									? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
+									: 'bg-transparent text-gray-400 hover:text-white'}"
+							>
+								{category.name}
+							</button>
+						{/each}
+					</div>
+				</div>
 
-			<!-- Voice Samples with MixItUp -->
-			<div class="max-w-6xl mx-auto">
-				<div bind:this={container} class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[400px]">
-					{#each allSamples as sample}
-						<div class="mix-item {sample.category}">
-							<div class="neu-card p-6 hover:scale-[1.02] transition-all duration-300">
-								<div class="flex items-start justify-between mb-4">
-									<div>
-										<div class="flex items-center gap-2 mb-2">
-											<span class="bg-indigo-600/20 text-indigo-400 px-2 py-1 text-xs rounded border border-indigo-600/30">
-												{sample.categoryName}
-											</span>
-											<span class="bg-gray-600/20 text-gray-400 px-2 py-1 text-xs rounded border border-gray-600/30">
-												{sample.duration}
-											</span>
+				<!-- Voice Samples with MixItUp -->
+				<div class="w-full px-4">
+					{#if allSamples.length === 0}
+						<div class="text-center py-20">
+							<Icon icon="mdi:microphone-off" class="text-gray-500 text-5xl mb-4 mx-auto" />
+							<p class="text-gray-400">No voice projects available yet.</p>
+						</div>
+					{:else}
+						<div
+							bind:this={container}
+							class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[400px]"
+						>
+							{#each allSamples as sample}
+								<div class="mix-item {sample.categorySlugs}">
+									<div class="neu-card p-6 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
+										<!-- Dark overlay when dropdown is open -->
+										{#if openDropdownId === sample.id}
+											<div class="absolute inset-0 bg-black/40 z-10 pointer-events-none transition-opacity duration-200"></div>
+										{/if}
+
+										<!-- External Links Dropdown Button -->
+										{#if sample.externalLinks && sample.externalLinks.length > 0}
+											<div class="external-links-dropdown absolute top-4 right-4 z-20">
+												<button
+													onclick={(e) => toggleDropdown(sample.id, e)}
+													class="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-600/20 hover:bg-indigo-600/40 transition-colors"
+													title="External Links"
+												>
+													<Icon icon="mdi:earth" class="text-indigo-400 text-lg" />
+												</button>
+
+												<!-- Dropdown Menu with slide animation -->
+												<div
+													class="absolute top-10 right-0 w-48 bg-[var(--neu-bg)] rounded-lg shadow-xl border border-gray-700/50 overflow-hidden z-50 transition-all duration-200 origin-top-right
+													{openDropdownId === sample.id
+														? 'opacity-100 scale-100 translate-y-0'
+														: 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}"
+												>
+													{#each sample.externalLinks as link}
+														<a
+															href={link.url}
+															target="_blank"
+															rel="noopener noreferrer"
+															class="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 hover:bg-indigo-600/20 hover:text-white transition-colors"
+														>
+															<Icon icon="mdi:open-in-new" class="text-indigo-400" />
+															{link.label || 'Listen'}
+														</a>
+													{/each}
+												</div>
+											</div>
+										{/if}
+
+										<div class="flex items-start justify-between mb-4 pr-10 relative z-0">
+											<div>
+												<div class="flex items-center gap-2 mb-2 flex-wrap">
+													{#each sample.categories as cat}
+														<span
+															class="bg-indigo-600/20 text-indigo-400 px-2 py-1 text-xs rounded border border-indigo-600/30"
+														>
+															{cat.name}
+														</span>
+													{/each}
+													{#if sample.categories.length === 0}
+														<span
+															class="bg-gray-600/20 text-gray-400 px-2 py-1 text-xs rounded border border-gray-600/30"
+														>
+															Uncategorized
+														</span>
+													{/if}
+													{#if sample.clientName}
+														<span
+															class="bg-purple-600/20 text-purple-400 px-2 py-1 text-xs rounded border border-purple-600/30"
+														>
+															{sample.clientName}
+														</span>
+													{/if}
+												</div>
+												<h4 class="text-lg font-semibold text-white mb-1">{sample.title}</h4>
+												{#if sample.description}
+													<p class="text-gray-400 text-sm mb-2">{sample.description}</p>
+												{/if}
+												{#if sample.feeling && sample.feeling.length > 0}
+													<span class="text-indigo-400 text-xs font-medium">
+														{sample.feeling.join(', ')}
+													</span>
+												{/if}
+											</div>
 										</div>
-										<h4 class="text-lg font-semibold text-white mb-1">{sample.title}</h4>
-										<p class="text-gray-400 text-sm mb-2">{sample.description}</p>
-										<span class="text-indigo-400 text-xs font-medium">{sample.style}</span>
+
+										<div class="relative z-0">
+											{#if sample.audioUrl}
+												<AudioPlayer
+													audioUrl={getAudioUrl(sample.audioUrl)}
+													waveColor="rgba(99, 102, 241, 0.3)"
+													progressColor="rgba(99, 102, 241, 0.8)"
+													height={60}
+												/>
+											{:else}
+												<div
+													class="h-[60px] flex items-center justify-center text-gray-500 text-sm border border-gray-700/30 rounded"
+												>
+													No audio available
+												</div>
+											{/if}
+										</div>
 									</div>
 								</div>
-
-								<AudioPlayer
-									audioUrl={sample.audio_url}
-									trackTitle={sample.title}
-									waveColor="rgba(99, 102, 241, 0.3)"
-									progressColor="rgba(99, 102, 241, 0.8)"
-									height={60}
-								/>
-							</div>
+							{/each}
 						</div>
-					{/each}
+					{/if}
 				</div>
-			</div>
+			{/if}
 		</div>
 	</section>
 
@@ -269,33 +323,59 @@
 				<div class="neu-card p-8 text-center hover:scale-[1.02] transition-all duration-300">
 					<Icon icon="mdi:microphone" class="text-indigo-400 text-5xl mb-4 mx-auto" />
 					<h3 class="text-xl font-semibold text-white mb-3">Commercial Voice-Over</h3>
-					<p class="text-gray-400 mb-6">Professional voice for TV, radio, and online advertisements with quick turnaround times.</p>
+					<p class="text-gray-400 mb-6">
+						Professional voice for TV, radio, and online advertisements with quick turnaround
+						times.
+					</p>
 					<ul class="text-gray-300 text-sm space-y-2 text-left">
-						<li class="flex items-center gap-2"><Icon icon="mdi:check" class="text-green-400" /> 24-48 hour delivery</li>
-						<li class="flex items-center gap-2"><Icon icon="mdi:check" class="text-green-400" /> Multiple take options</li>
-						<li class="flex items-center gap-2"><Icon icon="mdi:check" class="text-green-400" /> Commercial usage rights</li>
+						<li class="flex items-center gap-2">
+							<Icon icon="mdi:check" class="text-green-400" /> 24-48 hour delivery
+						</li>
+						<li class="flex items-center gap-2">
+							<Icon icon="mdi:check" class="text-green-400" /> Multiple take options
+						</li>
+						<li class="flex items-center gap-2">
+							<Icon icon="mdi:check" class="text-green-400" /> Commercial usage rights
+						</li>
 					</ul>
 				</div>
 
 				<div class="neu-card p-8 text-center hover:scale-[1.02] transition-all duration-300">
 					<Icon icon="mdi:book-open-page-variant" class="text-purple-400 text-5xl mb-4 mx-auto" />
 					<h3 class="text-xl font-semibold text-white mb-3">Narration</h3>
-					<p class="text-gray-400 mb-6">Engaging narration for documentaries, e-learning, and audiobooks with clear articulation.</p>
+					<p class="text-gray-400 mb-6">
+						Engaging narration for documentaries, e-learning, and audiobooks with clear
+						articulation.
+					</p>
 					<ul class="text-gray-300 text-sm space-y-2 text-left">
-						<li class="flex items-center gap-2"><Icon icon="mdi:check" class="text-green-400" /> Long-form content expertise</li>
-						<li class="flex items-center gap-2"><Icon icon="mdi:check" class="text-green-400" /> Educational content specialty</li>
-						<li class="flex items-center gap-2"><Icon icon="mdi:check" class="text-green-400" /> Chapter-by-chapter delivery</li>
+						<li class="flex items-center gap-2">
+							<Icon icon="mdi:check" class="text-green-400" /> Long-form content expertise
+						</li>
+						<li class="flex items-center gap-2">
+							<Icon icon="mdi:check" class="text-green-400" /> Educational content specialty
+						</li>
+						<li class="flex items-center gap-2">
+							<Icon icon="mdi:check" class="text-green-400" /> Chapter-by-chapter delivery
+						</li>
 					</ul>
 				</div>
 
 				<div class="neu-card p-8 text-center hover:scale-[1.02] transition-all duration-300">
 					<Icon icon="mdi:drama-masks" class="text-green-400 text-5xl mb-4 mx-auto" />
 					<h3 class="text-xl font-semibold text-white mb-3">Character Voices</h3>
-					<p class="text-gray-400 mb-6">Unique character voices for animation, games, and interactive media projects.</p>
+					<p class="text-gray-400 mb-6">
+						Unique character voices for animation, games, and interactive media projects.
+					</p>
 					<ul class="text-gray-300 text-sm space-y-2 text-left">
-						<li class="flex items-center gap-2"><Icon icon="mdi:check" class="text-green-400" /> Wide vocal range</li>
-						<li class="flex items-center gap-2"><Icon icon="mdi:check" class="text-green-400" /> Consistent character delivery</li>
-						<li class="flex items-center gap-2"><Icon icon="mdi:check" class="text-green-400" /> Direction-friendly approach</li>
+						<li class="flex items-center gap-2">
+							<Icon icon="mdi:check" class="text-green-400" /> Wide vocal range
+						</li>
+						<li class="flex items-center gap-2">
+							<Icon icon="mdi:check" class="text-green-400" /> Consistent character delivery
+						</li>
+						<li class="flex items-center gap-2">
+							<Icon icon="mdi:check" class="text-green-400" /> Direction-friendly approach
+						</li>
 					</ul>
 				</div>
 			</div>
@@ -334,11 +414,14 @@
 	</section>
 
 	<!-- Contact CTA Section -->
-	<section class="bg-gradient-to-b from-[var(--neu-bg-dark)] via-[#1a1d24] to-[var(--neu-bg-dark)] py-20 relative">
+	<section
+		class="bg-gradient-to-b from-[var(--neu-bg-dark)] via-[#1a1d24] to-[var(--neu-bg-dark)] py-20 relative"
+	>
 		<div class="container mx-auto px-4 text-center">
 			<h2 class="text-3xl font-bold text-white mb-4">Ready to Bring Your Project to Life?</h2>
 			<p class="text-gray-400 mb-8 max-w-2xl mx-auto">
-				Let's discuss your voice-over needs and create something amazing together. Professional quality, quick turnaround, and competitive rates.
+				Let's discuss your voice-over needs and create something amazing together. Professional
+				quality, quick turnaround, and competitive rates.
 			</p>
 
 			<div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -348,7 +431,9 @@
 				>
 					Get a Quote
 				</button>
-				<button class="neu-button px-8 py-4 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105">
+				<button
+					class="neu-button px-8 py-4 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105"
+				>
 					Listen to More Samples
 				</button>
 			</div>

@@ -77,6 +77,7 @@
 				artist: project.artist,
 				description: project.description,
 				richContent: project.richContent,
+				linerNotes: project.linerNotes,
 				backgroundImageUrl: project.backgroundImageUrl || project.coverArt || '/img/hero-music-concert.webp',
 				mediaUrl: project.thumbnailUrl || project.coverArt || '/img/hero-music-concert.webp',
 				coverArt: project.coverArt,

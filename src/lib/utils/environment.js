@@ -67,8 +67,17 @@ export function getAudioUrl(originalUrl) {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
     return `/api/proxy-audio/${cleanPath}`;
   }
-  
-  // If not a CDN URL, return as-is
+
+  // Handle Directus asset URLs in development
+  // Pattern: http://host:port/assets/uuid or http://host:port/assets/uuid?access_token=...
+  const directusAssetPattern = /^https?:\/\/[^\/]+\/assets\/([^?]+)/;
+  const directusMatch = originalUrl.match(directusAssetPattern);
+  if (directusMatch) {
+    const assetId = directusMatch[1];
+    return `/api/proxy-directus-audio/${assetId}`;
+  }
+
+  // If not a known URL pattern, return as-is
   return originalUrl;
 }
 
