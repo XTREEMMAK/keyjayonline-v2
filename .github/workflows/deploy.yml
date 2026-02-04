@@ -137,6 +137,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           # Pass secrets as environment variables for the SSH script
+          DB_HOST: ${{ secrets.DB_HOST }}
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -154,12 +155,13 @@ jobs:
           PUBLIC_CONTACT_EMAIL: ${{ secrets.PUBLIC_CONTACT_EMAIL }}
           CONTACT_FORM_WEBHOOK_URL: ${{ secrets.CONTACT_FORM_WEBHOOK_URL }}
           CONTACT_FORM_WEBHOOK_SECRET: ${{ secrets.CONTACT_FORM_WEBHOOK_SECRET }}
+          USE_LOCAL_POSTGRES: ${{ secrets.USE_LOCAL_POSTGRES }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: DB_DATABASE,DB_USER,DB_PASSWORD,DIRECTUS_KEY,DIRECTUS_SECRET,DIRECTUS_ADMIN_EMAIL,DIRECTUS_ADMIN_PASSWORD,DIRECTUS_TOKEN,DIRECTUS_PUBLIC_URL,S3_ACCESS_KEY,S3_SECRET_KEY,CDN_BASE_URL,S3_BUCKET_URL,PUBLIC_SITE_URL,PUBLIC_CONTACT_EMAIL,CONTACT_FORM_WEBHOOK_URL,CONTACT_FORM_WEBHOOK_SECRET
+          envs: DB_HOST,DB_DATABASE,DB_USER,DB_PASSWORD,DIRECTUS_KEY,DIRECTUS_SECRET,DIRECTUS_ADMIN_EMAIL,DIRECTUS_ADMIN_PASSWORD,DIRECTUS_TOKEN,DIRECTUS_PUBLIC_URL,S3_ACCESS_KEY,S3_SECRET_KEY,CDN_BASE_URL,S3_BUCKET_URL,PUBLIC_SITE_URL,PUBLIC_CONTACT_EMAIL,CONTACT_FORM_WEBHOOK_URL,CONTACT_FORM_WEBHOOK_SECRET,USE_LOCAL_POSTGRES
           script_stop: true
           script: |
             echo "Starting Docker deployment..."
@@ -167,6 +169,17 @@ jobs:
 
             # Pull latest docker-compose and related files
             git pull origin main
+
+            # Determine database host and profile based on USE_LOCAL_POSTGRES
+            if [ "${USE_LOCAL_POSTGRES}" = "true" ]; then
+              EFFECTIVE_DB_HOST="kjo2_postgres"
+              DOCKER_PROFILE="--profile local-db"
+              echo "Using local Postgres container (kjo2_postgres)"
+            else
+              EFFECTIVE_DB_HOST="${DB_HOST:-external-db-host}"
+              DOCKER_PROFILE=""
+              echo "Using external Postgres at ${EFFECTIVE_DB_HOST}"
+            fi
 
             # Generate .env from GitHub Secrets (SINGLE SOURCE OF TRUTH)
             echo "Generating .env from GitHub Secrets..."
@@ -177,7 +190,7 @@ jobs:
             # =============================================================================
 
             # Database
-            DB_HOST=kjo2_postgres
+            DB_HOST=${EFFECTIVE_DB_HOST}
             DB_PORT=5432
             DB_DATABASE=${DB_DATABASE}
             DB_USER=${DB_USER}
@@ -223,17 +236,17 @@ jobs:
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
             # Stop existing containers
-            docker compose down --remove-orphans || true
+            docker compose ${DOCKER_PROFILE} down --remove-orphans || true
 
             # Start containers with new image
-            docker compose up -d
+            docker compose ${DOCKER_PROFILE} up -d
 
             # Wait for health checks
             sleep 30
 
             # Verify deployment
-            docker compose ps
-            docker compose logs --tail=20 kjo2_app
+            docker compose ${DOCKER_PROFILE} ps
+            docker compose ${DOCKER_PROFILE} logs --tail=20 kjo2_app
 
             # Clean up old images
             docker image prune -f
@@ -242,16 +255,28 @@ jobs:
 
       - name: Verify deployment health
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          USE_LOCAL_POSTGRES: ${{ secrets.USE_LOCAL_POSTGRES }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          envs: USE_LOCAL_POSTGRES
           script: |
+            cd /var/www/keyjayonline.com
+
+            # Determine profile based on USE_LOCAL_POSTGRES
+            if [ "${USE_LOCAL_POSTGRES}" = "true" ]; then
+              DOCKER_PROFILE="--profile local-db"
+            else
+              DOCKER_PROFILE=""
+            fi
+
             # Check container health
-            if docker compose -f /var/www/keyjayonline.com/docker-compose.yml ps | grep -q "unhealthy"; then
+            if docker compose ${DOCKER_PROFILE} ps | grep -q "unhealthy"; then
               echo "ERROR: Container health check failed!"
-              docker compose -f /var/www/keyjayonline.com/docker-compose.yml logs --tail=50
+              docker compose ${DOCKER_PROFILE} logs --tail=50
               exit 1
             fi
 

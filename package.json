@@ -12,10 +12,11 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
-		"docker:up": "set -a && . ./.env.local && set +a && docker compose up -d",
-		"docker:down": "docker compose down",
-		"docker:logs": "docker compose logs -f",
-		"docker:build": "set -a && . ./.env.local && set +a && docker compose build --no-cache"
+		"docker:init": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db up kjo2_directus kjo2_postgres -d",
+		"docker:up": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db up -d",
+		"docker:down": "docker compose --profile local-db down",
+		"docker:logs": "docker compose --profile local-db logs -f",
+		"docker:build": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db build --no-cache"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.2.12",
