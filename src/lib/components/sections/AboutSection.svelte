@@ -567,6 +567,7 @@
 						{/if}
 
 						<!-- Relevant Testimonials -->
+						{#if testimonials.filter(t => activeTab === 'bio' || (t.serviceTypes && t.serviceTypes.includes(activeTab)) || (t.categories && t.categories.includes(activeTab))).length > 0}
 						<div class="mb-20">
 							<h3 class="text-2xl font-semibold text-white mb-8 text-center">Client Testimonials</h3>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -620,6 +621,7 @@
 								{/each}
 							</div>
 						</div>
+						{/if}
 					</div>
 					{/if}
 				{/key}

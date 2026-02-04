@@ -10,10 +10,13 @@ import {
   DIRECTUS_URL,
   DIRECTUS_TOKEN,
   CDN_BASE_URL,
-  S3_BUCKET_URL,
-  USE_CDN_FOR_ASSETS,
-  NODE_ENV
+  S3_BUCKET_URL
 } from '$env/static/private';
+
+// Use dynamic import for optional env vars to avoid build failures
+import { env } from '$env/dynamic/private';
+const USE_CDN_FOR_ASSETS = env.USE_CDN_FOR_ASSETS ?? 'true';
+const NODE_ENV = env.NODE_ENV ?? 'production';
 
 /**
  * Builds optimized asset URLs for images and files
