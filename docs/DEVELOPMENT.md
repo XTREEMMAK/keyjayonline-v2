@@ -159,8 +159,8 @@ source .env.docker.local && docker compose --profile local-db up -d
 
 **Export schema** (from a working Directus instance):
 ```bash
-docker exec -it kjo2_directus npx directus schema snapshot --yes /directus/schema.yaml
-docker cp kjo2_directus:/directus/schema.yaml ./docker/directus/schema.yaml
+docker exec -it directus-keyjayonline_v2-docker-directus-1 npx directus schema snapshot --yes /directus/schema.yaml
+docker cp directus-keyjayonline_v2-docker-directus-1:/directus/schema.yaml ./docker/directus/schema.yaml
 ```
 
 **Import schema** (to a fresh Directus container):
@@ -176,6 +176,8 @@ docker exec -it kjo2_directus npx directus schema apply /directus/schema.yaml --
 ```
 
 ### Seed Data & Flows
+
+#### From Local Docker Postgres
 
 **Export Flows, settings, and seed data** (via SQL):
 ```bash
@@ -207,6 +209,56 @@ docker cp ./docker/directus/content-seed.sql kjo2_postgres:/tmp/
 # Apply seeds (run AFTER schema is applied)
 docker exec kjo2_postgres psql -U kjo_user -d kjo_v2_db -f /tmp/system-seed.sql
 docker exec kjo2_postgres psql -U kjo_user -d kjo_v2_db -f /tmp/content-seed.sql
+```
+
+#### From External/Remote Postgres
+
+For databases hosted externally (managed databases, remote servers, etc.), use `pg_dump` directly with connection parameters instead of `docker exec`.
+
+**Export from external database:**
+```bash
+# Export Directus system tables
+pg_dump -h your-db-host.com -p 5432 -U your_db_user -d your_db_name \
+  --data-only \
+  --table=directus_flows \
+  --table=directus_operations \
+  --table=directus_settings \
+  --table=directus_roles \
+  --table=directus_permissions \
+  > ./docker/directus/system-seed.sql
+
+# Export app content/seed data
+pg_dump -h your-db-host.com -p 5432 -U your_db_user -d your_db_name \
+  --data-only \
+  --table=kjov2_general \
+  --table=kjov2_socials \
+  --table=kjov2_testimonials \
+  > ./docker/directus/content-seed.sql
+```
+
+**Import to external database:**
+```bash
+# Apply seeds (run AFTER schema is applied)
+psql -h your-db-host.com -p 5432 -U your_db_user -d your_db_name -f ./docker/directus/system-seed.sql
+psql -h your-db-host.com -p 5432 -U your_db_user -d your_db_name -f ./docker/directus/content-seed.sql
+```
+
+**Tips for external databases:**
+- You'll be prompted for the password, or set `PGPASSWORD` env var
+- For SSL connections, add `?sslmode=require` or use `--set=sslmode=require`
+- Use `.pgpass` file for automation (see [PostgreSQL docs](https://www.postgresql.org/docs/current/libpq-pgpass.html))
+- For managed databases (DigitalOcean, AWS RDS, etc.), check if you need to allowlist your IP
+
+**Example with environment variables:**
+```bash
+export PGHOST=your-db-host.com
+export PGPORT=5432
+export PGUSER=your_db_user
+export PGDATABASE=your_db_name
+export PGPASSWORD=your_db_password  # Or use .pgpass for security
+
+# Now pg_dump/psql will use these automatically
+pg_dump --data-only --table=directus_flows > ./docker/directus/system-seed.sql
 ```
 
 **Note:** Import order matters - apply schema first, then seed data.
