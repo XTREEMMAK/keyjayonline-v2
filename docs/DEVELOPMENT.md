@@ -70,8 +70,8 @@ DIRECTUS_URL=http://kjo2_directus:8055
 # Production settings
 NODE_ENV=production
 USE_CDN_FOR_ASSETS=true
-CDN_BASE_URL=https://kjo.nyc3.cdn.digitaloceanspaces.com
-S3_BUCKET_URL=https://kjo.nyc3.digitaloceanspaces.com
+CDN_BASE_URL=${CDN_BASE_URL}
+S3_BUCKET_URL=${S3_BUCKET_URL}
 ```
 
 ### .env.development (Local Dev Overrides)
@@ -80,11 +80,11 @@ Overrides for local development with external services:
 
 ```bash
 # Database (external server)
-DB_HOST=192.168.10.156
+DB_HOST=your_database_host
 DB_USER=xtreemmak
 
 # Directus (external instance)
-DIRECTUS_URL=http://192.168.10.24:8057
+DIRECTUS_URL=http://your_directus_host:8055
 
 # Development settings
 APP_PORT=3001
@@ -166,9 +166,9 @@ BYPASS_CORS_IN_DEV=false
 
 #### URL Transformation Example
 ```
-Original:    https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/track.mp3
+Original:    ${CDN_BASE_URL}/audio/track.mp3
 Development: /api/proxy-audio/audio/track.mp3
-Production:  https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/track.mp3
+Production:  ${CDN_BASE_URL}/audio/track.mp3
 ```
 
 ### Components Using Audio
@@ -213,10 +213,10 @@ npm run docker:build   # Rebuild images
 #### Common Console Messages
 ```
 WaveSurfer URL transformation:
-  Original: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/sample.mp3
+  Original: ${CDN_BASE_URL}/audio/sample.mp3
   Transformed: /api/proxy-audio/audio/sample.mp3
 
-Proxying audio request: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/sample.mp3
+Proxying audio request: ${CDN_BASE_URL}/audio/sample.mp3
 ```
 
 ## Troubleshooting
@@ -247,7 +247,7 @@ Proxying audio request: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/sample
 1. **Check Database Server**
    ```bash
    # Test connection
-   pg_isready -h 192.168.10.156 -p 5432
+   pg_isready -h your_database_host -p 5432
    ```
 
 2. **Verify Credentials**
@@ -263,7 +263,7 @@ Proxying audio request: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/sample
 1. **Check Directus Server**
    ```bash
    # Test accessibility
-   curl http://192.168.10.24:8057/server/ping
+   curl http://your_directus_host:8055/server/ping
    ```
 
 2. **Verify Token**

@@ -5,6 +5,7 @@
 
 import { json } from '@sveltejs/kit';
 import { getProductions, getProductionsCategories, getSiteSettings } from '$lib/api/index.js';
+import { getTestimonialsByServiceType } from '$lib/api/content/testimonials.js';
 
 // Helper to wrap promises with error handling
 const safePromise = (promise, name = 'Promise') =>
@@ -16,16 +17,18 @@ const safePromise = (promise, name = 'Promise') =>
 export async function GET() {
 	try {
 		// Load all productions data in parallel
-		const [productions, categories, siteSettings] = await Promise.all([
+		const [productions, categories, siteSettings, testimonials] = await Promise.all([
 			safePromise(getProductions(), 'getProductions'),
 			safePromise(getProductionsCategories(), 'getProductionsCategories'),
-			safePromise(getSiteSettings(), 'getSiteSettings')
+			safePromise(getSiteSettings(), 'getSiteSettings'),
+			safePromise(getTestimonialsByServiceType('productions'), 'getTestimonials')
 		]);
 
 		return json({
 			productions: productions || [],
 			categories: categories || [],
-			socialLinks: siteSettings?.socialLinks || []
+			socialLinks: siteSettings?.socialLinks || [],
+			testimonials: testimonials || []
 		});
 	} catch (error) {
 		console.error('Error loading productions section data:', error);
@@ -35,7 +38,8 @@ export async function GET() {
 				error: 'Failed to load productions section data',
 				productions: [],
 				categories: [],
-				socialLinks: []
+				socialLinks: [],
+				testimonials: []
 			},
 			{ status: 500 }
 		);

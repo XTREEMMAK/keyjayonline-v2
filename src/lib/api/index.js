@@ -68,6 +68,13 @@ export {
 } from './content/productions.js';
 
 export {
+  getTestimonials,
+  getTestimonialsByServiceType,
+  getTestimonialsForBio,
+  getTestimonialsByCategory
+} from './content/testimonials.js';
+
+export {
   getMusicPageHeader,
   getTechPageHeader,
   getGamesPageHeader

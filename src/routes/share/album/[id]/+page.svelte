@@ -173,7 +173,7 @@
 	}
 
 	async function handleShare() {
-		const shareUrl = generateShareUrl('album', album.id);
+		const shareUrl = generateShareUrl('album', { id: album.id, title: album.title, slug: album.slug });
 		const success = await copyShareUrl(shareUrl);
 		if (success) {
 			shareSuccess = true;
@@ -372,18 +372,18 @@
 		{#if album.external_links && album.external_links.length > 0}
 			<section class="streaming-links">
 				<h2>Listen On</h2>
-				<div class="link-grid">
+				<div class="link-chips">
 					{#each album.external_links as link}
 						{@const colors = getPlatformColors(link)}
 						<a
 							href={link.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="streaming-link"
+							class="streaming-chip"
 							title={link.label}
-							style="background: {colors.bg}; color: {colors.color}; --hover-bg: {colors.bgHover};"
+							style="--chip-color: {colors.color}; --chip-bg: {colors.bg}; --chip-hover: {colors.bgHover};"
 						>
-							<Icon icon={getExternalLinkIcon(link)} width={48} height={48} />
+							<Icon icon={getExternalLinkIcon(link)} width={20} height={20} />
 							<span>{link.label}</span>
 						</a>
 					{/each}
@@ -769,29 +769,39 @@
 		font-size: 0.875rem;
 	}
 
-	.link-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-		gap: 1rem;
-	}
-
-	.streaming-link {
+	.link-chips {
 		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 1.5rem;
-		backdrop-filter: blur(10px);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 12px;
-		text-decoration: none;
-		transition: all 0.3s;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		justify-content: center;
 	}
 
-	.streaming-link:hover {
-		background: var(--hover-bg) !important;
-		transform: translateY(-4px);
-		box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+	.streaming-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.75rem 1.25rem;
+		background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.4) 100%);
+		color: var(--chip-color);
+		border: 1.5px solid var(--chip-color);
+		border-radius: 50px;
+		text-decoration: none;
+		font-size: 1rem;
+		font-weight: 600;
+		transition: all 0.25s ease;
+		backdrop-filter: blur(12px);
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+	}
+
+	.streaming-chip:hover {
+		background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.5) 100%);
+		transform: translateY(-2px);
+		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+		border-color: var(--chip-color);
+	}
+
+	.streaming-chip span {
+		white-space: nowrap;
 	}
 
 	.video-grid {
@@ -1011,8 +1021,13 @@
 			font-size: 1.25rem;
 		}
 
-		.link-grid {
-			grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		.link-chips {
+			gap: 0.5rem;
+		}
+
+		.streaming-chip {
+			padding: 0.5rem 0.75rem;
+			font-size: 0.8rem;
 		}
 
 		.video-grid {

@@ -42,20 +42,23 @@
 		}
 	});
 
-	// Fetch milestones from API
-	async function fetchMilestones() {
+	// Fetch milestones and testimonials from API
+	async function fetchAboutData() {
 		try {
 			const response = await fetch('/api/sections/about');
 			if (!response.ok) {
-				throw new Error('Failed to fetch milestones');
+				throw new Error('Failed to fetch about data');
 			}
 			const data = await response.json();
 			if (data.milestones) {
 				milestones = data.milestones;
 			}
+			if (data.testimonials && data.testimonials.length > 0) {
+				testimonials = data.testimonials;
+			}
 		} catch (error) {
-			console.error('Error fetching milestones:', error);
-			// Keep empty arrays if fetch fails
+			console.error('Error fetching about data:', error);
+			// Keep fallback data if fetch fails
 		}
 	}
 
@@ -63,8 +66,8 @@
 	onMount(() => {
 		if (!browser) return;
 
-		// Fetch milestones on mount
-		fetchMilestones();
+		// Fetch about data on mount (milestones, testimonials)
+		fetchAboutData();
 
 		function handleScroll() {
 			if (!inlineNavRef) return;
@@ -242,8 +245,8 @@
 		]
 	};
 
-	// Client testimonials
-	const testimonials = [
+	// Client testimonials (fallback data, updated from API if available)
+	let testimonials = $state([
 		{
 			name: 'Sandra Espinoza',
 			date: '05/2013',
@@ -265,7 +268,7 @@
 			rating: 5,
 			categories: ['creative', 'productions']
 		}
-	];
+	]);
 
 	// Tab content descriptions
 	const tabDescriptions = {
@@ -567,7 +570,7 @@
 						<div class="mb-20">
 							<h3 class="text-2xl font-semibold text-white mb-8 text-center">Client Testimonials</h3>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-								{#each testimonials.filter(t => activeTab === 'bio' || t.categories.includes(activeTab)) as testimonial, index}
+								{#each testimonials.filter(t => activeTab === 'bio' || (t.serviceTypes && t.serviceTypes.includes(activeTab)) || (t.categories && t.categories.includes(activeTab))) as testimonial, index}
 									<div
 										use:observeElement={`${activeTab}-testimonial-${index}`}
 										class="neu-card p-8 hover:scale-[1.02] transition-all duration-700 transform {
@@ -580,12 +583,38 @@
 												<Icon icon="mdi:star" class="text-yellow-400 text-xl" />
 											{/each}
 										</div>
-										<blockquote class="text-gray-100 mb-6 italic text-lg">
-											"{testimonial.quote}"
+										<blockquote class="text-gray-100 mb-6 italic text-lg testimonial-content">
+											{@html testimonial.quote}
 										</blockquote>
-										<div class="border-t border-gray-700 pt-4">
-											<div class="text-white font-semibold">{testimonial.name}</div>
-											<div class="text-gray-400 text-sm">{testimonial.date}</div>
+										<div class="border-t border-gray-700 pt-4 flex items-center gap-4">
+											{#if testimonial.avatarUrl}
+												<img
+													src={testimonial.avatarUrl}
+													alt={testimonial.name}
+													class="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
+												/>
+											{:else}
+												<div class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xl">
+													{testimonial.name?.charAt(0) || '?'}
+												</div>
+											{/if}
+											<div class="flex-1 min-w-0">
+												<div class="text-white font-semibold">
+													{testimonial.name}{#if testimonial.title}<span class="text-gray-400 font-normal">, {testimonial.title}</span>{/if}
+												</div>
+												{#if testimonial.company}
+													<div class="text-gray-300 text-sm">{testimonial.company}</div>
+												{/if}
+												<div class="flex items-center gap-2 text-gray-400 text-sm">
+													{#if testimonial.projectName}
+														<span class="text-purple-400">Re: {testimonial.projectName}</span>
+														{#if testimonial.date}<span>•</span>{/if}
+													{/if}
+													{#if testimonial.date}
+														<span>{testimonial.date}</span>
+													{/if}
+												</div>
+											</div>
 										</div>
 									</div>
 								{/each}
@@ -707,5 +736,29 @@
 		box-shadow:
 			6px 6px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
 			-6px -6px 12px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	/* Style HTML content from WYSIWYG editor */
+	.testimonial-content :global(p) {
+		margin-bottom: 0.5rem;
+	}
+	.testimonial-content :global(p:last-child) {
+		margin-bottom: 0;
+	}
+	.testimonial-content :global(strong),
+	.testimonial-content :global(b) {
+		font-weight: 600;
+		color: #fff;
+	}
+	.testimonial-content :global(em),
+	.testimonial-content :global(i) {
+		font-style: italic;
+	}
+	.testimonial-content :global(a) {
+		color: #818cf8;
+		text-decoration: underline;
+	}
+	.testimonial-content :global(a:hover) {
+		color: #a5b4fc;
 	}
 </style>

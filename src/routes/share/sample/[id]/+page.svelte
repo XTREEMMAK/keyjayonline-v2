@@ -28,7 +28,7 @@
 	}
 
 	async function handleShare() {
-		const shareUrl = generateShareUrl('sample', sample.id);
+		const shareUrl = generateShareUrl('sample', { id: sample.id, title: sample.title, slug: sample.slug });
 		const success = await copyShareUrl(shareUrl);
 		if (success) {
 			shareSuccess = true;

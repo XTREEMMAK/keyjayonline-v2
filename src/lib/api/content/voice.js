@@ -94,6 +94,7 @@ export async function getVoiceProjects() {
 
       return {
         id: project.id,
+        slug: project.slug,
         title: project.title,
         description: project.description,
         clientName: project.client_name || null,

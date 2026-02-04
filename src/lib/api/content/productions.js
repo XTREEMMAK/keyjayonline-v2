@@ -162,6 +162,7 @@ export async function getProductions() {
 
       return {
         id: production.id,
+        slug: production.slug,
         title: production.title,
         description: production.description,
         category: production.category,
@@ -400,6 +401,7 @@ export async function getProductionById(productionId) {
 
     return {
       id: production.id,
+      slug: production.slug,
       title: production.title,
       description: production.description,
       category: production.category,

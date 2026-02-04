@@ -5,6 +5,7 @@
 
 import { json } from '@sveltejs/kit';
 import { getVoiceProjects, getVoiceCategories } from '$lib/api/index.js';
+import { getTestimonialsByServiceType } from '$lib/api/content/testimonials.js';
 
 // Helper to wrap promises with error handling
 const safePromise = (promise, name = 'Promise') =>
@@ -16,14 +17,16 @@ const safePromise = (promise, name = 'Promise') =>
 export async function GET() {
 	try {
 		// Load all voice data in parallel
-		const [projects, categories] = await Promise.all([
+		const [projects, categories, testimonials] = await Promise.all([
 			safePromise(getVoiceProjects(), 'getVoiceProjects'),
-			safePromise(getVoiceCategories(), 'getVoiceCategories')
+			safePromise(getVoiceCategories(), 'getVoiceCategories'),
+			safePromise(getTestimonialsByServiceType('voice'), 'getTestimonials')
 		]);
 
 		return json({
 			projects: projects || [],
-			categories: categories || []
+			categories: categories || [],
+			testimonials: testimonials || []
 		});
 	} catch (error) {
 		console.error('Error loading voice section data:', error);
@@ -32,7 +35,8 @@ export async function GET() {
 			{
 				error: 'Failed to load voice section data',
 				projects: [],
-				categories: []
+				categories: [],
+				testimonials: []
 			},
 			{ status: 500 }
 		);

@@ -133,7 +133,7 @@
 
 		<!-- Copyright -->
 		<p class="text-white text-sm drop-shadow-lg">
-			© 2024 J2it. All rights reserved.
+			© {new Date().getFullYear()} J2it. All rights reserved.
 		</p>
 	</div>
 </footer>

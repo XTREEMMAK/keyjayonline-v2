@@ -45,8 +45,8 @@ import {
 			console.error('Error fetching music samples:', error);
 		}
 
-		// Generate share URL for this album
-		const shareUrl = generateShareUrl('album', album.id);
+		// Generate share URL for this album (prefers database slug, falls back to title)
+		const shareUrl = generateShareUrl('album', { id: album.id, title: album.title, slug: album.slug });
 
 		// Set up global share function that can be called from HTML
 		window.handleAlbumShare = async () => {
@@ -285,28 +285,31 @@ import {
 							 style="width: 100%; max-width: 350px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);" />
 					</div>
 					<div class="album-details">
-						<div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;">
-							<h2 class="album-modal-title" style="font-size: clamp(1.25rem, 4vw, 2rem); font-weight: bold; color: #ffffff; line-height: 1.2; margin: 0;">${album.title}</h2>
-							<button id="album-share-btn" onclick="handleAlbumShare()" title="Share album" style="padding: 8px; background: transparent; border: none; color: #9ca3af; cursor: pointer; transition: all 0.3s ease; border-radius: 50%;" onmouseover="this.style.background='rgba(156, 163, 175, 0.1)'; this.style.color='#ffffff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'">
-								<iconify-icon id="album-share-icon" icon="mdi:share-variant" width="24" height="24" style="display: block;"></iconify-icon>
-							</button>
-						</div>
-						${album.artist ? `<p style="font-size: clamp(1rem, 3vw, 1.2rem); color: #d1d5db; margin-bottom: 16px;">${album.artist}</p>` : ''}
-						
-						<div class="streaming-links" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: nowrap; justify-content: center; overflow-x: auto; padding: 4px; min-width: 0; will-change: transform; scrollbar-width: none; -ms-overflow-style: none;">
+						<h2 class="album-modal-title" style="font-size: clamp(1.25rem, 4vw, 2rem); font-weight: bold; color: #ffffff; line-height: 1.2; margin: 0 0 8px 0; text-align: center;">${album.title}</h2>
+						${album.artist ? `<p style="font-size: clamp(1rem, 3vw, 1.2rem); color: #d1d5db; margin-bottom: 16px; text-align: center;">${album.artist}</p>` : ''}
+
+						<div class="streaming-links" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: nowrap; justify-content: center; align-items: center; overflow-x: auto; padding: 4px; min-width: 0; will-change: transform; scrollbar-width: none; -ms-overflow-style: none;">
 							<style>
 								.streaming-links::-webkit-scrollbar { display: none; }
 							</style>
 							${albumLinks.length > 0 ? albumLinks.map(/** @type {ExternalLink} */ (link) => {
 								const colors = getPlatformColors(link);
 								return `
-								<a href="${link.url}" target="_blank" title="${link.label}" style="display: inline-block; padding: 10px; background: ${colors.bg}; border-radius: 50%; color: ${colors.color}; text-decoration: none; transition: all 0.3s; flex-shrink: 0;" 
-								   onmouseover="this.style.transform='scale(1.1)'; this.style.background='${colors.bgHover}'" 
+								<a href="${link.url}" target="_blank" title="${link.label}" style="display: inline-block; padding: 10px; background: ${colors.bg}; border-radius: 50%; color: ${colors.color}; text-decoration: none; transition: all 0.3s; flex-shrink: 0;"
+								   onmouseover="this.style.transform='scale(1.1)'; this.style.background='${colors.bgHover}'"
 								   onmouseout="this.style.transform='scale(1)'; this.style.background='${colors.bg}'">
 									<iconify-icon icon="${getExternalLinkIcon(link)}" width="28" height="28" style="display: block; pointer-events: none;"></iconify-icon>
 								</a>
 								`;
 							}).join('') : ''}
+							<!-- Divider -->
+							<span style="color: rgba(255, 255, 255, 0.3); font-size: 1.5rem; font-weight: 300; flex-shrink: 0;">|</span>
+							<!-- Share Button -->
+							<button id="album-share-btn" onclick="handleAlbumShare()" title="Share album" style="display: inline-flex; align-items: center; justify-content: center; padding: 10px; background: rgba(139, 92, 246, 0.2); border-radius: 50%; color: #a78bfa; border: none; cursor: pointer; transition: all 0.3s; flex-shrink: 0;"
+							   onmouseover="this.style.transform='scale(1.1)'; this.style.background='rgba(139, 92, 246, 0.3)'"
+							   onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(139, 92, 246, 0.2)'">
+								<iconify-icon id="album-share-icon" icon="mdi:share-variant" width="28" height="28" style="display: block; pointer-events: none;"></iconify-icon>
+							</button>
 						</div>
 						
 						${album.access_type === 'paid' || album.access_type === 'subscriber' ? `

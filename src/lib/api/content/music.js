@@ -80,6 +80,7 @@ export async function getMusicReleases() {
     // Transform the data to match our existing format
     return releases.map(release => ({
       id: release.id,
+      slug: release.slug,
       title: release.title,
       artist: release.main_artist, // Default artist
       release_type: release.release_type,

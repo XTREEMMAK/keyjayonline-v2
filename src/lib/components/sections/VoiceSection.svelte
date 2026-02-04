@@ -8,6 +8,8 @@
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
+	import { copyShareUrl } from '$lib/utils/shareLinks.js';
+	import { PUBLIC_SITE_URL } from '$env/static/public';
 
 	// Title letters for animation
 	const titleLetters = 'Voice'.split('');
@@ -17,6 +19,19 @@
 	let mixer = $state();
 	let activeCategory = $state('all');
 	let openDropdownId = $state(null);
+	let shareSuccessId = $state(null);
+
+	// Handle share button click - uses Directus slug directly
+	async function handleShare(project, e) {
+		e.stopPropagation();
+		const base = PUBLIC_SITE_URL || (browser ? window.location.origin : '');
+		const shareUrl = `${base}/share/voice/${project.slug}`;
+		const success = await copyShareUrl(shareUrl);
+		if (success) {
+			shareSuccessId = project.id;
+			setTimeout(() => (shareSuccessId = null), 2000);
+		}
+	}
 
 	// Derived state from store
 	const sectionState = $derived($sectionData.voice);
@@ -30,8 +45,8 @@
 	// Projects are ready for MixItUp - categorySlugs provides space-separated class names
 	const allSamples = $derived(projects);
 
-	// Client testimonials (static for now)
-	const testimonials = [
+	// Fallback testimonials (used if Directus data not available)
+	const fallbackTestimonials = [
 		{
 			name: 'Sandra Espinoza',
 			date: '05/2013',
@@ -51,6 +66,13 @@
 			rating: 5
 		}
 	];
+
+	// Client testimonials - from Directus or fallback
+	const testimonials = $derived(
+		voiceData.testimonials && voiceData.testimonials.length > 0
+			? voiceData.testimonials
+			: fallbackTestimonials
+	);
 
 	onMount(async () => {
 		if (!browser) return;
@@ -213,16 +235,27 @@
 											<div class="absolute inset-0 bg-black/40 z-10 pointer-events-none transition-opacity duration-200"></div>
 										{/if}
 
-										<!-- External Links Dropdown Button -->
-										{#if sample.externalLinks && sample.externalLinks.length > 0}
-											<div class="external-links-dropdown absolute top-4 right-4 z-20">
-												<button
-													onclick={(e) => toggleDropdown(sample.id, e)}
-													class="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-600/20 hover:bg-indigo-600/40 transition-colors"
-													title="External Links"
-												>
-													<Icon icon="mdi:earth" class="text-indigo-400 text-lg" />
-												</button>
+										<!-- Action Buttons (Share + External Links) -->
+										<div class="absolute top-4 right-4 z-20 flex items-center gap-2">
+											<!-- Share Button -->
+											<button
+												onclick={(e) => handleShare(sample, e)}
+												class="w-8 h-8 flex items-center justify-center rounded-full bg-purple-600/20 hover:bg-purple-600/40 transition-colors"
+												title="Share"
+											>
+												<Icon icon={shareSuccessId === sample.id ? 'mdi:check' : 'mdi:share-variant'} class="text-purple-400 text-lg" />
+											</button>
+
+											<!-- External Links Dropdown Button -->
+											{#if sample.externalLinks && sample.externalLinks.length > 0}
+												<div class="external-links-dropdown relative">
+													<button
+														onclick={(e) => toggleDropdown(sample.id, e)}
+														class="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-600/20 hover:bg-indigo-600/40 transition-colors"
+														title="External Links"
+													>
+														<Icon icon="mdi:earth" class="text-indigo-400 text-lg" />
+													</button>
 
 												<!-- Dropdown Menu with slide animation -->
 												<div
@@ -244,7 +277,8 @@
 													{/each}
 												</div>
 											</div>
-										{/if}
+											{/if}
+										</div>
 
 										<div class="flex items-start justify-between mb-4 pr-10 relative z-0">
 											<div>
@@ -400,12 +434,38 @@
 								<Icon icon="mdi:star" class="text-yellow-400 text-lg" />
 							{/each}
 						</div>
-						<blockquote class="text-gray-300 mb-6 italic">
-							"{testimonial.quote}"
+						<blockquote class="text-gray-300 mb-6 italic testimonial-content">
+							{@html testimonial.quote}
 						</blockquote>
-						<div class="border-t border-gray-700 pt-4">
-							<div class="text-white font-semibold">{testimonial.name}</div>
-							<div class="text-gray-400 text-sm">{testimonial.date}</div>
+						<div class="border-t border-gray-700 pt-4 flex items-center gap-4">
+							{#if testimonial.avatarUrl}
+								<img
+									src={testimonial.avatarUrl}
+									alt={testimonial.name}
+									class="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
+								/>
+							{:else}
+								<div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+									{testimonial.name?.charAt(0) || '?'}
+								</div>
+							{/if}
+							<div class="flex-1 min-w-0">
+								<div class="text-white font-semibold">
+									{testimonial.name}{#if testimonial.title}<span class="text-gray-400 font-normal">, {testimonial.title}</span>{/if}
+								</div>
+								{#if testimonial.company}
+									<div class="text-gray-300 text-sm">{testimonial.company}</div>
+								{/if}
+								<div class="flex items-center gap-2 text-gray-400 text-sm">
+									{#if testimonial.projectName}
+										<span class="text-indigo-400">Re: {testimonial.projectName}</span>
+										{#if testimonial.date}<span>•</span>{/if}
+									{/if}
+									{#if testimonial.date}
+										<span>{testimonial.date}</span>
+									{/if}
+								</div>
+							</div>
 						</div>
 					</div>
 				{/each}
@@ -501,5 +561,29 @@
 		box-shadow:
 			6px 6px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
 			-6px -6px 12px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	/* Style HTML content from WYSIWYG editor */
+	.testimonial-content :global(p) {
+		margin-bottom: 0.5rem;
+	}
+	.testimonial-content :global(p:last-child) {
+		margin-bottom: 0;
+	}
+	.testimonial-content :global(strong),
+	.testimonial-content :global(b) {
+		font-weight: 600;
+		color: #fff;
+	}
+	.testimonial-content :global(em),
+	.testimonial-content :global(i) {
+		font-style: italic;
+	}
+	.testimonial-content :global(a) {
+		color: #818cf8;
+		text-decoration: underline;
+	}
+	.testimonial-content :global(a:hover) {
+		color: #a5b4fc;
 	}
 </style>

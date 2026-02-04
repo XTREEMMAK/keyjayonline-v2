@@ -60,8 +60,8 @@ The following secrets must be configured in your GitHub repository settings:
 |--------|-------------|---------|
 | `DIRECTUS_URL` | Internal Directus URL | `http://kjo2_directus:8055` |
 | `DIRECTUS_TOKEN` | API token for SvelteKit | `your_token` |
-| `CDN_BASE_URL` | CDN URL for assets | `https://kjo.nyc3.cdn.digitaloceanspaces.com` |
-| `S3_BUCKET_URL` | Direct S3 URL | `https://kjo.nyc3.digitaloceanspaces.com` |
+| `CDN_BASE_URL` | CDN URL for assets | `${CDN_BASE_URL}` |
+| `S3_BUCKET_URL` | Direct S3 URL | `${S3_BUCKET_URL}` |
 | `PUBLIC_SITE_URL` | Production site URL | `https://keyjayonline.com` |
 | `PUBLIC_CONTACT_EMAIL` | Contact email | `contact@keyjayonline.com` |
 
@@ -259,7 +259,7 @@ The development CORS bypass system is automatically secure in production:
    console.log('Audio URLs should be CDN URLs, not proxy URLs');
 
    // Look for direct CDN requests in Network tab
-   // Should see: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/...
+   // Should see: ${CDN_BASE_URL}/audio/...
    // Should NOT see: /api/proxy-audio/...
    ```
 
@@ -275,7 +275,7 @@ The development CORS bypass system is automatically secure in production:
 
 1. **CORS Configuration Missing**
    ```
-   Error: "Access to fetch at 'https://kjo.nyc3.cdn.digitaloceanspaces.com/...'
+   Error: "Access to fetch at '${CDN_BASE_URL}/...'
           from origin 'https://keyjayonline.com' has been blocked by CORS policy"
 
    Solution: Configure CDN CORS headers (see above)

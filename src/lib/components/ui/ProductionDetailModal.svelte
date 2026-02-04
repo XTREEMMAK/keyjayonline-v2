@@ -10,6 +10,7 @@
 	 * - Links (watch, listen, read, play)
 	 * - Comic page viewer integration
 	 * - Keyboard support (escape to close)
+	 * - Share button for shareable links
 	 */
 
 	import Icon from '@iconify/svelte';
@@ -17,6 +18,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 	import { extractYouTubeId } from '$lib/utils/youtube.js';
+	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
 
 	// Props
 	let {
@@ -26,6 +28,9 @@
 		onViewPages = () => {},
 		loading = false
 	} = $props();
+
+	// Share state
+	let shareSuccess = $state(false);
 
 	// Get YouTube video ID if available
 	const youtubeId = $derived(
@@ -76,6 +81,20 @@
 
 		if (event.key === 'Escape') {
 			handleClose();
+		}
+	}
+
+	// Handle share action
+	async function handleShare() {
+		if (!production?.slug) {
+			console.warn('Cannot share - production has no slug');
+			return;
+		}
+		const shareUrl = generateShareUrl('production', { slug: production.slug });
+		const success = await copyShareUrl(shareUrl);
+		if (success) {
+			shareSuccess = true;
+			setTimeout(() => (shareSuccess = false), 2000);
 		}
 	}
 
@@ -156,14 +175,27 @@
 			class="relative w-full max-w-4xl max-h-[90vh] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f172a] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
 			transition:fly={{ y: 50, duration: 300 }}
 		>
-			<!-- Close button -->
-			<button
-				onclick={handleClose}
-				class="absolute top-4 right-4 z-20 p-2 text-white/70 hover:text-white transition-colors rounded-full bg-black/30 hover:bg-black/50"
-				title="Close (Escape)"
-			>
-				<Icon icon="mdi:close" class="text-2xl" />
-			</button>
+			<!-- Header Buttons -->
+			<div class="absolute top-4 right-4 z-20 flex items-center gap-2">
+				<!-- Share button -->
+				{#if production?.slug}
+					<button
+						onclick={handleShare}
+						class="p-2 text-white/70 hover:text-white transition-colors rounded-full bg-black/30 hover:bg-black/50"
+						title={shareSuccess ? 'Link copied!' : 'Share'}
+					>
+						<Icon icon={shareSuccess ? 'mdi:check' : 'mdi:share-variant'} class="text-2xl" />
+					</button>
+				{/if}
+				<!-- Close button -->
+				<button
+					onclick={handleClose}
+					class="p-2 text-white/70 hover:text-white transition-colors rounded-full bg-black/30 hover:bg-black/50"
+					title="Close (Escape)"
+				>
+					<Icon icon="mdi:close" class="text-2xl" />
+				</button>
+			</div>
 
 			<!-- Scrollable content -->
 			<div class="overflow-y-auto flex-1 custom-scrollbar">

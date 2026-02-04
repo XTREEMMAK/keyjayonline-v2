@@ -9,14 +9,14 @@ This document provides detailed technical information about the audio CORS bypas
 Cross-Origin Resource Sharing (CORS) prevents web browsers from loading audio files from external CDNs when the request originates from a different domain. In development:
 
 - **Local Development**: `http://localhost:5173`
-- **Audio CDN**: `https://kjo.nyc3.cdn.digitaloceanspaces.com`
+- **Audio CDN**: `${CDN_BASE_URL}`
 - **Result**: Browser blocks audio requests due to CORS policy
 
 ### Impact
 
 Without CORS bypass, WaveSurfer.js audio players fail to load with errors like:
 ```
-Access to fetch at 'https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/track.mp3' 
+Access to fetch at '${CDN_BASE_URL}/audio/track.mp3' 
 from origin 'http://localhost:5173' has been blocked by CORS policy
 ```
 
@@ -68,7 +68,7 @@ export function getAudioUrl(originalUrl) {
     return originalUrl; // No transformation in production
   }
   
-  const cdnBaseUrl = 'https://kjo.nyc3.cdn.digitaloceanspaces.com';
+  const cdnBaseUrl = '${CDN_BASE_URL}';
   if (originalUrl.startsWith(cdnBaseUrl)) {
     const path = originalUrl.replace(cdnBaseUrl, '');
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
@@ -81,9 +81,9 @@ export function getAudioUrl(originalUrl) {
 
 **Transformation Examples**:
 ```
-Original:  https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/samples/track.mp3
+Original:  ${CDN_BASE_URL}/audio/samples/track.mp3
 Development: /api/proxy-audio/audio/samples/track.mp3
-Production:  https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/samples/track.mp3
+Production:  ${CDN_BASE_URL}/audio/samples/track.mp3
 ```
 
 ### 3. Vite Proxy Configuration
@@ -95,7 +95,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/proxy-audio': {
-        target: 'https://kjo.nyc3.cdn.digitaloceanspaces.com',
+        target: '${CDN_BASE_URL}',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/proxy-audio/, ''),
         configure: (proxy, options) => {
@@ -111,7 +111,7 @@ export default defineConfig({
 
 **How It Works**:
 1. Request: `GET /api/proxy-audio/audio/track.mp3`
-2. Vite rewrites to: `https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/track.mp3`
+2. Vite rewrites to: `${CDN_BASE_URL}/audio/track.mp3`
 3. Vite fetches from CDN and returns to browser
 4. Browser receives response as if from same origin
 
@@ -126,7 +126,7 @@ export async function GET({ params, url }) {
     throw error(404, 'Proxy endpoint not available in production');
   }
 
-  const cdnUrl = `https://kjo.nyc3.cdn.digitaloceanspaces.com/${params.path}`;
+  const cdnUrl = `${CDN_BASE_URL}/${params.path}`;
   const response = await fetch(cdnUrl);
   const audioData = await response.arrayBuffer();
   
@@ -224,14 +224,14 @@ export async function GET({ params, url }) {
 
 ```javascript
 // Current implementation
-const cdnUrl = `https://kjo.nyc3.cdn.digitaloceanspaces.com/${params.path}`;
+const cdnUrl = `${CDN_BASE_URL}/${params.path}`;
 ```
 
 **Potential Improvement**:
 ```javascript
 // Enhanced validation (optional)
 const safePath = params.path.replace(/\.\./g, '').replace(/^\/+/, '');
-const cdnUrl = `https://kjo.nyc3.cdn.digitaloceanspaces.com/${safePath}`;
+const cdnUrl = `${CDN_BASE_URL}/${safePath}`;
 ```
 
 #### 3. Resource Abuse Risk: **LOW**
@@ -328,13 +328,13 @@ console.log('CORS Bypass:', shouldBypassCors()); // Should be true
 // Test URL transformation
 import { getAudioUrl } from '/src/lib/utils/environment.js';
 
-const original = 'https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/test.mp3';
+const original = '${CDN_BASE_URL}/audio/test.mp3';
 const transformed = getAudioUrl(original);
 
 console.log('Original:', original);
 console.log('Transformed:', transformed);
 // Development: /api/proxy-audio/audio/test.mp3
-// Production: https://kjo.nyc3.cdn.digitaloceanspaces.com/audio/test.mp3
+// Production: ${CDN_BASE_URL}/audio/test.mp3
 ```
 
 ### Network Request Monitoring

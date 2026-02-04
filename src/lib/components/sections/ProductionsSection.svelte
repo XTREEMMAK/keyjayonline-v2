@@ -34,6 +34,7 @@
 	const productions = $derived(productionsData.productions || []);
 	const dbCategories = $derived(productionsData.categories || []);
 	const socialLinks = $derived(productionsData.socialLinks || []);
+	const testimonials = $derived(productionsData.testimonials || []);
 	const isLoading = $derived(sectionState.status === 'loading');
 	const isLoaded = $derived(sectionState.status === 'loaded');
 	const hasError = $derived(sectionState.status === 'error');
@@ -553,6 +554,65 @@
 			</section>
 		{/if}
 
+		<!-- Testimonials Section -->
+		{#if testimonials.length > 0}
+			<section class="bg-gradient-to-br from-orange-900/20 via-[var(--neu-bg)] to-amber-900/20 py-16">
+				<div class="container mx-auto px-4">
+					<div class="text-center mb-12">
+						<h2 class="text-3xl font-bold text-white mb-4">Client Testimonials</h2>
+						<p class="text-gray-400 max-w-2xl mx-auto">
+							What clients say about working with me on their production projects
+						</p>
+					</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+						{#each testimonials as testimonial}
+							<div class="neu-card p-8 hover:scale-[1.02] transition-all duration-300">
+								<div class="flex items-center mb-4">
+									{#each Array(testimonial.rating) as _}
+										<Icon icon="mdi:star" class="text-yellow-400 text-lg" />
+									{/each}
+								</div>
+								<blockquote class="text-gray-300 mb-6 italic testimonial-content">
+									{@html testimonial.quote}
+								</blockquote>
+								<div class="border-t border-gray-700 pt-4 flex items-center gap-4">
+									{#if testimonial.avatarUrl}
+										<img
+											src={testimonial.avatarUrl}
+											alt={testimonial.name}
+											class="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
+										/>
+									{:else}
+										<div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center text-white font-bold text-xl">
+											{testimonial.name?.charAt(0) || '?'}
+										</div>
+									{/if}
+									<div class="flex-1 min-w-0">
+										<div class="text-white font-semibold">
+											{testimonial.name}{#if testimonial.title}<span class="text-gray-400 font-normal">, {testimonial.title}</span>{/if}
+										</div>
+										{#if testimonial.company}
+											<div class="text-gray-300 text-sm">{testimonial.company}</div>
+										{/if}
+										<div class="flex items-center gap-2 text-gray-400 text-sm">
+											{#if testimonial.projectName}
+												<span class="text-orange-400">Re: {testimonial.projectName}</span>
+												{#if testimonial.date}<span>•</span>{/if}
+											{/if}
+											{#if testimonial.date}
+												<span>{testimonial.date}</span>
+											{/if}
+										</div>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			</section>
+		{/if}
+
 		<!-- Newsletter / Updates CTA with Dynamic Social Links -->
 		<section class="subsection-gradient-dark subsection-accent-blue relative py-16">
 			<div class="container mx-auto px-4 text-center">
@@ -640,5 +700,29 @@
 		box-shadow:
 			6px 6px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
 			-6px -6px 12px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	/* Style HTML content from WYSIWYG editor */
+	.testimonial-content :global(p) {
+		margin-bottom: 0.5rem;
+	}
+	.testimonial-content :global(p:last-child) {
+		margin-bottom: 0;
+	}
+	.testimonial-content :global(strong),
+	.testimonial-content :global(b) {
+		font-weight: 600;
+		color: #fff;
+	}
+	.testimonial-content :global(em),
+	.testimonial-content :global(i) {
+		font-style: italic;
+	}
+	.testimonial-content :global(a) {
+		color: #fb923c;
+		text-decoration: underline;
+	}
+	.testimonial-content :global(a:hover) {
+		color: #fdba74;
 	}
 </style>
