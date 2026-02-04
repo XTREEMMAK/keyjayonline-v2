@@ -69,8 +69,8 @@ Visit `http://localhost:5173` to see the site.
 
 ### Prerequisites
 
-- Node.js 18+
-- npm 8+
+- Node.js 22+ (required by @directus/sdk)
+- npm 10+
 - Access to development database and Directus instance
 
 ### Environment Configuration

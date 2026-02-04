@@ -4,8 +4,8 @@ This guide covers setting up the development environment for KeyJay Online v2, i
 
 ## Prerequisites
 
-- Node.js 20+
-- npm 9+
+- Node.js 22+
+- npm 10+
 - Docker (optional, for containerized development)
 - Access to the development database and Directus instance
 
