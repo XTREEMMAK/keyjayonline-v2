@@ -60,6 +60,7 @@ jobs:
           DIRECTUS_URL: http://localhost:8055
           DIRECTUS_TOKEN: test-token
           PUBLIC_SITE_URL: https://keyjayonline.com
+          PUBLIC_CONTACT_EMAIL: contact@keyjayonline.com
 
   # ==========================================================================
   # Build Docker Image

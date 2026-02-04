@@ -1,7 +1,10 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { PUBLIC_CONTACT_EMAIL } from '$env/static/public';
+	// Use dynamic imports to avoid build failures in CI when env vars are not set
+	import { env } from '$env/dynamic/public';
+
+	const PUBLIC_CONTACT_EMAIL = env.PUBLIC_CONTACT_EMAIL ?? 'contact@keyjayonline.com';
 
 	let currentTime = $state('');
 
