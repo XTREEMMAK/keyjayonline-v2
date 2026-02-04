@@ -1,6 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { getDirectusInstance, readItems, createItem, updateItem } from '$lib/api/core/client.js';
-import { DISCORD_BOT_TOKEN, DISCORD_USER_ID } from '$env/static/private';
+// Use dynamic imports to avoid build failures in CI when env vars are not set
+import { env } from '$env/dynamic/private';
+
+const DISCORD_BOT_TOKEN = env.DISCORD_BOT_TOKEN ?? '';
+const DISCORD_USER_ID = env.DISCORD_USER_ID ?? '';
 
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
 

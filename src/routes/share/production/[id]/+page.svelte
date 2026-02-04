@@ -3,7 +3,6 @@
 	import { PUBLIC_SITE_URL } from '$env/static/public';
 	import Icon from '@iconify/svelte';
 	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
-	import { getImageUrl } from '$lib/utils/environment.js';
 	import { onMount, onDestroy } from 'svelte';
 	import * as THREE from 'three';
 
@@ -193,8 +192,8 @@
 		return icons[type] || 'mdi:star';
 	}
 
-	// Cover image URL
-	const coverImageUrl = $derived(production.coverImage ? getImageUrl(production.coverImage) : null);
+	// Cover image URL (already processed by server via buildAssetUrl)
+	const coverImageUrl = $derived(production.coverImage || null);
 </script>
 
 <svelte:head>

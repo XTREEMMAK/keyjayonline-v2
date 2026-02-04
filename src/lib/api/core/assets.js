@@ -6,15 +6,13 @@
  * CMS or CDN solutions while maintaining consistent interfaces.
  */
 
-import {
-  DIRECTUS_URL,
-  DIRECTUS_TOKEN,
-  CDN_BASE_URL,
-  S3_BUCKET_URL
-} from '$env/static/private';
-
-// Use dynamic import for optional env vars to avoid build failures
+// Use dynamic imports for all env vars to avoid build failures in CI
 import { env } from '$env/dynamic/private';
+
+const DIRECTUS_URL = env.DIRECTUS_URL ?? 'http://localhost:8055';
+const DIRECTUS_TOKEN = env.DIRECTUS_TOKEN ?? '';
+const CDN_BASE_URL = env.CDN_BASE_URL ?? '';
+const S3_BUCKET_URL = env.S3_BUCKET_URL ?? '';
 const USE_CDN_FOR_ASSETS = env.USE_CDN_FOR_ASSETS ?? 'true';
 const NODE_ENV = env.NODE_ENV ?? 'production';
 

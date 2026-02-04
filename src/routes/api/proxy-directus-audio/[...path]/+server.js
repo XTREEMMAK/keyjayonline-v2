@@ -7,7 +7,11 @@
 
 import { error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
-import { DIRECTUS_URL, DIRECTUS_TOKEN } from '$env/static/private';
+// Use dynamic imports to avoid build failures in CI when env vars are not set
+import { env } from '$env/dynamic/private';
+
+const DIRECTUS_URL = env.DIRECTUS_URL ?? 'http://localhost:8055';
+const DIRECTUS_TOKEN = env.DIRECTUS_TOKEN ?? '';
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ params }) {

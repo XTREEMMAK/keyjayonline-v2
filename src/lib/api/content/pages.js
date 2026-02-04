@@ -8,10 +8,11 @@
 
 import { getDirectusInstance, readItems } from '../core/client.js';
 import { buildAssetUrl } from '../core/assets.js';
-import { 
-  CDN_BASE_URL,
-  S3_BUCKET_URL
-} from '$env/static/private';
+// Use dynamic imports to avoid build failures in CI when env vars are not set
+import { env } from '$env/dynamic/private';
+
+const CDN_BASE_URL = env.CDN_BASE_URL ?? '';
+const S3_BUCKET_URL = env.S3_BUCKET_URL ?? '';
 
 /**
  * Fetches the music page header image from Directus general settings

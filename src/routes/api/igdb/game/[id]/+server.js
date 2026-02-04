@@ -1,5 +1,9 @@
 import { json } from '@sveltejs/kit';
-import { IGDB_CLIENT_ID, IGDB_ACCESS_TOKEN } from '$env/static/private';
+// Use dynamic imports to avoid build failures in CI when env vars are not set
+import { env } from '$env/dynamic/private';
+
+const IGDB_CLIENT_ID = env.IGDB_CLIENT_ID ?? '';
+const IGDB_ACCESS_TOKEN = env.IGDB_ACCESS_TOKEN ?? '';
 
 const IGDB_API_BASE = 'https://api.igdb.com/v4';
 
