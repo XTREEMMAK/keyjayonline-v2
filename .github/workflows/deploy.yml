@@ -169,8 +169,7 @@ jobs:
             # Ensure deploy directory exists and has the repo
             if [ ! -d "/var/www/keyjayonline.com/.git" ]; then
               echo "First-time setup: cloning repository..."
-              sudo mkdir -p /var/www/keyjayonline.com
-              sudo chown $USER:$USER /var/www/keyjayonline.com
+              mkdir -p /var/www/keyjayonline.com
               git clone https://github.com/XTREEMMAK/keyjayonline-v2.git /var/www/keyjayonline.com
             fi
 
