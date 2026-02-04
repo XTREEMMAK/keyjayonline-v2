@@ -17,7 +17,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/kjo2_app
+  # Must be lowercase for Docker - hardcoded since github.repository preserves case
+  IMAGE_NAME: xtreemmak/keyjayonline-v2/kjo2_app
 
 jobs:
   # ==========================================================================
