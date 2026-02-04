@@ -213,9 +213,8 @@ export async function getMusicReleases() {
       tidal_url: undefined
     }));
 
-  } catch (error) {
-    console.error('DirectUS SDK error:', error);
-    // Return empty array as fallback
+  } catch {
+    // Return empty array as fallback on fetch error
     return [];
   }
 }
@@ -226,8 +225,8 @@ export async function getMusicReleases() {
  * @returns {Promise<Array>} Array of music sample objects with track info
  */
 export async function getMusicSamples(releaseId) {
-  // Completely disabled - return empty array to stop Vite errors
-  console.log('getMusicSamples disabled - releaseId:', releaseId);
+  // Disabled - return empty array
+  void releaseId; // Suppress unused variable warning
   return [];
 }
 
@@ -266,8 +265,6 @@ export async function getLatestProjects(limit = 3) {
         ]
       })
     );
-
-    console.log('getLatestProjects - fetched', releases?.length || 0, 'releases');
 
     return releases.map(release => {
       // Build cover art URL - handle both object and string formats
@@ -366,8 +363,8 @@ export async function getLatestProjects(limit = 3) {
       };
     });
 
-  } catch (error) {
-    console.error('Error fetching latest projects:', error);
+  } catch {
+    // Return empty array on fetch error
     return [];
   }
 }
@@ -436,8 +433,8 @@ export async function getMusicNewReleases() {
         .filter(Boolean)
     }));
 
-  } catch (error) {
-    console.error('Error fetching new releases:', error);
+  } catch {
+    // Collection may not exist or lack permissions - return empty array silently
     return [];
   }
 }

@@ -64,7 +64,7 @@ services:
       # Directus Settings
       KEY: ${DIRECTUS_KEY:?Directus key required}
       SECRET: ${DIRECTUS_SECRET:?Directus secret required}
-      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL:-admin@keyjayonline.com}
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD:?Admin password required}
 
       # Public URL (for asset URLs)
@@ -74,11 +74,19 @@ services:
       CORS_ENABLED: "true"
       CORS_ORIGIN: "true"
 
-      # S3 Storage Configuration (DigitalOcean Spaces)
-      STORAGE_LOCATIONS: "s3"
+      # Storage Configuration
+      # Default: local storage for development
+      # Production: set STORAGE_LOCATIONS=s3 in GitHub Secrets
+      STORAGE_LOCATIONS: ${STORAGE_LOCATIONS:-local}
+
+      # Local Storage (used when STORAGE_LOCATIONS=local)
+      STORAGE_LOCAL_DRIVER: local
+      STORAGE_LOCAL_ROOT: /directus/uploads
+
+      # S3 Storage (used when STORAGE_LOCATIONS=s3)
       STORAGE_S3_DRIVER: "s3"
-      STORAGE_S3_KEY: ${S3_ACCESS_KEY:?S3 access key required}
-      STORAGE_S3_SECRET: ${S3_SECRET_KEY:?S3 secret key required}
+      STORAGE_S3_KEY: ${S3_ACCESS_KEY:-}
+      STORAGE_S3_SECRET: ${S3_SECRET_KEY:-}
       STORAGE_S3_BUCKET: ${S3_BUCKET:-kjo}
       STORAGE_S3_REGION: ${S3_REGION:-nyc3}
       STORAGE_S3_ENDPOINT: "https://${S3_ENDPOINT:-nyc3.digitaloceanspaces.com}"
@@ -107,16 +115,16 @@ services:
       args:
         DIRECTUS_URL: http://kjo2_directus:8055
         DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:?Directus token required}
-        PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://keyjayonline.com}
-        CDN_BASE_URL: ${CDN_BASE_URL:-https://kjo.nyc3.cdn.digitaloceanspaces.com}
-        S3_BUCKET_URL: ${S3_BUCKET_URL:-https://kjo.nyc3.digitaloceanspaces.com}
+        PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://example.com}
+        CDN_BASE_URL: ${CDN_BASE_URL:-}
+        S3_BUCKET_URL: ${S3_BUCKET_URL:-}
         USE_CDN_FOR_ASSETS: ${USE_CDN_FOR_ASSETS:-true}
         NODE_ENV: production
         IGDB_CLIENT_ID: ${IGDB_CLIENT_ID:-placeholder}
         IGDB_ACCESS_TOKEN: ${IGDB_ACCESS_TOKEN:-placeholder}
         DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-placeholder}
         DISCORD_USER_ID: ${DISCORD_USER_ID:-placeholder}
-        PUBLIC_CONTACT_EMAIL: ${PUBLIC_CONTACT_EMAIL:-contact@keyjayonline.com}
+        PUBLIC_CONTACT_EMAIL: ${PUBLIC_CONTACT_EMAIL:-contact@example.com}
     image: kjo2_app:${APP_VERSION:-latest}
     container_name: kjo2_app
     restart: unless-stopped
@@ -133,12 +141,12 @@ services:
       DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:?Directus token required}
 
       # CDN Configuration
-      CDN_BASE_URL: ${CDN_BASE_URL:-https://kjo.nyc3.cdn.digitaloceanspaces.com}
+      CDN_BASE_URL: ${CDN_BASE_URL:-}
       USE_CDN_FOR_ASSETS: "true"
 
       # Public URLs
-      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://keyjayonline.com}
-      PUBLIC_CONTACT_EMAIL: ${PUBLIC_CONTACT_EMAIL:-contact@keyjayonline.com}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://example.com}
+      PUBLIC_CONTACT_EMAIL: ${PUBLIC_CONTACT_EMAIL:-contact@example.com}
 
       # Contact Form Webhook
       CONTACT_FORM_WEBHOOK_URL: ${CONTACT_FORM_WEBHOOK_URL:-}

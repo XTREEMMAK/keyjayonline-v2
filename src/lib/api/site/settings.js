@@ -23,7 +23,6 @@ export async function getSiteSettings() {
     
     // Fetch general settings with explicit fields that exist in Directus
     // Note: Only fetching fields that actually exist in the kjov2_general table
-    console.log('Fetching kjov2_general...');
     const settings = await directus.request(
       readItems('kjov2_general', {
         fields: [
@@ -36,28 +35,23 @@ export async function getSiteSettings() {
         limit: 1
       })
     );
-    console.log('kjov2_general fetched successfully:', settings);
 
     // Fetch socials from separate table with icon reference expanded
     let socials = [];
     try {
-      console.log('Fetching socials from kjov2_socials...');
       socials = await directus.request(
         readItems('kjov2_socials', {
           fields: ['id', 'name', 'url', 'sort', 'icon_selector_name.icon_reference_id'],
           sort: ['sort', 'id']
         })
       );
-      console.log('Raw socials from kjov2_socials:', JSON.stringify(socials, null, 2));
-    } catch (socialsError) {
-      console.error('Error fetching socials:', socialsError);
-      // Continue with empty socials array
+    } catch {
+      // Continue with empty socials array if table doesn't exist or fetch fails
     }
 
     // Fetch support platforms (Ko-Fi, Patreon, etc.)
     let supportPlatforms = [];
     try {
-      console.log('Fetching support platforms from kjov2_support_platforms...');
       supportPlatforms = await directus.request(
         readItems('kjov2_support_platforms', {
           fields: ['id', 'name', 'url', 'icon', 'enabled', 'display_order'],
@@ -65,11 +59,8 @@ export async function getSiteSettings() {
           sort: ['display_order', 'id']
         })
       );
-      console.log('Support platforms fetched:', supportPlatforms?.length || 0);
-    } catch (supportError) {
-      // Table may not exist yet - this is expected
-      console.log('Support platforms table not available (this is OK if not yet created)');
-      // Continue with empty array
+    } catch {
+      // Table may not exist yet - continue with empty array
     }
 
     // Handle the case where settings is an object (single record) instead of array
@@ -154,9 +145,6 @@ export async function getSiteSettings() {
         display_order: 0 // Default since display_order field doesn't exist
       };
     }) : [];
-
-    // Debug: Log processed socialLinks
-    console.log('Processed socialLinks:', JSON.stringify(socialLinks, null, 2));
 
     // Process support platforms
     const processedSupportPlatforms = supportPlatforms.map(platform => ({

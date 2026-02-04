@@ -1,138 +1,98 @@
-# Development Setup Guide
-
-This guide covers setting up the development environment for KeyJay Online v2, including the audio CORS bypass functionality.
+# Development Setup
 
 ## Prerequisites
 
 - Node.js 22+
 - npm 10+
-- Docker (optional, for containerized development)
-- Access to the development database and Directus instance
+- Access to Directus instance
 
 ## Quick Start
 
-1. **Clone and Install Dependencies**
-   ```bash
-   git clone <repository-url>
-   cd keyjayonline.com_v2
-   npm install
-   ```
-
-2. **Environment Configuration**
-
-   This project uses Vite's auto-loading for environment files. Create your local files from the example:
-
-   ```bash
-   # Create base environment file
-   cp .env.example .env
-
-   # Create development overrides
-   cp .env.example .env.development
-
-   # Create secrets file (gitignored)
-   cp .env.example .env.local
-   ```
-
-   Edit each file according to the structure below.
-
-3. **Start Development Server**
-   ```bash
-   npm run dev
-   ```
-
-   The site will be available at `http://localhost:5173`
-
-## Environment File Structure
-
-Vite auto-loads environment files in this order (later files override earlier ones):
-
-```
-npm run dev:
-  .env                    → Base/Docker defaults
-  .env.development        → Local dev overrides
-  .env.local              → Your secrets (gitignored)
+```bash
+npm install
+cp .env.example .env.local
+# Edit .env.local with your credentials
+npm run dev
 ```
 
-### .env (Base/Docker Defaults)
+## Environment Files
 
-Contains Docker container defaults and production-like settings:
+Vite auto-loads environment files in order:
+
+```
+npm run dev: .env → .env.development → .env.local
+```
+
+| File | Purpose |
+|------|---------|
+| `.env.example` | Template (committed) |
+| `.env.local` | Your secrets (gitignored) |
+| `.env.development` | Dev overrides (gitignored) |
+
+### Required in .env.local
 
 ```bash
-# Database (Docker container names)
-DB_HOST=kjo2_postgres
-DB_PORT=5432
-DB_DATABASE=kjo_v2_db
-DB_USER=kjo_user
-
-# Directus (Docker internal URL)
-DIRECTUS_URL=http://kjo2_directus:8055
-
-# Production settings
-NODE_ENV=production
-USE_CDN_FOR_ASSETS=true
-CDN_BASE_URL=${CDN_BASE_URL}
-S3_BUCKET_URL=${S3_BUCKET_URL}
+DIRECTUS_TOKEN=your_api_token
+DB_PASSWORD=your_db_password  # Only for Docker
 ```
 
-### .env.development (Local Dev Overrides)
+### Development Overrides
 
-Overrides for local development with external services:
+Create `.env.development` for local settings:
 
 ```bash
-# Database (external server)
-DB_HOST=your_database_host
-DB_USER=xtreemmak
-
-# Directus (external instance)
-DIRECTUS_URL=http://your_directus_host:8055
-
-# Development settings
-APP_PORT=3001
+DIRECTUS_URL=http://your-directus-host:8055
 NODE_ENV=development
 USE_CDN_FOR_ASSETS=false
 BYPASS_CORS_IN_DEV=true
 ```
 
-### .env.local (Secrets - Gitignored)
-
-Your actual secrets - **never commit this file**:
-
-```bash
-# Database
-DB_PASSWORD=your_database_password
-
-# Directus
-DIRECTUS_TOKEN=your_directus_api_token
-DIRECTUS_KEY=your_directus_key
-DIRECTUS_SECRET=your_directus_secret
-DIRECTUS_ADMIN_PASSWORD=your_admin_password
-
-# S3/Spaces (for Docker)
-S3_ACCESS_KEY=your_spaces_access_key
-S3_SECRET_KEY=your_spaces_secret_key
-```
-
 ## Docker Development
 
-For self-contained development with Docker:
+### First-Time Setup
+
+1. Create `.env.local` with required secrets:
+   ```bash
+   cp .env.example .env.local
+   # Edit with your values:
+   DB_PASSWORD=your_password
+   DIRECTUS_KEY=$(openssl rand -hex 32)
+   DIRECTUS_SECRET=$(openssl rand -hex 32)
+   DIRECTUS_ADMIN_PASSWORD=your_admin_password
+   DIRECTUS_TOKEN=placeholder  # Update after first boot
+   ```
+
+2. Start Directus and Postgres (skip app for now):
+   ```bash
+   source .env.local && docker compose up -d kjo2_postgres kjo2_directus
+   ```
+
+3. Access Directus at `http://localhost:8055` and create collections or apply schema
+
+4. Create API token in Directus (Settings → Access Tokens), update `DIRECTUS_TOKEN` in `.env.local`
+
+5. Start full stack:
+   ```bash
+   source .env.local && docker compose up -d
+   ```
+
+### Commands
 
 ```bash
-# Start all containers (PostgreSQL, Directus, App)
-npm run docker:up
-
-# View logs
-npm run docker:logs
-
-# Stop containers
-npm run docker:down
-
-# Rebuild images
-npm run docker:build
+npm run docker:up      # Start containers (auto-sources .env.local)
+npm run docker:down    # Stop containers
+npm run docker:logs    # View logs
+npm run docker:build   # Rebuild images
 ```
 
-**Note**: Docker scripts automatically source `.env.local` for secrets.
+### Direct Docker Compose
 
-### Docker Services
+If not using npm scripts, source env first:
+```bash
+source .env.local && docker compose up -d
+```
+
+### Services
 
 | Service | Container | Port |
 |---------|-----------|------|
@@ -140,235 +100,96 @@ npm run docker:build
 | PostgreSQL | kjo2_postgres | Internal |
 | Directus | kjo2_directus | 8055 |
 
-## Audio CORS Bypass System
+### Storage
 
-### Overview
+- **Local dev**: Uses local filesystem (default)
+- **Production**: Set `STORAGE_LOCATIONS=s3` with S3 credentials
 
-The development environment includes a CORS bypass system to resolve audio playback issues when loading files from the DigitalOcean Spaces CDN.
+### Schema Management
 
-### How It Works
+**What's included in schema export:**
+- Collections, fields, relations (data model)
 
-1. **Environment Detection**: Automatically detects development vs production
-2. **URL Transformation**: CDN URLs are transformed to proxy through localhost
-3. **Vite Proxy**: Development server proxies requests to bypass CORS
-4. **API Endpoint**: Fallback server-side proxy for additional compatibility
+**What's NOT included (must be manually recreated or seeded):**
+- Flows (automations)
+- Roles/Permissions
+- Settings
+- Actual data/content
 
-### Configuration Options
-
-#### Enable/Disable CORS Bypass
+**Export schema** (from a working Directus instance):
 ```bash
-# Enable (default in development)
-BYPASS_CORS_IN_DEV=true
-
-# Disable (for testing production-like behavior)
-BYPASS_CORS_IN_DEV=false
+docker exec -it kjo2_directus npx directus schema snapshot --yes /directus/schema.yaml
+docker cp kjo2_directus:/directus/schema.yaml ./docker/directus/schema.yaml
 ```
 
-#### URL Transformation Example
-```
-Original:    ${CDN_BASE_URL}/audio/track.mp3
-Development: /api/proxy-audio/audio/track.mp3
-Production:  ${CDN_BASE_URL}/audio/track.mp3
-```
-
-### Components Using Audio
-
-The following components automatically use the CORS bypass:
-
-- **AlbumModalSwal**: Track previews in album modals
-- **AudioPlayer**: Standalone audio player component
-- **PersistentMusicPlayer**: Site-wide music player
-
-## Development Tools
-
-### Available Scripts
-
+**Import schema** (to a fresh Directus container):
 ```bash
-# Development server with hot reload
-npm run dev
+# Copy schema file into container
+docker cp ./docker/directus/schema.yaml kjo2_directus:/directus/schema.yaml
 
-# Production build
-npm run build
+# Apply schema (creates all collections, fields, relations)
+docker exec -it kjo2_directus npx directus schema apply /directus/schema.yaml --yes
 
-# Preview production build
-npm run preview
-
-# Sync SvelteKit types
-npm run prepare
-
-# Docker commands
-npm run docker:up      # Start containers
-npm run docker:down    # Stop containers
-npm run docker:logs    # View logs
-npm run docker:build   # Rebuild images
+# Optional: Preview changes without applying
+docker exec -it kjo2_directus npx directus schema apply /directus/schema.yaml --dry-run
 ```
 
-### Browser DevTools
+### Seed Data & Flows
 
-#### Audio Debugging
-- Check console for WaveSurfer initialization logs
-- Look for URL transformation messages in development
-- Network tab shows proxy requests to `/api/proxy-audio/`
+**Export Flows, settings, and seed data** (via SQL):
+```bash
+# Export Directus system tables (flows, operations, settings, roles, permissions)
+docker exec kjo2_postgres pg_dump -U kjo_user -d kjo_v2_db \
+  --data-only \
+  --table=directus_flows \
+  --table=directus_operations \
+  --table=directus_settings \
+  --table=directus_roles \
+  --table=directus_permissions \
+  > ./docker/directus/system-seed.sql
 
-#### Common Console Messages
+# Export your app's seed data (e.g., testimonials, general settings)
+docker exec kjo2_postgres pg_dump -U kjo_user -d kjo_v2_db \
+  --data-only \
+  --table=kjov2_general \
+  --table=kjov2_socials \
+  --table=kjov2_testimonials \
+  > ./docker/directus/content-seed.sql
 ```
-WaveSurfer URL transformation:
-  Original: ${CDN_BASE_URL}/audio/sample.mp3
-  Transformed: /api/proxy-audio/audio/sample.mp3
 
-Proxying audio request: ${CDN_BASE_URL}/audio/sample.mp3
+**Import seed data** (to fresh container):
+```bash
+# Copy seed files into postgres container
+docker cp ./docker/directus/system-seed.sql kjo2_postgres:/tmp/
+docker cp ./docker/directus/content-seed.sql kjo2_postgres:/tmp/
+
+# Apply seeds (run AFTER schema is applied)
+docker exec kjo2_postgres psql -U kjo_user -d kjo_v2_db -f /tmp/system-seed.sql
+docker exec kjo2_postgres psql -U kjo_user -d kjo_v2_db -f /tmp/content-seed.sql
 ```
+
+**Note:** Import order matters - apply schema first, then seed data.
+
+## Audio CORS Bypass
+
+Development includes automatic CORS bypass for CDN audio files:
+
+- Enabled when `BYPASS_CORS_IN_DEV=true`
+- Routes CDN URLs through local proxy (`/api/proxy-audio/`)
+- Automatically disabled in production builds
 
 ## Troubleshooting
 
-### Audio Not Playing
+**Audio not playing:**
+- Check `BYPASS_CORS_IN_DEV=true` in `.env.development`
+- Restart dev server after config changes
 
-1. **Check CORS Bypass Status**
-   ```javascript
-   // In browser console
-   console.log(window.location.href.includes('localhost')); // Should be true
-   ```
+**Database connection:**
+```bash
+pg_isready -h your-db-host -p 5432
+```
 
-2. **Verify Environment Variables**
-   - Check that `.env.local` contains `BYPASS_CORS_IN_DEV=true`
-   - Restart dev server after changing env files
-
-3. **Check Network Requests**
-   - Audio requests should go to `/api/proxy-audio/` in development
-   - Look for 200 status codes, not CORS errors
-
-4. **Common Issues**
-   - **404 on proxy requests**: Restart dev server to pick up new Vite config
-   - **Still getting CORS errors**: Check that `BYPASS_CORS_IN_DEV=true`
-   - **Files not found**: Verify CDN URLs are correct in database
-
-### Database Connection Issues
-
-1. **Check Database Server**
-   ```bash
-   # Test connection
-   pg_isready -h your_database_host -p 5432
-   ```
-
-2. **Verify Credentials**
-   - Ensure `DB_PASSWORD` is set in `.env.local`
-   - Check that database user has proper permissions
-
-3. **Network Access**
-   - Verify database server is accessible from development machine
-   - Check firewall settings
-
-### Directus Connection Issues
-
-1. **Check Directus Server**
-   ```bash
-   # Test accessibility
-   curl http://your_directus_host:8055/server/ping
-   ```
-
-2. **Verify Token**
-   - Check that `DIRECTUS_TOKEN` is valid in `.env.local`
-   - Ensure token has necessary permissions
-
-## Development Workflow
-
-### Making Changes to Audio Components
-
-1. **Test Both Environments**
-   ```bash
-   # Test with CORS bypass (default)
-   npm run dev
-
-   # Test production-like behavior
-   # Edit .env.development: BYPASS_CORS_IN_DEV=false
-   npm run dev
-   ```
-
-2. **Check Console Logs**
-   - WaveSurfer initialization should show URL transformations
-   - No CORS errors in development
-   - Audio files load successfully
-
-3. **Verify All Components**
-   - Album modal track players
-   - Standalone AudioPlayer components
-   - Persistent music player
-
-### Adding New Audio Features
-
-1. **Use Shared Utilities**
-   ```javascript
-   import { createWaveSurfer, getAudioUrl } from '$lib/utils/wavesurfer.js';
-
-   // Automatically includes CORS bypass
-   const wavesurfer = await createWaveSurfer({
-     container: element,
-     audioUrl: originalUrl
-   });
-   ```
-
-2. **Follow Environment Patterns**
-   - Always use `getAudioUrl()` for URL transformation
-   - Use shared WaveSurfer factory functions
-   - Include proper error handling
-
-## Performance Considerations
-
-### Development Mode
-
-- **Proxy Overhead**: Adds ~50ms latency to audio requests
-- **Memory Usage**: Each proxy request loads full audio file into memory
-- **Caching**: Browser caches proxied responses for better performance
-
-### Optimization Tips
-
-1. **Use Smaller Audio Files**
-   - Keep development audio samples under 5MB
-   - Use compressed formats (MP3 at 128kbps)
-
-2. **Limit Concurrent Players**
-   - Only one WaveSurfer instance active at a time
-   - Clean up instances when components unmount
-
-3. **Browser Cache**
-   - Clear cache if audio changes aren't reflected
-   - Use hard refresh (Ctrl+Shift+R) for testing
-
-## Security Notes
-
-### Development Only
-
-The CORS bypass system is **automatically disabled** in production:
-
-- Environment detection prevents proxy in production builds
-- Server endpoints return 404 in production
-- Vite proxy configuration only exists during development
-
-### Safe Practices
-
-1. **Never commit `.env.local`** - it's gitignored for a reason
-2. **Use different database credentials for development**
-3. **Regularly rotate Directus tokens**
-4. **All `.env*` files except `.env.example` are gitignored**
-
-## Getting Help
-
-### Common Resources
-
-- **SvelteKit Documentation**: https://kit.svelte.dev/
-- **WaveSurfer.js Documentation**: https://wavesurfer.xyz/
-- **Tailwind CSS Documentation**: https://tailwindcss.com/
-
-### Project-Specific Help
-
-- Check existing documentation in `/docs/` folder
-- Review component code in `/src/lib/components/`
-- Look at utility functions in `/src/lib/utils/`
-
-### Debugging Steps
-
-1. Check browser console for errors
-2. Verify environment variables are loaded (check `.env.local`)
-3. Test database/Directus connectivity
-4. Compare with working production environment
-5. Review recent changes for potential issues
+**Directus connection:**
+```bash
+curl http://your-directus-host:8055/server/ping
+```
