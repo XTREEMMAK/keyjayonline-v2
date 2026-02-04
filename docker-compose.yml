@@ -129,12 +129,14 @@ services:
   # SvelteKit Application
   # ==========================================================================
   kjo2_app:
+    # Build section - only used for local development (npm run docker:build)
+    # Production uses pre-built image from ghcr.io (set via REGISTRY_IMAGE env var)
     build:
       context: .
       dockerfile: Dockerfile
       args:
         DIRECTUS_URL: http://kjo2_directus:8055
-        DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:?Directus token required}
+        DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:-}
         PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://example.com}
         CDN_BASE_URL: ${CDN_BASE_URL:-}
         S3_BUCKET_URL: ${S3_BUCKET_URL:-}
@@ -145,7 +147,7 @@ services:
         DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-placeholder}
         DISCORD_USER_ID: ${DISCORD_USER_ID:-placeholder}
         PUBLIC_CONTACT_EMAIL: ${PUBLIC_CONTACT_EMAIL:-contact@example.com}
-    image: kjo2_app:${APP_VERSION:-latest}
+    image: ${REGISTRY_IMAGE:-kjo2_app}:${APP_VERSION:-latest}
     container_name: kjo2_app
     restart: unless-stopped
     depends_on:
