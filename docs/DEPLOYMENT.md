@@ -5,7 +5,7 @@
 Deployments are automated via GitHub Actions on push to `main`:
 
 ```
-Push to main → Build & Test → Docker Image → Deploy → Health Check → Backup
+Push to main → Build & Test → Upload CDN Assets → Docker Image → Deploy → Health Check → Backup
 ```
 
 For local development setup, see [DEVELOPMENT.md](./DEVELOPMENT.md).
@@ -109,18 +109,73 @@ Backups created after each deployment, kept for 5 deployments.
 
 ---
 
-## CDN CORS Configuration
+## CDN Architecture
 
-DigitalOcean Spaces must have CORS configured:
+SvelteKit is configured with `paths.assets` pointing to the CDN (`CDN_BASE_URL`). This means:
+- **JS/CSS bundles** (`_app/immutable/`) load from CDN
+- **Static images** (`img/`) load from CDN (uploaded by CI)
+- **Videos/audio** load from CDN (uploaded locally via `npm run cdn:sync`)
+- The app server handles only SSR and API routes
+
+### CORS Configuration (Required)
+
+DigitalOcean Spaces must have CORS configured for cross-origin ES module loading:
 
 ```json
 {
-  "AllowedOrigins": ["https://example.com", "https://www.example.com"],
+  "AllowedOrigins": ["https://keyjayonline.com", "https://www.keyjayonline.com"],
   "AllowedMethods": ["GET", "HEAD"],
   "AllowedHeaders": ["*"],
   "MaxAgeSeconds": 3600
 }
 ```
+
+Configure this in the DigitalOcean control panel under Spaces settings.
+
+### What Gets Uploaded Automatically (CI)
+
+On every push to `main`, the `upload-cdn-assets` job in the deploy workflow:
+1. Builds the app with `CDN_BASE_URL` set
+2. Uploads `build/client/` to S3 (JS bundles, CSS, images, robots.txt)
+
+This happens automatically — no manual steps needed for code changes.
+
+### What Gets Uploaded Manually (Videos/Audio)
+
+Large static assets (videos, audio) are gitignored and uploaded locally.
+
+| Path | Storage | Purpose |
+|------|---------|---------|
+| `static/videos/` | CDN (manual upload) | Hero video, large video files |
+| `static/audio/` | CDN (manual upload) | Music samples, audio files |
+| `static/img/` | CDN (auto via CI) | Small images, icons |
+
+When you add or change files in `static/videos/` or `static/audio/`:
+
+1. **Configure credentials** in `.env.local`:
+   ```bash
+   S3_ACCESS_KEY=your_spaces_access_key
+   S3_SECRET_KEY=your_spaces_secret_key
+   ```
+
+2. **Sync to CDN** before pushing:
+   ```bash
+   npm run cdn:sync
+   ```
+
+3. **Then push** your code changes.
+
+The sync script (`scripts/sync-cdn-assets.js`):
+- Uses `@aws-sdk/client-s3` (no AWS CLI needed)
+- Only uploads changed files (compares by size)
+- Uploads to `s3://kjo/videos/` and `s3://kjo/audio/`
+- Sets public-read ACL and correct Content-Type
+
+### Why Not Git for Videos/Audio?
+
+- Video/audio files are large (100+ MB total)
+- Git isn't designed for binary files
+- CDN provides faster delivery worldwide
 
 ---
 

@@ -12,6 +12,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
+		"cdn:sync": "node scripts/sync-cdn-assets.js",
 		"docker:init": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db up kjo2_directus kjo2_postgres -d",
 		"docker:up": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db up -d",
 		"docker:down": "docker compose --profile local-db down",
@@ -19,6 +20,7 @@
 		"docker:build": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db build --no-cache"
 	},
 	"devDependencies": {
+		"@aws-sdk/client-s3": "^3.983.0",
 		"@sveltejs/adapter-node": "^5.2.12",
 		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",

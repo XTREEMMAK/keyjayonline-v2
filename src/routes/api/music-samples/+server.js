@@ -49,9 +49,9 @@ export async function GET({ url }) {
           'artist',
           'library',
           'music_sample.id',
-          'music_sample.filename_download',
+          'music_sample.filename_disk',
           'thumbnail.id',
-          'thumbnail.filename_download'
+          'thumbnail.filename_disk'
         ],
         sort: shuffleParam ? null : ['library', 'track_name']
       })
@@ -63,11 +63,11 @@ export async function GET({ url }) {
       title: sample.track_name,
       artist: sample.artist || 'Key Jay',
       genre: sample.library,
-      audioUrl: sample.music_sample?.id
-        ? buildAssetUrl(sample.music_sample.id)
+      audioUrl: sample.music_sample
+        ? buildAssetUrl(sample.music_sample)
         : null,
-      thumbnail: sample.thumbnail?.id
-        ? buildAssetUrl(sample.thumbnail.id)
+      thumbnail: sample.thumbnail
+        ? buildAssetUrl(sample.thumbnail)
         : null
     }));
 

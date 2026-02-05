@@ -33,9 +33,9 @@ export async function load({ params }) {
 					'artist',
 					'library',
 					'music_sample.id',
-					'music_sample.filename_download',
+					'music_sample.filename_disk',
 					'thumbnail.id',
-					'thumbnail.filename_download'
+					'thumbnail.filename_disk'
 				],
 				limit: 1
 			})
@@ -51,8 +51,8 @@ export async function load({ params }) {
 				artist: sample.artist || 'Key Jay',
 				genre: sample.library,
 				type: 'music',
-				audioUrl: sample.music_sample?.id ? buildAssetUrl(sample.music_sample.id) : null,
-				thumbnail: sample.thumbnail?.id ? buildAssetUrl(sample.thumbnail.id) : null
+				audioUrl: sample.music_sample ? buildAssetUrl(sample.music_sample) : null,
+				thumbnail: sample.thumbnail ? buildAssetUrl(sample.thumbnail) : null
 			};
 
 			const meta = {

@@ -1,10 +1,5 @@
 import { getSiteSettings } from '$lib/api/index.js';
 import { redirect, error } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
-
-const CDN_BASE_URL = env.CDN_BASE_URL ?? '';
-const USE_CDN_FOR_ASSETS = env.USE_CDN_FOR_ASSETS ?? 'true';
-const NODE_ENV = env.NODE_ENV ?? 'production';
 
 // Temporarily hidden pages - remove this when ready to re-enable
 const TEMPORARILY_HIDDEN_PAGES = ['games', 'tech', 'blog'];
@@ -45,8 +40,7 @@ export async function load({ url }) {
 
 		return {
 			siteSettings,
-			socialLinks: siteSettings.socialLinks,
-			cdnBaseUrl: (USE_CDN_FOR_ASSETS === 'true' || NODE_ENV === 'production') ? CDN_BASE_URL : ''
+			socialLinks: siteSettings.socialLinks
 		};
 	} catch (error) {
 		// If it's already a redirect, re-throw it
@@ -61,8 +55,7 @@ export async function load({ url }) {
 				status: 'live',
 				pages: {}
 			},
-			socialLinks: [],
-			cdnBaseUrl: (USE_CDN_FOR_ASSETS === 'true' || NODE_ENV === 'production') ? CDN_BASE_URL : ''
+			socialLinks: []
 		};
 	}
 }
