@@ -24,6 +24,13 @@
 	// Combined visibility - hide if scroll hidden OR if section subnav takes over OR if content viewer is open
 	const shouldShow = $derived(isVisible && !$hideMainNavbar && !$contentViewerOpen);
 
+	// Auto-close mobile menu when navbar hides
+	$effect(() => {
+		if (!shouldShow && isMobileMenuOpen) {
+			isMobileMenuOpen = false;
+		}
+	});
+
 	onMount(() => {
 		if (!browser) return;
 
@@ -72,114 +79,112 @@
 	}
 </script>
 
-{#if shouldShow && hasInitiallyLoaded}
-	<nav
-		use:mouseGlow={{ color: 'rgba(59, 130, 246, 0.12)', size: 300, blur: 60 }}
-		class="neu-navbar transition-shadow duration-300 {isMobileMenuOpen ? 'mobile-menu-open' : ''}"
-		class:shadow-2xl={isScrolled}
-		in:fly={{ y: -100, duration: 400 }}
-		out:fly={{ y: -100, duration: 300 }}
-		aria-label="Main navigation"
-		style="--section-glow-color: {glowColor};"
-	>
-		<!-- Mobile Layout: Hamburger left, Logo right -->
-		<div class="flex md:hidden items-center justify-between w-full">
+<nav
+	use:mouseGlow={{ color: 'rgba(59, 130, 246, 0.12)', size: 300, blur: 60 }}
+	class="neu-navbar {isMobileMenuOpen ? 'mobile-menu-open' : ''}"
+	class:shadow-2xl={isScrolled}
+	class:nav-hidden={!shouldShow || !hasInitiallyLoaded}
+	aria-label="Main navigation"
+	aria-hidden={!shouldShow || !hasInitiallyLoaded}
+	style="--section-glow-color: {glowColor};"
+>
+	<!-- Mobile Layout: Hamburger left, Logo right -->
+	<div class="flex md:hidden items-center justify-between w-full">
+		<button
+			class="hamburger-btn p-2"
+			class:open={isMobileMenuOpen}
+			onclick={() => isMobileMenuOpen = !isMobileMenuOpen}
+			aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+			aria-expanded={isMobileMenuOpen}
+		>
+			<span class="hamburger-line"></span>
+			<span class="hamburger-line"></span>
+			<span class="hamburger-line"></span>
+		</button>
+
+		<button
+			class="neu-navbar-logo"
+			class:active={$activeSection === 'home'}
+			class:logo-glow-active={$activeSection === 'home'}
+			onclick={goHome}
+			aria-label="Go to home"
+			aria-current={$activeSection === 'home' ? 'page' : undefined}
+			style="--item-glow-color: {sectionMeta.home.color};"
+		>
+			<img
+				src="/img/KJ_Logo_Medium_W.svg"
+				alt="KEY JAY ONLINE"
+				class="logo-img"
+			/>
+		</button>
+	</div>
+
+	<!-- Desktop Layout: Logo, Divider, Nav Items -->
+	<div class="hidden md:flex items-center gap-1">
+		<button
+			class="neu-navbar-logo"
+			class:active={$activeSection === 'home'}
+			class:logo-glow-active={$activeSection === 'home'}
+			onclick={goHome}
+			aria-label="Go to home"
+			aria-current={$activeSection === 'home' ? 'page' : undefined}
+			style="--item-glow-color: {sectionMeta.home.color};"
+		>
+			<img
+				src="/img/KJ_Logo_Medium_W.svg"
+				alt="KEY JAY ONLINE"
+				class="logo-img"
+			/>
+		</button>
+
+		<!-- Divider -->
+		<div class="w-px h-6 bg-white/10 mx-1"></div>
+
+		{#each navItems as section}
 			<button
-				class="hamburger-btn p-2"
-				class:open={isMobileMenuOpen}
-				onclick={() => isMobileMenuOpen = !isMobileMenuOpen}
-				aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-				aria-expanded={isMobileMenuOpen}
+				class="neu-navbar-item uppercase tracking-wider"
+				class:active={$activeSection === section}
+				class:glow-active={$activeSection === section}
+				onmouseenter={() => prefetchSection(section)}
+				onclick={() => handleNavClick(section)}
+				aria-current={$activeSection === section ? 'page' : undefined}
+				style="--item-glow-color: {sectionMeta[section].color};"
 			>
-				<span class="hamburger-line"></span>
-				<span class="hamburger-line"></span>
-				<span class="hamburger-line"></span>
+				{sectionMeta[section].label}
 			</button>
+		{/each}
+	</div>
 
-			<button
-				class="neu-navbar-logo"
-				class:active={$activeSection === 'home'}
-				class:logo-glow-active={$activeSection === 'home'}
-				onclick={goHome}
-				aria-label="Go to home"
-				aria-current={$activeSection === 'home' ? 'page' : undefined}
-				style="--item-glow-color: {sectionMeta.home.color};"
-			>
-				<img
-					src="/img/KJ_Logo_Medium_W.svg"
-					alt="KEY JAY ONLINE"
-					class="logo-img"
-				/>
-			</button>
-		</div>
-
-		<!-- Desktop Layout: Logo, Divider, Nav Items -->
-		<div class="hidden md:flex items-center gap-1">
-			<button
-				class="neu-navbar-logo"
-				class:active={$activeSection === 'home'}
-				class:logo-glow-active={$activeSection === 'home'}
-				onclick={goHome}
-				aria-label="Go to home"
-				aria-current={$activeSection === 'home' ? 'page' : undefined}
-				style="--item-glow-color: {sectionMeta.home.color};"
-			>
-				<img
-					src="/img/KJ_Logo_Medium_W.svg"
-					alt="KEY JAY ONLINE"
-					class="logo-img"
-				/>
-			</button>
-
-			<!-- Divider -->
-			<div class="w-px h-6 bg-white/10 mx-1"></div>
-
+	<!-- Mobile Menu Dropdown - Now inside nav for visual connection -->
+	{#if isMobileMenuOpen}
+		<div
+			class="mobile-menu-container md:hidden"
+			transition:fly={{ y: -10, duration: 200 }}
+		>
 			{#each navItems as section}
 				<button
-					class="neu-navbar-item uppercase tracking-wider"
+					class="mobile-menu-item"
 					class:active={$activeSection === section}
-					class:glow-active={$activeSection === section}
 					onmouseenter={() => prefetchSection(section)}
 					onclick={() => handleNavClick(section)}
 					aria-current={$activeSection === section ? 'page' : undefined}
 					style="--item-glow-color: {sectionMeta[section].color};"
 				>
-					{sectionMeta[section].label}
+					<iconify-icon icon={sectionMeta[section].icon} class="text-xl"></iconify-icon>
+					<span>{sectionMeta[section].label}</span>
 				</button>
 			{/each}
 		</div>
-
-		<!-- Mobile Menu Dropdown - Now inside nav for visual connection -->
-		{#if isMobileMenuOpen}
-			<div
-				class="mobile-menu-container md:hidden"
-				transition:fly={{ y: -10, duration: 200 }}
-			>
-				{#each navItems as section}
-					<button
-						class="mobile-menu-item"
-						class:active={$activeSection === section}
-						onmouseenter={() => prefetchSection(section)}
-						onclick={() => handleNavClick(section)}
-						aria-current={$activeSection === section ? 'page' : undefined}
-						style="--item-glow-color: {sectionMeta[section].color};"
-					>
-						<iconify-icon icon={sectionMeta[section].icon} class="text-xl"></iconify-icon>
-						<span>{sectionMeta[section].label}</span>
-					</button>
-				{/each}
-			</div>
-		{/if}
-	</nav>
-
-	<!-- Backdrop overlay when mobile menu is open -->
-	{#if isMobileMenuOpen}
-		<div
-			class="mobile-backdrop md:hidden"
-			onclick={() => isMobileMenuOpen = false}
-			transition:fly={{ duration: 200 }}
-		></div>
 	{/if}
+</nav>
+
+<!-- Backdrop overlay when mobile menu is open -->
+{#if isMobileMenuOpen && shouldShow}
+	<div
+		class="mobile-backdrop md:hidden"
+		onclick={() => isMobileMenuOpen = false}
+		transition:fly={{ duration: 200 }}
+	></div>
 {/if}
 
 <style>

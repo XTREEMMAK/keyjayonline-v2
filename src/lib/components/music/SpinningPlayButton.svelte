@@ -250,4 +250,18 @@
 			-8px -8px 20px var(--neu-shadow-light, rgba(60, 64, 72, 0.4)),
 			0 0 0 3px rgba(59, 130, 246, 0.5);
 	}
+
+	@media (max-width: 1024px) {
+		.outer-ring {
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
+			background: rgba(42, 45, 53, 0.9);
+		}
+
+		.play-button {
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
+			background: rgba(255, 255, 255, 0.2);
+		}
+	}
 </style>

@@ -156,7 +156,7 @@
 	<div
 		class="fixed-play-button"
 		class:pulsing={$isPlaying}
-		in:fade={{ duration: 300, delay: 200 }}
+		in:fade={{ duration: 300 }}
 		out:fade={{ duration: 200 }}
 	>
 		<SpinningPlayButton onClick={handlePlayButtonClick} />

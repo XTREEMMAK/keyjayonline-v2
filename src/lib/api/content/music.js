@@ -258,6 +258,8 @@ export async function getLatestProjects(limit = 3) {
           '*',
           'liner_notes',
           { cover_art: ['id', 'filename_disk'] },
+          { background_image: ['id', 'filename_disk'] },
+          { thumbnail_url: ['id', 'filename_disk'] },
           { videos: ['*'] },
           { external_links: ['*', { icon_value: ['icon_reference_id'] }] }
         ]
