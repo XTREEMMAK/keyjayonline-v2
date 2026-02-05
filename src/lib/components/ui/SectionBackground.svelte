@@ -1,7 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import { asset } from '$app/paths';
 	import { getSectionBackground } from '$lib/utils/sectionBackgrounds.js';
 
 	let { section = 'music', opacity = 0.15 } = $props();
@@ -11,7 +10,8 @@
 
 	onMount(() => {
 		if (browser) {
-			backgroundUrl = asset(getSectionBackground(section));
+			// Section background images are small and served locally
+			backgroundUrl = getSectionBackground(section);
 
 			// Preload image
 			const img = new Image();
