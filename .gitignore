@@ -24,6 +24,6 @@ vite.config.ts.timestamp-*
 # References
 References/
 
-#CDNable Assets
-/static/audio/*
-/static/videos*
+# CDN-uploaded static assets (large files - uploaded to S3)
+static/audio/
+static/videos/

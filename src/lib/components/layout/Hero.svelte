@@ -2,14 +2,10 @@
 	import { onMount } from 'svelte';
 	import { fly, fade } from 'svelte/transition';
 	import { activeSection } from '$lib/stores/navigation.js';
-
-	let { cdnBaseUrl = '' } = $props();
+	import { asset } from '$app/paths';
 
 	let videoElement = $state();
 	let showAnimations = $state(false);
-
-	// Build video URL based on environment (CDN in production, local in development)
-	const videoBase = $derived(cdnBaseUrl ? `${cdnBaseUrl}/videos` : '/videos');
 
 	// Show hero content only when on home section
 	const isHome = $derived($activeSection === 'home');
@@ -40,11 +36,11 @@
 		playsinline
 		disablepictureinpicture
 		class="pointer-events-none"
-		poster="{videoBase}/MAIN-poster-00001.jpg"
+		poster={asset('/videos/MAIN-poster-00001.jpg')}
 		preload="auto"
 	>
-		<source src="{videoBase}/MAIN-transcode.webm" type="video/webm" />
-		<source src="{videoBase}/MAIN-transcode.mp4" type="video/mp4" />
+		<source src={asset('/videos/MAIN-transcode.webm')} type="video/webm" />
+		<source src={asset('/videos/MAIN-transcode.mp4')} type="video/mp4" />
 		Your browser does not support the video tag.
 	</video>
 

@@ -107,7 +107,7 @@
 <NeumorphicNavbar />
 
 <!-- Persistent Video Background (Hero) -->
-<Hero cdnBaseUrl={data.cdnBaseUrl} />
+<Hero />
 
 <!-- Main Content Layer -->
 <div class="relative z-10">

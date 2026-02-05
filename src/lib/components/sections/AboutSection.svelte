@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
+	import { asset } from '$app/paths';
 	import { fade } from 'svelte/transition';
 	import Icon from '@iconify/svelte';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
@@ -447,7 +448,7 @@
 			class="absolute inset-0 -z-10 transition-opacity duration-1500 {
 				visibleElements.has('bio-bg') ? 'opacity-20' : 'opacity-0'
 			}"
-			style="background-image: url('/img/keyjayside.webp'); background-size: cover; background-position: center; transition-delay: 600ms;"
+			style="background-image: url({asset('/img/keyjayside.webp')}); background-size: cover; background-position: center; transition-delay: 600ms;"
 		></div>
 
 		<!-- Dark overlay for better text readability -->
