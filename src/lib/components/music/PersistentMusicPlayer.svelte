@@ -1,5 +1,5 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { fly, slide } from 'svelte/transition';
 	import WaveSurfer from 'wavesurfer.js';
 	import Icon from '@iconify/svelte';
@@ -36,6 +36,7 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 	let duration = $state('0:00');
 	let isLoading = $state(false);
 	let wavesurferReady = $state(false);
+	let visualWavesurferReady = $state(false);
 	let thumbnailError = $state(false);
 	
 	
@@ -118,44 +119,70 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 			if (visualWavesurfer) {
 				visualWavesurfer.destroy();
 				visualWavesurfer = null;
+				visualWavesurferReady = false;
 			}
 			return;
 		}
-		
-		if (!visualContainer || visualWavesurfer) {
+
+		// Don't recreate if already exists
+		if (visualWavesurfer) {
 			return;
 		}
-		
-		try {
-			console.log('Creating visual wavesurfer instance');
-			visualWavesurfer = WaveSurfer.create({
-				container: visualContainer,
-				...getPersistentPlayerConfig()
-			});
-			
-			// Load current track if available (with CORS bypass)
-			if (wavesurfer && $currentTrack?.audioUrl) {
-				const transformedUrl = getAudioUrl($currentTrack.audioUrl);
-				visualWavesurfer.load(transformedUrl);
-			}
-			
-			// Handle interaction - when user clicks visual waveform, control main wavesurfer
-			visualWavesurfer.on('interaction', () => {
-				if (wavesurfer && visualWavesurfer) {
-					const progress = visualWavesurfer.getCurrentTime() / visualWavesurfer.getDuration();
-					wavesurfer.seekTo(progress);
-				}
-			});
-			
-			visualWavesurfer.on('click', (progress) => {
-				if (wavesurfer) {
-					wavesurfer.seekTo(progress);
-				}
-			});
-			
-		} catch (error) {
-			console.error('Failed to create visual wavesurfer:', error);
+
+		// Access container synchronously to track it as a reactive dependency
+		const container = visualContainer;
+
+		// If container not ready yet, effect will re-run when it becomes available
+		if (!container) {
+			console.log('Visual container not yet available, waiting...');
+			return;
 		}
+
+		// Use tick() to ensure DOM is fully settled
+		tick().then(() => {
+			// Double-check container still exists and we haven't already created the instance
+			if (!visualContainer || visualWavesurfer) {
+				return;
+			}
+
+			try {
+				console.log('Creating visual wavesurfer instance');
+				visualWavesurfer = WaveSurfer.create({
+					container: visualContainer,
+					...getPersistentPlayerConfig()
+				});
+
+				// Mark as ready when waveform finishes rendering
+				visualWavesurfer.on('ready', () => {
+					console.log('Visual wavesurfer ready event fired');
+					visualWavesurferReady = true;
+				});
+
+				// Load current track if available (with CORS bypass)
+				if (wavesurfer && $currentTrack?.audioUrl) {
+					const transformedUrl = getAudioUrl($currentTrack.audioUrl);
+					visualWavesurfer.load(transformedUrl);
+				}
+
+				// Handle interaction - when user clicks visual waveform, control main wavesurfer
+				visualWavesurfer.on('interaction', () => {
+					if (wavesurfer && visualWavesurfer) {
+						const progress = visualWavesurfer.getCurrentTime() / visualWavesurfer.getDuration();
+						wavesurfer.seekTo(progress);
+					}
+				});
+
+				visualWavesurfer.on('click', (progress) => {
+					if (wavesurfer) {
+						wavesurfer.seekTo(progress);
+					}
+				});
+
+			} catch (error) {
+				console.error('Failed to create visual wavesurfer:', error);
+				visualWavesurferReady = false;
+			}
+		});
 	});
 	
 	// React to track changes
@@ -226,11 +253,14 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 			// Load into visual wavesurfer as well
 			if (visualWavesurfer) {
 				try {
+					visualWavesurferReady = false;  // Show skeleton while loading
 					const transformedVisualUrl = getAudioUrl(track.audioUrl);
 					await visualWavesurfer.load(transformedVisualUrl);
 					console.log('Visual wavesurfer loaded successfully');
+					// Note: ready state set by 'ready' event handler
 				} catch (error) {
 					console.error('Error loading visual wavesurfer:', error);
+					visualWavesurferReady = false;
 				}
 			}
 			
@@ -278,6 +308,30 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 					console.log('Audio not loaded, loading first...');
 					await loadTrack($currentTrack);
 				}
+
+				// Safety check: ensure visual waveform is synced when starting playback
+				if (visualWavesurfer && !isMinimized) {
+					const visualDuration = visualWavesurfer.getDuration();
+					const mainDuration = wavesurfer.getDuration();
+
+					// If visual waveform not ready or has wrong track, reload it
+					if (!visualWavesurferReady || visualDuration === 0 || Math.abs(visualDuration - mainDuration) > 0.1) {
+						console.log('Visual waveform out of sync, reloading...', {
+							ready: visualWavesurferReady,
+							visualDuration,
+							mainDuration
+						});
+						try {
+							visualWavesurferReady = false;
+							const transformedUrl = getAudioUrl($currentTrack.audioUrl);
+							await visualWavesurfer.load(transformedUrl);
+							console.log('Visual waveform resynced');
+						} catch (error) {
+							console.error('Error resyncing visual waveform:', error);
+						}
+					}
+				}
+
 				console.log('Starting playback');
 				await wavesurfer.play();
 			}
@@ -291,9 +345,10 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 		volume.set(newVolume);
 	}
 	
-	function toggleMinimize() {
+	async function toggleMinimize() {
+		const wasMinimized = isMinimized;
 		isMinimized = !isMinimized;
-		
+
 		// Resize wavesurfer after animation completes
 		if (wavesurfer) {
 			setTimeout(() => {
@@ -301,6 +356,37 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 					wavesurfer.resize();
 				}
 			}, 350); // After transition duration
+		}
+
+		// Safety check: sync visual waveform when expanding
+		if (wasMinimized && !isMinimized && $currentTrack?.audioUrl) {
+			// Wait for animation and visual effect to complete
+			setTimeout(async () => {
+				if (!visualWavesurfer) {
+					console.log('Visual wavesurfer not created yet, waiting for effect...');
+					return;
+				}
+
+				const visualDuration = visualWavesurfer.getDuration();
+				const mainDuration = wavesurfer?.getDuration() || 0;
+
+				// If visual waveform not ready or has wrong track, reload it
+				if (!visualWavesurferReady || visualDuration === 0 || Math.abs(visualDuration - mainDuration) > 0.1) {
+					console.log('Visual waveform out of sync after expand, reloading...', {
+						ready: visualWavesurferReady,
+						visualDuration,
+						mainDuration
+					});
+					try {
+						visualWavesurferReady = false;
+						const transformedUrl = getAudioUrl($currentTrack.audioUrl);
+						await visualWavesurfer.load(transformedUrl);
+						console.log('Visual waveform synced after expand');
+					} catch (error) {
+						console.error('Error syncing visual waveform after expand:', error);
+					}
+				}
+			}, 400); // Wait slightly longer than animation
 		}
 	}
 	
@@ -453,7 +539,20 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 				
 				<!-- Waveform -->
 				<div class="mb-2">
-					<div bind:this={visualContainer} class="waveform-container mb-2" style="height: 50px;"></div>
+					<!-- Waveform Container with Skeleton Loader -->
+					<div class="relative mb-2" style="height: 50px;">
+						{#if !visualWavesurferReady && !isMinimized}
+							<!-- Skeleton Loader -->
+							<div class="skeleton-waveform"></div>
+						{/if}
+						<div
+							bind:this={visualContainer}
+							class="waveform-container"
+							class:waveform-hidden={!visualWavesurferReady}
+							style="height: 50px;"
+						></div>
+					</div>
+
 					<div class="flex items-center justify-between">
 						<span class="text-xs text-gray-400">{currentTime}</span>
 						<span class="text-xs text-gray-400">{duration}</span>
@@ -620,5 +719,64 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 			transform: scale(1.5);
 			opacity: 0;
 		}
+	}
+
+	/* Waveform Skeleton Loader */
+	.skeleton-waveform {
+		position: absolute;
+		inset: 0;
+		height: 50px;
+		background: linear-gradient(90deg,
+			rgba(75, 0, 130, 0.1) 0%,
+			rgba(138, 43, 226, 0.15) 50%,
+			rgba(75, 0, 130, 0.1) 100%
+		);
+		background-size: 200% 100%;
+		animation: skeleton-shimmer 2s ease-in-out infinite;
+		border-radius: 4px;
+		overflow: hidden;
+	}
+
+	.skeleton-waveform::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background-image: repeating-linear-gradient(
+			90deg,
+			transparent 0px,
+			transparent 2px,
+			rgba(200, 0, 200, 0.15) 2px,
+			rgba(200, 0, 200, 0.15) 4px
+		);
+		animation: skeleton-bars 0.8s ease-in-out infinite alternate;
+	}
+
+	@keyframes skeleton-shimmer {
+		0% {
+			background-position: 200% 0;
+		}
+		100% {
+			background-position: -200% 0;
+		}
+	}
+
+	@keyframes skeleton-bars {
+		0% {
+			opacity: 0.3;
+		}
+		100% {
+			opacity: 0.6;
+		}
+	}
+
+	/* Hide waveform until ready */
+	.waveform-hidden {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	/* Smooth fade-in when waveform becomes visible */
+	.waveform-container {
+		transition: opacity 0.3s ease-in-out;
 	}
 </style>

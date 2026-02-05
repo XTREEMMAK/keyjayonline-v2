@@ -1,6 +1,8 @@
 <script>
+	import { onMount } from 'svelte';
 	import '../app.css';
 	import { page } from '$app/stores';
+	import { afterNavigate } from '$app/navigation';
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import ScrollToTop from '$lib/components/ui/ScrollToTop.svelte';
 	import PersistentMusicPlayer from '$lib/components/music/PersistentMusicPlayer.svelte';
@@ -10,6 +12,37 @@
 
 	// Check if we're on an error page to conditionally hide footer
 	const isErrorPage = $derived($page.status >= 400);
+
+	// State to control footer visibility after initial load
+	let pageReady = $state(false);
+
+	// Disable browser scroll restoration and scroll to top immediately
+	if (typeof window !== 'undefined') {
+		if ('scrollRestoration' in history) {
+			history.scrollRestoration = 'manual';
+		}
+		// Immediate scroll to top on page load (before mount)
+		if (!window.location.hash) {
+			window.scrollTo(0, 0);
+		}
+	}
+
+	// Show footer after page is ready
+	onMount(() => {
+		// Small delay to ensure page is fully settled
+		const timer = setTimeout(() => {
+			pageReady = true;
+		}, 100);
+
+		return () => clearTimeout(timer);
+	});
+
+	// Scroll to top after navigation (except for hash links)
+	afterNavigate(() => {
+		if (!window.location.hash) {
+			window.scrollTo(0, 0);
+		}
+	});
 </script>
 
 <svelte:head>
@@ -70,12 +103,32 @@
 	{@render children?.()}
 </main>
 
-<!-- Global Footer - Hidden on error pages, always on top of content -->
-{#if !isErrorPage}
-	<div class="relative z-20">
+<!-- Global Footer - Hidden on error pages and during initial load, always on top of content -->
+{#if !isErrorPage && pageReady}
+	<div class="relative z-20 footer-wrapper" class:home-footer={$page.url.pathname === '/'}>
 		<Footer siteSettings={data?.siteSettings} socialLinks={data?.socialLinks} supportPlatforms={data?.siteSettings?.supportPlatforms} />
 	</div>
 {/if}
+
+<style>
+	/* Make footer full viewport height on mobile for home page only */
+	@media (max-width: 768px) {
+		.footer-wrapper.home-footer {
+			min-height: 100vh;
+			min-height: 100dvh; /* Use dynamic viewport height for better mobile support */
+			display: flex;
+			flex-direction: column;
+			justify-content: center; /* Center content vertically */
+		}
+
+		.footer-wrapper.home-footer :global(footer) {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			justify-content: center; /* Center footer content in the middle */
+		}
+	}
+</style>
 
 <!-- Scroll to Top Button -->
 <ScrollToTop />

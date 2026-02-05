@@ -4,9 +4,15 @@
 	import { fly } from 'svelte/transition';
 	import { playerVisible } from '$lib/stores/musicPlayer.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
+	import { scrollButtonVisible } from '$lib/stores/scrollButton.js';
 
 	let visible = $state(false);
 	let scrollY = $state(0);
+
+	// Sync visibility with store
+	$effect(() => {
+		scrollButtonVisible.set(visible && !$contentViewerOpen);
+	});
 
 	onMount(() => {
 		if (!browser) return;
@@ -60,10 +66,23 @@
 		backdrop-filter: blur(8px);
 		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
-	
+
 	button:hover {
-		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
 		           0 10px 10px -5px rgba(0, 0, 0, 0.04),
 		           0 0 20px rgba(59, 130, 246, 0.3);
+	}
+
+	/* Mobile: Reduce size slightly to match play button */
+	@media (max-width: 768px) {
+		button {
+			padding: 0.625rem !important; /* 10px - slightly smaller than desktop */
+			right: 1rem !important; /* Match play button offset */
+		}
+
+		button :global(svg) {
+			width: 20px !important;
+			height: 20px !important;
+		}
 	}
 </style>

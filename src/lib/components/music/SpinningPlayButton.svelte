@@ -49,6 +49,9 @@
 			<!-- Inner ring detail -->
 			<div class="label-ring"></div>
 
+			<!-- Ghost pulse ring (mobile only) -->
+			<div class="ghost-pulse"></div>
+
 			<!-- Play Button -->
 			<div class="play-button">
 				<svg viewBox="0 0 24 24" fill="currentColor" class="play-icon">
@@ -262,6 +265,93 @@
 			backdrop-filter: none;
 			-webkit-backdrop-filter: none;
 			background: rgba(255, 255, 255, 0.2);
+		}
+	}
+
+	/* Mobile: Remove vinyl, show only play button */
+	@media (max-width: 768px) {
+		.vinyl-play-button {
+			width: 60px;
+			height: 60px;
+		}
+
+		/* Hide the outer ring with spinning text */
+		.outer-ring {
+			display: none;
+		}
+
+		/* Simplify vinyl body - remove grooves and styling */
+		.vinyl-body {
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: transparent;
+			box-shadow: none;
+			animation: none;
+		}
+
+		/* Hide vinyl grooves */
+		.groove {
+			display: none;
+		}
+
+		/* Make center label fill entire button */
+		.vinyl-label {
+			width: 100%;
+			height: 100%;
+			top: 0;
+			left: 0;
+			transform: none;
+			position: relative;
+			overflow: visible;
+		}
+
+		.label-ring {
+			display: none;
+		}
+
+		/* Ghost pulse animation - expanding ring that fades out from outer edge */
+		.ghost-pulse {
+			position: absolute;
+			inset: -4px; /* Start slightly outside the button */
+			border-radius: 50%;
+			border: 3px solid rgba(59, 130, 246, 0.6);
+			background: transparent;
+			animation: ghost-pulse 2s ease-out infinite;
+			pointer-events: none;
+		}
+
+		/* Disable animations on mobile for performance */
+		.spinning-text {
+			animation: none !important;
+		}
+
+		.vinyl-play-button:hover {
+			transform: scale(1.02);
+		}
+
+		.vinyl-body:hover .vinyl-label {
+			background: linear-gradient(145deg, #60a5fa, #3b82f6);
+		}
+
+		/* Ghost pulse keyframes - ring expands from button edge */
+		@keyframes ghost-pulse {
+			0% {
+				transform: scale(1);
+				opacity: 0.8;
+				border-width: 3px;
+			}
+			50% {
+				transform: scale(1.5);
+				opacity: 0.4;
+				border-width: 2px;
+			}
+			100% {
+				transform: scale(2);
+				opacity: 0;
+				border-width: 1px;
+			}
 		}
 	}
 </style>

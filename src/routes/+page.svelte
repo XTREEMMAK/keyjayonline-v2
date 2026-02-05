@@ -6,6 +6,7 @@
 	import NeumorphicNavbar from '$lib/components/ui/NeumorphicNavbar.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
 	import { showPlayer, loadRandomTrack, playerVisible, isPlaying } from '$lib/stores/musicPlayer.js';
+	import { scrollButtonVisible } from '$lib/stores/scrollButton.js';
 	import {
 		activeSection,
 		isContentVisible,
@@ -156,6 +157,7 @@
 	<div
 		class="fixed-play-button"
 		class:pulsing={$isPlaying}
+		class:scroll-hidden={!$scrollButtonVisible}
 		in:fade={{ duration: 300 }}
 		out:fade={{ duration: 200 }}
 	>
@@ -164,9 +166,9 @@
 {/if}
 
 <style>
-	/* Home spacer - creates full viewport height so footer appears when scrolling down */
+	/* Home spacer - creates full page height so footer appears at the bottom */
 	.home-spacer {
-		height: 100vh;
+		min-height: calc(100vh - 100px); /* Full viewport minus footer space */
 		pointer-events: none;
 	}
 
@@ -180,27 +182,60 @@
 		overflow: visible !important;
 	}
 
-	/* Fixed Play Button - positioned above scroll-to-top button */
+	/* Fixed Play Button - positioned above scroll-to-top button on right */
 	.fixed-play-button {
 		position: fixed;
-		bottom: 80px; /* Above scroll-to-top button */
-		right: 0px;
+		bottom: 72px; /* Above scroll-to-top button (16px + ~40px button + 16px gap) */
+		right: 16px; /* Align with scroll-to-top */
 		z-index: 35;
-		transform: scale(0.65);
+		transform: scale(0.67); /* Scale 60px to ~40px to match scroll button */
 		transform-origin: bottom right;
+		pointer-events: auto;
+		visibility: visible;
+		opacity: 1;
+		transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* When scroll button is hidden, move play button to scroll button's position */
+	.fixed-play-button.scroll-hidden {
+		bottom: 16px; /* Same position as scroll-to-top button */
+	}
+
+	/* Mobile: Ensure button is visible and properly sized */
+	@media (max-width: 639px) {
+		.fixed-play-button {
+			bottom: 72px !important;
+			right: 16px !important;
+			transform: scale(0.67) !important;
+			z-index: 40 !important;
+		}
+
+		.fixed-play-button.scroll-hidden {
+			bottom: 16px !important;
+		}
 	}
 
 	@media (min-width: 640px) {
 		.fixed-play-button {
-			bottom: 84px;
+			bottom: 76px;
 			transform: scale(0.75);
+		}
+
+		.fixed-play-button.scroll-hidden {
+			bottom: 16px;
 		}
 	}
 
 	@media (min-width: 1024px) {
 		.fixed-play-button {
 			bottom: 88px;
+			right: 0px;
 			transform: scale(0.85);
+		}
+
+		.fixed-play-button.scroll-hidden {
+			bottom: 24px;
+			right: 32px;
 		}
 	}
 
