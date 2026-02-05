@@ -308,10 +308,15 @@
 }
 
 @media (max-width: 768px) {
+	.album-modal-content {
+		max-height: calc(100vh - 60px) !important;
+	}
+
 	.album-modal-container {
 		grid-template-columns: 1fr;
 		gap: 24px;
 		padding: 20px;
+		overflow-x: hidden;
 	}
 
 	.album-info-section {
@@ -352,10 +357,6 @@
 }
 
 @media (max-width: 480px) {
-	.album-modal-popup {
-		border-radius: 16px !important;
-	}
-
 	.album-modal-container {
 		padding: 16px;
 	}

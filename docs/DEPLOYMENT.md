@@ -23,7 +23,7 @@ All production configuration comes from GitHub Secrets. No manual `.env` managem
 | **Database** | `USE_LOCAL_POSTGRES`, `DB_HOST`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD` |
 | **Directus** | `DIRECTUS_KEY`, `DIRECTUS_SECRET`, `DIRECTUS_TOKEN`, `DIRECTUS_PUBLIC_URL`, `DIRECTUS_ADMIN_EMAIL`, `DIRECTUS_ADMIN_PASSWORD` |
 | **Storage (Credentials)** | `S3_ACCESS_KEY`, `S3_SECRET_KEY` |
-| **Storage (Config)** | `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `CDN_BASE_URL`, `S3_BUCKET_URL` |
+| **Storage (Config)** | `STORAGE_LOCATIONS`, `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `CDN_BASE_URL`, `S3_BUCKET_URL` |
 | **SSH** | `SSH_HOST`, `SSH_USERNAME`, `SSH_KEY`, `SSH_PORT` |
 | **Public** | `PUBLIC_SITE_URL`, `PUBLIC_CONTACT_EMAIL` |
 
@@ -32,7 +32,8 @@ All production configuration comes from GitHub Secrets. No manual `.env` managem
 - `DB_HOST` - Only needed when `USE_LOCAL_POSTGRES=false` (e.g., `your-db-server.com`)
 
 **Storage Config Notes:**
-- `S3_BUCKET` - Bucket name (e.g., `keyjc`)
+- `STORAGE_LOCATIONS` - Directus storage driver name. Must be `digitalocean` (matches DB file records). Defaults to `local` for dev.
+- `S3_BUCKET` - Bucket name (e.g., `kjo`)
 - `S3_REGION` - Region code (e.g., `nyc3`)
 - `S3_ENDPOINT` - Provider endpoint (e.g., `nyc3.digitaloceanspaces.com`)
 - `CDN_BASE_URL` - Full CDN URL (e.g., `https://bucket.region.cdn.digitaloceanspaces.com`)
@@ -131,6 +132,7 @@ DigitalOcean Spaces must have CORS configured for cross-origin ES module loading
 ```
 
 Configure this in the DigitalOcean control panel under Spaces settings.
+**Note:** In the DO panel, origins must include the scheme (`https://`). The panel does **not** auto-add it. Use `https://keyjayonline.com` and `https://*.keyjayonline.com`. See [DO CORS docs](https://docs.digitalocean.com/products/spaces/how-to/configure-cors/).
 
 ### What Gets Uploaded Automatically (CI)
 

@@ -253,6 +253,10 @@
 
 /* Responsive Styles */
 @media (max-width: 768px) {
+	.new-release-modal-content {
+		max-height: calc(100vh - 60px) !important;
+	}
+
 	.new-release-modal-container {
 		padding: 16px;
 	}
@@ -286,10 +290,6 @@
 }
 
 @media (max-width: 480px) {
-	.new-release-modal-popup {
-		width: 98% !important;
-	}
-
 	.release-image {
 		max-height: 250px;
 	}

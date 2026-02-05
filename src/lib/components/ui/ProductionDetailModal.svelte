@@ -161,7 +161,7 @@
 {#if isOpen && production}
 	<!-- Backdrop -->
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+		class="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-8"
 		role="dialog"
 		aria-modal="true"
 		aria-label={production.title || 'Production details'}
@@ -172,7 +172,7 @@
 
 		<!-- Modal Container -->
 		<div
-			class="relative w-full max-w-4xl max-h-[90vh] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f172a] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+			class="relative w-full max-w-full md:max-w-4xl h-full md:h-auto max-h-full md:max-h-[90vh] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f172a] rounded-none md:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
 			transition:fly={{ y: 50, duration: 300 }}
 		>
 			<!-- Header Buttons -->

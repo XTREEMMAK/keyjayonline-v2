@@ -101,3 +101,27 @@
   transform-origin: center bottom;
   will-change: transform, filter;
 }
+
+/* =============================================================================
+   Mobile Modal Fullscreen — SweetAlert2 overrides
+   All Swal modals fill the viewport on mobile to prevent cutoffs and h-scroll
+   ============================================================================= */
+@media (max-width: 768px) {
+  .swal2-container {
+    padding: 0 !important;
+  }
+  .swal2-popup {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+  .swal2-html-container {
+    max-height: calc(100vh - 60px) !important;
+  }
+  .swal2-close {
+    z-index: 10 !important;
+  }
+}
