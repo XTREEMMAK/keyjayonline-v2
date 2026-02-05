@@ -51,8 +51,8 @@ ENV DISCORD_BOT_TOKEN=$DISCORD_BOT_TOKEN
 ENV DISCORD_USER_ID=$DISCORD_USER_ID
 ENV PUBLIC_CONTACT_EMAIL=$PUBLIC_CONTACT_EMAIL
 
-# Build the application
-RUN npm run build
+# Build the application (skip if pre-built via CI artifact)
+RUN [ -d build ] || npm run build
 
 # Prune dev dependencies for smaller production image
 RUN npm prune --production
