@@ -3,6 +3,7 @@
 	max-width: 110em !important;
 	border-radius: 20px !important;
 	backdrop-filter: blur(20px) !important;
+	overflow: hidden !important;
 	transition: all 0.4s ease !important;
 	border: 1px solid rgba(255, 255, 255, 0.1) !important;
 	box-shadow:
@@ -317,11 +318,16 @@
 		gap: 24px;
 		padding: 20px;
 		overflow-x: hidden;
+		max-width: 100%;
+		box-sizing: border-box;
 	}
 
 	.album-info-section {
 		position: relative;
 		padding: 20px;
+		max-width: 100%;
+		box-sizing: border-box;
+		min-width: 0;
 	}
 
 	.album-content-section {
@@ -369,5 +375,23 @@
 	.mobile-accordion-system {
 		padding: 12px;
 		border-radius: 12px;
+	}
+}
+
+@media (max-width: 442px) {
+	.album-modal-container {
+		padding: 12px;
+	}
+
+	.album-info-section {
+		padding: 12px;
+	}
+
+	.album-artwork img {
+		max-width: 100% !important;
+	}
+
+	.mobile-accordion-system {
+		padding: 8px;
 	}
 }

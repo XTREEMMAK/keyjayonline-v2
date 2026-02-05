@@ -32,21 +32,29 @@
 			hasInitiallyLoaded = true;
 		}, 100);
 
+		let ticking = false;
 		function handleScroll() {
-			const currentScrollY = window.scrollY;
-			isScrolled = currentScrollY > 50;
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(() => {
+				const currentScrollY = window.scrollY;
+				isScrolled = currentScrollY > 50;
 
-			// Hide on scroll down, show on scroll up (only after 200px)
-			if (currentScrollY > lastScrollY && currentScrollY > 200) {
-				isVisible = false;
-				isMobileMenuOpen = false;
-				navbarVisible.set(false);
-			} else {
-				isVisible = true;
-				navbarVisible.set(true);
-			}
+				// Hide on scroll down, show on scroll up (only after 200px)
+				// Dead zone of 5px prevents momentum scrolling from toggling rapidly
+				const scrollDelta = currentScrollY - lastScrollY;
+				if (scrollDelta > 5 && currentScrollY > 200) {
+					isVisible = false;
+					isMobileMenuOpen = false;
+					navbarVisible.set(false);
+				} else if (scrollDelta < -5) {
+					isVisible = true;
+					navbarVisible.set(true);
+				}
 
-			lastScrollY = currentScrollY;
+				lastScrollY = currentScrollY;
+				ticking = false;
+			});
 		}
 
 		window.addEventListener('scroll', handleScroll, { passive: true });
@@ -67,7 +75,7 @@
 {#if shouldShow && hasInitiallyLoaded}
 	<nav
 		use:mouseGlow={{ color: 'rgba(59, 130, 246, 0.12)', size: 300, blur: 60 }}
-		class="neu-navbar transition-all duration-300 {isMobileMenuOpen ? 'mobile-menu-open' : ''}"
+		class="neu-navbar transition-shadow duration-300 {isMobileMenuOpen ? 'mobile-menu-open' : ''}"
 		class:shadow-2xl={isScrolled}
 		in:fly={{ y: -100, duration: 400 }}
 		out:fly={{ y: -100, duration: 300 }}

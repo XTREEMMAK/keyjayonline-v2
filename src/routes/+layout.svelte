@@ -62,7 +62,7 @@
 	}
 	</script>`}
 	<!-- Iconify for icons -->
-	<script src="https://code.iconify.design/iconify-icon/2.0.0/iconify-icon.min.js"></script>
+	<script async src="https://code.iconify.design/iconify-icon/2.0.0/iconify-icon.min.js"></script>
 </svelte:head>
 
 <!-- Page Content -->

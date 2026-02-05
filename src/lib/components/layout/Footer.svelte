@@ -85,7 +85,7 @@
 		<!-- Logo -->
 		<div class="flex flex-col items-center mb-6">
 			<div class="w-1/2">
-				<img src="/img/KJ_Logo_Medium_W.svg" alt="KEY JAY Logo" class="w-auto h-auto footer-logo drop-shadow-xl">
+				<img src="/img/KJ_Logo_Medium_W.svg" alt="KEY JAY Logo" class="w-auto h-auto footer-logo drop-shadow-xl" width="256" height="256">
 			</div>
 
 			<span class="text-white text-4xl font-light tracking-wider mt-2 opacity-90 drop-shadow-lg">KEYJAY ONLINE</span>

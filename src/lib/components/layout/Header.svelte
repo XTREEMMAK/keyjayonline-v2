@@ -85,7 +85,7 @@
 	<div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 sm:left-6 sm:translate-x-0 hidden sm:block {isScrolled ? '-mt-6' : ''}" transition:fly={{ x: -200, duration: 400 }}>
 		<!-- Logo - Use a larger size and center on mobile -->
 		<a href="/" class="logo p-2 transition-all duration-700 ease-out transform scale-100 hover:scale-105 flex flex-col items-center group" bind:this={logo}>
-			<img src="/img/KJ_Logo_Medium_W.svg" alt="KEY JAY Logo" class="w-16 sm:w-24 md:w-32 h-auto transition-all duration-700 group-hover:drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+			<img src="/img/KJ_Logo_Medium_W.svg" alt="KEY JAY Logo" class="w-16 sm:w-24 md:w-32 h-auto transition-all duration-700 group-hover:drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" width="128" height="128">
 			<span class="text-white text-xs sm:text-sm font-light tracking-wider mt-1 opacity-80 transition-all duration-700 group-hover:opacity-100 group-hover:text-blue-200">KEYJAY ONLINE</span>
 		</a>
 	</div>

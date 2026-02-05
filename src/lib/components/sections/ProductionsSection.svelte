@@ -275,7 +275,7 @@
 	{:else}
 		<!-- Featured Production -->
 		{#if featuredProduction}
-			<section class="bg-gradient-to-b from-[var(--neu-bg-dark)]/95 via-orange-950/15 to-[var(--neu-bg-dark)]/95 backdrop-blur-sm py-16 relative">
+			<section class="bg-gradient-to-b from-[var(--neu-bg-dark)]/95 via-orange-950/15 to-[var(--neu-bg-dark)]/95 py-16 relative">
 				<div class="container mx-auto px-4">
 					<div class="max-w-6xl mx-auto">
 						<div class="neu-card overflow-hidden">
@@ -287,6 +287,7 @@
 										alt={featuredProduction.title}
 										onerror={(e) => handleImageError(e, featuredProduction)}
 										class="w-full h-full object-cover"
+										loading="lazy"
 									/>
 									<div class="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent lg:bg-gradient-to-t lg:from-black/40 lg:via-transparent lg:to-transparent"></div>
 									<div class="absolute top-4 left-4">
@@ -399,7 +400,7 @@
 		</section>
 
 		<!-- Productions Grid -->
-		<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-amber-950/10 to-[var(--neu-bg)]/95 backdrop-blur-sm py-12 relative">
+		<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-amber-950/10 to-[var(--neu-bg)]/95 py-12 relative">
 			<div class="container mx-auto px-4">
 				{#if productions.length === 0}
 					<div class="text-center py-16">
@@ -412,7 +413,7 @@
 						{#each productions as production (production.id)}
 							<div class="mix-item {production.categorySlugs || production.category}">
 								<article
-									class="neu-card overflow-hidden hover:scale-[1.02] transition-all duration-300 group cursor-pointer"
+									class="neu-card overflow-hidden hover:scale-[1.02] transition-transform duration-300 group cursor-pointer"
 									onclick={() => handleCardClick(production)}
 									role="button"
 									tabindex="0"
@@ -425,6 +426,7 @@
 											alt={production.title}
 											onerror={(e) => handleImageError(e, production)}
 											class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+											loading="lazy"
 										/>
 										<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent group-hover:scale-110 transition-transform duration-500"></div>
 
@@ -443,7 +445,7 @@
 
 										<!-- Play/View Overlay -->
 										<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-											<div class="bg-white/10 backdrop-blur-sm rounded-full p-4">
+											<div class="bg-white/20 rounded-full p-4">
 												{#if production.category === 'video' || production.category === 'audio'}
 													<Icon icon="mdi:play" class="text-white text-3xl" />
 												{:else if production.category === 'comic'}

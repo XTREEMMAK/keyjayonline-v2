@@ -53,16 +53,16 @@
 	// Parallax state for Latest Projects
 	let latestProjectsRef = $state(null);
 	let scrollY = $state(0);
+	let isMobile = $state(false);
 
 	// Derived parallax transform - scrollY dependency triggers recalculation
 	const parallaxY = $derived(() => {
-		// Reference scrollY to create dependency (Svelte will re-run when scrollY changes)
 		const _scroll = scrollY;
-		if (!browser || !latestProjectsRef) return 0;
+		// Skip parallax on mobile for performance (avoids getBoundingClientRect on every frame)
+		if (!browser || !latestProjectsRef || isMobile) return 0;
 		const rect = latestProjectsRef.getBoundingClientRect();
 		const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
 		const progress = (viewportHeight - rect.top) / (viewportHeight + rect.height);
-		// Range: -100px to +100px for more noticeable parallax effect
 		return Math.max(-100, Math.min(100, (progress - 0.5) * 200));
 	});
 
@@ -177,17 +177,32 @@
 			});
 		}
 
-		// Scroll listener for parallax effect
+		// Scroll listener for parallax effect (rAF throttled)
+		let ticking = false;
 		const handleScroll = () => {
-			scrollY = window.scrollY;
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(() => {
+				scrollY = window.scrollY;
+				ticking = false;
+			});
 		};
+
+		// Detect mobile for parallax disabling
+		const checkMobile = () => {
+			isMobile = window.innerWidth < 768;
+		};
+		checkMobile();
+
 		window.addEventListener('scroll', handleScroll, { passive: true });
+		window.addEventListener('resize', checkMobile, { passive: true });
 
 		return () => {
 			if (mixer) {
 				mixer.destroy();
 			}
 			window.removeEventListener('scroll', handleScroll);
+			window.removeEventListener('resize', checkMobile);
 		};
 	});
 
@@ -441,7 +456,7 @@
 
 								<!-- Play button overlay -->
 								<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-									<div class="bg-black/40 backdrop-blur-sm rounded-full p-6 group-hover:bg-black/60 group-hover:scale-110 transition-all duration-300">
+									<div class="bg-black/60 rounded-full p-6 group-hover:bg-black/70 group-hover:scale-110 transition-transform duration-300">
 										<svg width="40" height="40" viewBox="0 0 24 24" fill="white">
 											<path d="M8 5v14l11-7z"/>
 										</svg>
@@ -505,7 +520,7 @@
 
 	<!-- View Switcher -->
 	<div
-		class="bg-[var(--neu-bg)]/95 backdrop-blur-sm border-b border-gray-800 sticky z-30 transition-[top] duration-300"
+		class="bg-[var(--neu-bg)] border-b border-gray-800 sticky z-30 transition-[top] duration-300"
 		style="top: {$navbarVisible ? '88px' : '0px'}"
 	>
 		<div class="container mx-auto px-4">

@@ -23,19 +23,16 @@ export function letterPulse(node, options = {}) {
 		{
 			offset: 0,
 			transform: 'scale(1) translateY(0)',
-			filter: 'brightness(1)',
-			easing: 'ease-in' // Ease-in as we go UP to the peak
+			easing: 'ease-in'
 		},
 		{
 			offset: 0.5,
 			transform: 'scale(1.2) translateY(-4px)',
-			filter: 'brightness(1.2)',
-			easing: 'ease-out' // Ease-out as we come back DOWN
+			easing: 'ease-out'
 		},
 		{
 			offset: 1,
-			transform: 'scale(1) translateY(0)',
-			filter: 'brightness(1)'
+			transform: 'scale(1) translateY(0)'
 		}
 	];
 
@@ -61,7 +58,6 @@ export function letterPulse(node, options = {}) {
 			if (isDestroyed) return;
 			// Reset to initial state
 			node.style.transform = 'scale(1) translateY(0)';
-			node.style.filter = 'brightness(1)';
 		};
 	}
 

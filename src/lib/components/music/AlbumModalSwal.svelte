@@ -280,15 +280,15 @@ import {
 			<div class="album-modal-container">
 				<div class="album-info-section">
 					<div class="album-artwork">
-						<img src="${album.cover_art || 'https://placehold.co/400x400/1a1a1a/3B82F6?text=Album+Cover'}" 
-							 alt="${album.title}" 
+						<img src="${album.cover_art || 'https://placehold.co/400x400/1a1a1a/3B82F6?text=Album+Cover'}"
+							 alt="${album.title}"
 							 style="width: 100%; max-width: 350px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);" />
 					</div>
 					<div class="album-details">
 						<h2 class="album-modal-title" style="font-size: clamp(1.25rem, 4vw, 2rem); font-weight: bold; color: #ffffff; line-height: 1.2; margin: 0 0 8px 0; text-align: center;">${album.title}</h2>
 						${album.artist ? `<p style="font-size: clamp(1rem, 3vw, 1.2rem); color: #d1d5db; margin-bottom: 16px; text-align: center;">${album.artist}</p>` : ''}
 
-						<div class="streaming-links" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: nowrap; justify-content: center; align-items: center; overflow-x: auto; padding: 4px; min-width: 0; will-change: transform; scrollbar-width: none; -ms-overflow-style: none;">
+						<div class="streaming-links" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; justify-content: center; align-items: center; padding: 4px; min-width: 0; max-width: 100%; box-sizing: border-box;">
 							<style>
 								.streaming-links::-webkit-scrollbar { display: none; }
 							</style>

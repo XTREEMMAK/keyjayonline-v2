@@ -201,7 +201,7 @@
 				{#each displayPosts as post}
 					<article class="mix-item card bg-gray-800 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 ease-in-out hover:scale-[1.02] {post.category || 'general'} {post.featured_post ? 'featured' : ''}" data-category={post.category || 'general'}>
 						<a href="/blog/{post.slug || post.id}" class="aspect-video relative block overflow-hidden">
-							<img src={post.image} alt={post.title} class="w-full h-full object-cover">
+							<img src={post.image} alt={post.title} class="w-full h-full object-cover" loading="lazy">
 							<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
 							<div class="absolute top-4 left-4 flex gap-2">
 								<span class="px-2 py-1 text-xs rounded-full border {getCategoryColor(post.category || 'general')}">{post.category || 'general'}</span>

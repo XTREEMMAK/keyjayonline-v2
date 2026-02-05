@@ -99,7 +99,7 @@
   display: inline-block !important;
   animation: letterPulse 2.5s ease-in-out infinite !important;
   transform-origin: center bottom;
-  will-change: transform, filter;
+  will-change: transform;
 }
 
 /* =============================================================================

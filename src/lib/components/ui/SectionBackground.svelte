@@ -73,8 +73,15 @@
 		background-size: cover;
 		background-position: center;
 		background-repeat: no-repeat;
-		filter: blur(8px); /* Softer blur to see video effect through */
-		transform: scale(1.05); /* Extra scale to cover blur edges */
+		filter: blur(8px);
+		transform: scale(1.05);
 		transition: opacity 1s ease-in-out;
+	}
+
+	@media (max-width: 1024px) {
+		.section-bg-image {
+			filter: none;
+			transform: translateZ(0); /* Maintain GPU compositing layer without blur cost */
+		}
 	}
 </style>

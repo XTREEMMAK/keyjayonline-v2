@@ -11,13 +11,19 @@
 	onMount(() => {
 		if (!browser) return;
 
+		let ticking = false;
 		function handleScroll() {
-			scrollY = window.scrollY;
-			visible = scrollY > 300;
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(() => {
+				scrollY = window.scrollY;
+				visible = scrollY > 300;
+				ticking = false;
+			});
 		}
 
-		window.addEventListener('scroll', handleScroll);
-		
+		window.addEventListener('scroll', handleScroll, { passive: true });
+
 		return () => {
 			window.removeEventListener('scroll', handleScroll);
 		};

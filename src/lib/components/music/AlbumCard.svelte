@@ -12,7 +12,7 @@
 </script>
 
 <div 
-	class="album-card relative group cursor-pointer transform transition-all duration-300 hover:scale-105"
+	class="album-card relative group cursor-pointer transform transition-transform duration-300 hover:scale-105"
 	onclick={() => onclick(album)}
 	onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onclick(album); }}}
 	onmouseenter={() => isHovered = true}
@@ -22,12 +22,15 @@
 	aria-label={`View ${album.title} album details`}
 	in:fly={{ y: 50, duration: 400, delay: index * 100 }}
 >
-	<div class="relative overflow-hidden rounded-xl bg-gray-900/50 backdrop-blur-sm">
+	<div class="relative overflow-hidden rounded-xl bg-gray-900/80">
 		<div class="aspect-square">
-			<img 
-				src={album.cover_art || 'https://placehold.co/400x400/1a1a1a/3B82F6?text=Album+Cover'} 
+			<img
+				src={album.cover_art || 'https://placehold.co/400x400/1a1a1a/3B82F6?text=Album+Cover'}
 				alt={album.title}
 				class="w-full h-full object-cover"
+				loading="lazy"
+				width="400"
+				height="400"
 			/>
 			
 			<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">

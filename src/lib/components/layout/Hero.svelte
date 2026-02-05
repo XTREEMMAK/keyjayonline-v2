@@ -37,7 +37,7 @@
 		disablepictureinpicture
 		class="pointer-events-none"
 		poster={asset('/videos/MAIN-poster-00001.jpg')}
-		preload="auto"
+		preload="metadata"
 	>
 		<source src={asset('/videos/MAIN-transcode.webm')} type="video/webm" />
 		<source src={asset('/videos/MAIN-transcode.mp4')} type="video/mp4" />

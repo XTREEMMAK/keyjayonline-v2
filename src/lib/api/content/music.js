@@ -252,16 +252,14 @@ export async function getLatestProjects(limit = 3) {
         },
         sort: ['-release_date', '-created_at'],
         limit: limit,
-        // Use wildcard for base fields, then specify relationships
-        // Note: liner_notes explicitly included to ensure it's fetched
+        // Use wildcard for base fields, then specify relationships with object notation
+        // (dot-notation with '*' can cause cover_art to remain a UUID string)
         fields: [
           '*',
           'liner_notes',
-          'cover_art.id',
-          'cover_art.filename_disk',
-          'videos.*',
-          'external_links.*',
-          'external_links.icon_value.icon_reference_id'
+          { cover_art: ['id', 'filename_disk'] },
+          { videos: ['*'] },
+          { external_links: ['*', { icon_value: ['icon_reference_id'] }] }
         ]
       })
     );

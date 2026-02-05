@@ -73,9 +73,15 @@
 			visible = isVisible;
 		}, 0.6);
 
-		// Add scroll listener for parallax effect
+		// Add scroll listener for parallax effect (rAF throttled)
+		let ticking = false;
 		const handleScroll = () => {
-			scrollY = window.scrollY;
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(() => {
+				scrollY = window.scrollY;
+				ticking = false;
+			});
 		};
 
 		// Add resize listener to detect mobile
@@ -83,7 +89,7 @@
 			isMobile = window.innerWidth < 768;
 		};
 
-		window.addEventListener('scroll', handleScroll);
+		window.addEventListener('scroll', handleScroll, { passive: true });
 		window.addEventListener('resize', handleResize);
 		
 		// Initial setup

@@ -69,8 +69,10 @@
 		// Fetch about data on mount (milestones, testimonials)
 		fetchAboutData();
 
-		function handleScroll() {
-			if (!inlineNavRef) return;
+		let ticking = false;
+
+		function handleScrollWork() {
+			if (!inlineNavRef) { ticking = false; return; }
 
 			const rect = inlineNavRef.getBoundingClientRect();
 			const navbarOffset = get(navbarVisible) ? 88 : 0;
@@ -109,6 +111,13 @@
 			} else {
 				bioImageOffset = 0;
 			}
+			ticking = false;
+		}
+
+		function handleScroll() {
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(handleScrollWork);
 		}
 
 		window.addEventListener('scroll', handleScroll, { passive: true });
