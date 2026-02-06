@@ -79,9 +79,16 @@
 	}
 
 	@media (max-width: 1024px) {
+		/* Disable expensive mask on mobile to fix render issues */
+		.section-bg-container {
+			-webkit-mask-image: none !important;
+			mask-image: none !important;
+		}
+
 		.section-bg-image {
 			filter: none;
-			transform: translateZ(0); /* Maintain GPU compositing layer without blur cost */
+			transform: none; /* Remove all transforms on mobile */
+			position: absolute; /* Switch from fixed to absolute */
 		}
 	}
 </style>

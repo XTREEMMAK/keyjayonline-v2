@@ -4,7 +4,7 @@
 	import { page } from '$app/stores';
 	import { afterNavigate } from '$app/navigation';
 	import Footer from '$lib/components/layout/Footer.svelte';
-	import ScrollToTop from '$lib/components/ui/ScrollToTop.svelte';
+	import FloatingButtonContainer from '$lib/components/ui/FloatingButtonContainer.svelte';
 	import PersistentMusicPlayer from '$lib/components/music/PersistentMusicPlayer.svelte';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
 
@@ -130,8 +130,8 @@
 	}
 </style>
 
-<!-- Scroll to Top Button -->
-<ScrollToTop />
+<!-- Floating Button Container (Mobile Only) -->
+<FloatingButtonContainer socialLinks={data?.socialLinks ?? []} />
 
 <!-- Persistent Music Player -->
 <PersistentMusicPlayer />

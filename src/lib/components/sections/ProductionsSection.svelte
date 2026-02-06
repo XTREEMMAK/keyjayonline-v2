@@ -244,7 +244,7 @@
 	<SectionBackground section="productions" opacity={0.12} />
 
 	<!-- Section Header with Orange Accent -->
-	<div class="pt-28 pb-8 text-center relative">
+	<div class="pt-16 md:pt-28 pb-8 text-center relative">
 		<div class="absolute inset-0 bg-gradient-to-b from-orange-600/20 via-red-500/5 to-transparent pointer-events-none"></div>
 		<h1 class="text-4xl md:text-5xl font-bold text-white mb-3 relative">
 			{#each titleLetters as letter, i}

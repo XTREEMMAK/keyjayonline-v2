@@ -38,10 +38,41 @@
 		backdrop-filter: blur(8px);
 		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
-	
+
 	button:hover {
-		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
 		           0 10px 10px -5px rgba(0, 0, 0, 0.04),
 		           0 0 20px rgba(59, 130, 246, 0.3);
+	}
+
+	/* Mobile: Minimal icon-only style */
+	@media (max-width: 768px) {
+		button {
+			padding: 0 !important;
+			bottom: 1.5rem !important;
+			left: 1.5rem !important;
+			background: transparent !important;
+			backdrop-filter: none !important;
+			border: none !important;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+			width: auto !important;
+			height: auto !important;
+		}
+
+		button:hover {
+			background: transparent !important;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+		}
+
+		button :global(svg) {
+			width: 32px !important;
+			height: 32px !important;
+			filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+		}
+
+		/* Hide the pulsing animation ring on mobile */
+		button :global(.animate-ping) {
+			display: none !important;
+		}
 	}
 </style>

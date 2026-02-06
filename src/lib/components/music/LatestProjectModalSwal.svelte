@@ -26,7 +26,15 @@
 			background: project.backgroundImageUrl
 				? `linear-gradient(145deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 50%, rgba(15, 23, 42, 0.95) 100%), url('${project.backgroundImageUrl}')`
 				: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
-			color: '#ffffff'
+			color: '#ffffff',
+			didOpen: () => {
+				// Lock body scroll on mobile
+				document.body.classList.add('swal2-shown');
+			},
+			willClose: () => {
+				// Unlock body scroll
+				document.body.classList.remove('swal2-shown');
+			}
 		});
 
 		return result;

@@ -80,12 +80,35 @@
 	.album-card {
 		view-transition-name: album-cover;
 	}
-	
+
 	.line-clamp-2 {
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	/* Mobile: Disable expensive effects to fix render issues */
+	@media (max-width: 768px) {
+		.album-card {
+			transform: none !important;
+		}
+
+		.album-card:hover {
+			transform: none !important;
+		}
+
+		/* Disable backdrop-blur */
+		:global(.backdrop-blur-sm) {
+			backdrop-filter: none !important;
+			-webkit-backdrop-filter: none !important;
+			background-color: rgba(0, 0, 0, 0.7) !important;
+		}
+
+		/* Disable blur on hover glow */
+		:global(.blur-lg) {
+			filter: none !important;
+		}
 	}
 </style>

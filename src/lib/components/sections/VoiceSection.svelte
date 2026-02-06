@@ -150,7 +150,7 @@
 	<SectionBackground section="voice" opacity={0.12} />
 
 	<!-- Section Header with Indigo Accent -->
-	<div class="pt-28 pb-8 text-center relative">
+	<div class="pt-16 md:pt-28 pb-8 text-center relative">
 		<div
 			class="absolute inset-0 bg-gradient-to-b from-indigo-600/20 via-purple-500/5 to-transparent pointer-events-none"
 		></div>

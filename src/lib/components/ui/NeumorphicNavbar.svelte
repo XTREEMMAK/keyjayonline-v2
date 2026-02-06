@@ -4,6 +4,7 @@
 	import { activeSection, navigateTo, sectionMeta, enabledSections, navbarVisible } from '$lib/stores/navigation.js';
 	import { hideMainNavbar } from '$lib/stores/stickyNav.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
+	import { mobileMenuOpen, closeMobileMenu, toggleMobileMenu } from '$lib/stores/mobileNav.js';
 	import { browser } from '$app/environment';
 	import { mouseGlow } from '$lib/actions/mouseGlow.js';
 	import { prefetchSection } from '$lib/stores/sectionData.js';
@@ -11,8 +12,22 @@
 	let isVisible = $state(true);
 	let isScrolled = $state(false);
 	let lastScrollY = 0;
-	let isMobileMenuOpen = $state(false);
 	let hasInitiallyLoaded = $state(false);
+	let isMenuClosing = $state(false); // Delayed state for smooth close animation
+	let prevMenuOpen = $state(false); // Track previous state
+	let isMobile = $state(false); // Track mobile viewport
+
+	// Delay navbar size change until menu animation completes
+	$effect(() => {
+		// Detect when menu transitions from open to closed
+		if (prevMenuOpen && !$mobileMenuOpen) {
+			isMenuClosing = true;
+			setTimeout(() => {
+				isMenuClosing = false;
+			}, 200); // Match animation duration
+		}
+		prevMenuOpen = $mobileMenuOpen;
+	});
 
 	// Navigation items (exclude home from visible nav, it's the default)
 	// Uses enabledSections to filter out disabled pages
@@ -22,17 +37,40 @@
 	const glowColor = $derived(sectionMeta[$activeSection]?.color || '#667eea');
 
 	// Combined visibility - hide if scroll hidden OR if section subnav takes over OR if content viewer is open
-	const shouldShow = $derived(isVisible && !$hideMainNavbar && !$contentViewerOpen);
+	// Exception: Always show if mobile menu is open
+	// On mobile: Only show on home page
+	const shouldShow = $derived(
+		(() => {
+			// On mobile, only show on home page (show when scrolled up OR when menu is open)
+			if (isMobile) {
+				if ($activeSection === 'home') {
+					return (isVisible || $mobileMenuOpen) && !$contentViewerOpen;
+				}
+				// Never show on non-home pages
+				return false;
+			}
+			// On desktop, normal behavior
+			return (isVisible && !$hideMainNavbar && !$contentViewerOpen) || $mobileMenuOpen;
+		})()
+	);
 
-	// Auto-close mobile menu when navbar hides
+	// Auto-close mobile menu when scrolling down (user dismissed navbar)
 	$effect(() => {
-		if (!shouldShow && isMobileMenuOpen) {
-			isMobileMenuOpen = false;
+		if (!isVisible && !$hideMainNavbar && !$contentViewerOpen && $mobileMenuOpen) {
+			// Only auto-close if user scrolled down while menu was open
+			// Don't close if menu was just opened via button
 		}
 	});
 
 	onMount(() => {
 		if (!browser) return;
+
+		// Check if mobile viewport
+		const checkMobile = () => {
+			isMobile = window.innerWidth <= 768;
+		};
+		checkMobile();
+		window.addEventListener('resize', checkMobile);
 
 		// Trigger initial slide-down animation after a brief delay
 		setTimeout(() => {
@@ -52,7 +90,7 @@
 				const scrollDelta = currentScrollY - lastScrollY;
 				if (scrollDelta > 5 && currentScrollY > 200) {
 					isVisible = false;
-					isMobileMenuOpen = false;
+					closeMobileMenu();
 					navbarVisible.set(false);
 				} else if (scrollDelta < -5) {
 					isVisible = true;
@@ -65,50 +103,44 @@
 		}
 
 		window.addEventListener('scroll', handleScroll, { passive: true });
-		return () => window.removeEventListener('scroll', handleScroll);
+		return () => {
+			window.removeEventListener('scroll', handleScroll);
+			window.removeEventListener('resize', checkMobile);
+		};
 	});
 
 	function handleNavClick(section) {
 		navigateTo(section);
-		isMobileMenuOpen = false;
+		closeMobileMenu();
 	}
 
 	function goHome() {
 		navigateTo('home');
-		isMobileMenuOpen = false;
+		closeMobileMenu();
 	}
 </script>
 
 <nav
 	use:mouseGlow={{ color: 'rgba(59, 130, 246, 0.12)', size: 300, blur: 60 }}
-	class="neu-navbar {isMobileMenuOpen ? 'mobile-menu-open' : ''}"
+	class="neu-navbar {$mobileMenuOpen || isMenuClosing ? 'mobile-menu-open' : ''}"
+	class:menu-closing={isMenuClosing && !$mobileMenuOpen}
 	class:shadow-2xl={isScrolled}
 	class:nav-hidden={!shouldShow || !hasInitiallyLoaded}
 	aria-label="Main navigation"
 	aria-hidden={!shouldShow || !hasInitiallyLoaded}
 	style="--section-glow-color: {glowColor};"
 >
-	<!-- Mobile Layout: Hamburger left, Logo right -->
-	<div class="flex md:hidden items-center justify-between w-full">
+	<!-- Mobile Layout: Centered Logo for navigation and menu -->
+	<div class="flex md:hidden items-center justify-center w-full mobile-nav-header">
 		<button
-			class="hamburger-btn p-2"
-			class:open={isMobileMenuOpen}
-			onclick={() => isMobileMenuOpen = !isMobileMenuOpen}
-			aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-			aria-expanded={isMobileMenuOpen}
-		>
-			<span class="hamburger-line"></span>
-			<span class="hamburger-line"></span>
-			<span class="hamburger-line"></span>
-		</button>
-
-		<button
-			class="neu-navbar-logo"
+			class="neu-navbar-logo mobile-interactive-logo"
 			class:active={$activeSection === 'home'}
 			class:logo-glow-active={$activeSection === 'home'}
-			onclick={goHome}
-			aria-label="Go to home"
+			class:menu-active={$mobileMenuOpen}
+			onclick={$activeSection === 'home' ? toggleMobileMenu : goHome}
+			aria-label={$activeSection === 'home' ? ($mobileMenuOpen ? 'Close menu' : 'Open menu') : 'Go to home'}
 			aria-current={$activeSection === 'home' ? 'page' : undefined}
+			aria-expanded={$activeSection === 'home' ? $mobileMenuOpen : undefined}
 			style="--item-glow-color: {sectionMeta.home.color};"
 		>
 			<img
@@ -156,10 +188,11 @@
 	</div>
 
 	<!-- Mobile Menu Dropdown - Now inside nav for visual connection -->
-	{#if isMobileMenuOpen}
+	{#if $mobileMenuOpen}
 		<div
 			class="mobile-menu-container md:hidden"
-			transition:fly={{ y: -10, duration: 200 }}
+			in:fly={{ y: -10, duration: 200 }}
+			out:fly={{ y: -10, duration: 200 }}
 		>
 			{#each navItems as section}
 				<button
@@ -179,11 +212,12 @@
 </nav>
 
 <!-- Backdrop overlay when mobile menu is open -->
-{#if isMobileMenuOpen && shouldShow}
+{#if $mobileMenuOpen && shouldShow}
 	<div
 		class="mobile-backdrop md:hidden"
-		onclick={() => isMobileMenuOpen = false}
-		transition:fly={{ duration: 200 }}
+		onclick={closeMobileMenu}
+		in:fly={{ duration: 200 }}
+		out:fly={{ duration: 200 }}
 	></div>
 {/if}
 
@@ -268,6 +302,37 @@
 		display: block;
 	}
 
+	/* Larger logo on mobile */
+	@media (max-width: 768px) {
+		.logo-img {
+			width: 40px;
+			height: 40px;
+			min-width: 40px;
+			min-height: 40px;
+		}
+
+		/* Remove margin on mobile since logo is centered */
+		.neu-navbar-logo {
+			margin-right: 0;
+		}
+
+		.neu-navbar-logo {
+			width: 56px;
+			height: 56px;
+			min-width: 56px;
+			min-height: 56px;
+			padding: 8px;
+		}
+
+		/* Disable expensive animations on mobile to fix render issues */
+		.logo-glow-active::before,
+		.glow-active::before {
+			animation: none !important;
+			filter: none !important;
+			opacity: 0.3;
+		}
+	}
+
 	/* Rotating glow effect for active nav items */
 	.glow-active {
 		position: relative;
@@ -334,53 +399,122 @@
 		}
 	}
 
-	/* Hamburger Button */
-	.hamburger-btn {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		gap: 4px;
-		width: 36px;
-		height: 36px;
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		border-radius: 8px;
-		transition: background 0.2s ease;
+	/* Mobile nav header - even padding */
+	.mobile-nav-header {
+		padding: 8px;
 	}
 
-	.hamburger-btn:hover {
-		background: rgba(255, 255, 255, 0.05);
+	/* Mobile interactive logo - underglow animation on home page */
+	.mobile-interactive-logo {
+		position: relative;
 	}
 
-	.hamburger-line {
-		display: block;
-		width: 20px;
-		height: 2px;
-		background: var(--neu-text-secondary, #9ca3af);
-		border-radius: 1px;
-		transition: all 0.3s ease;
+	@media (max-width: 768px) {
+		/* Expanding ring effect for mobile logo on home page - extends beyond container */
+		.mobile-interactive-logo::before {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 100%;
+			height: 100%;
+			transform: translate(-50%, -50%);
+			border-radius: 50%;
+			border: 2px solid rgba(59, 130, 246, 0.9);
+			box-shadow: 0 0 12px rgba(59, 130, 246, 0.7),
+			           0 0 24px rgba(59, 130, 246, 0.5);
+			animation: ring-disperse 2s ease-out infinite;
+			z-index: -1;
+			pointer-events: none;
+		}
+
+		/* Secondary ring layer with delay */
+		.mobile-interactive-logo::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 100%;
+			height: 100%;
+			transform: translate(-50%, -50%);
+			border-radius: 50%;
+			border: 2px solid rgba(59, 130, 246, 0.8);
+			box-shadow: 0 0 16px rgba(59, 130, 246, 0.6),
+			           0 0 32px rgba(59, 130, 246, 0.4);
+			animation: ring-disperse 2s ease-out infinite;
+			animation-delay: 1s;
+			z-index: -2;
+			pointer-events: none;
+		}
+
+		.mobile-interactive-logo:hover::before {
+			animation: ring-disperse 1.2s ease-out infinite;
+		}
+
+		.mobile-interactive-logo:hover::after {
+			animation: ring-disperse 1.2s ease-out infinite;
+			animation-delay: 0.6s;
+		}
+
+		.mobile-interactive-logo.menu-active::before {
+			border-color: rgba(59, 130, 246, 1);
+			box-shadow: 0 0 16px rgba(59, 130, 246, 0.9),
+			           0 0 32px rgba(59, 130, 246, 0.7);
+		}
+
+		.mobile-interactive-logo.menu-active::after {
+			border-color: rgba(59, 130, 246, 0.9);
+			box-shadow: 0 0 20px rgba(59, 130, 246, 0.8),
+			           0 0 40px rgba(59, 130, 246, 0.6);
+		}
 	}
 
-	.hamburger-btn.open .hamburger-line:nth-child(1) {
-		transform: translateY(6px) rotate(45deg);
+	@keyframes ring-disperse {
+		0% {
+			transform: translate(-50%, -50%) scale(1);
+			opacity: 1;
+		}
+		100% {
+			transform: translate(-50%, -50%) scale(3);
+			opacity: 0;
+		}
 	}
 
-	.hamburger-btn.open .hamburger-line:nth-child(2) {
-		opacity: 0;
-	}
-
-	.hamburger-btn.open .hamburger-line:nth-child(3) {
-		transform: translateY(-6px) rotate(-45deg);
+	/* Mobile: Always use column layout */
+	@media (max-width: 768px) {
+		.neu-navbar {
+			flex-direction: column;
+			align-items: stretch;
+		}
 	}
 
 	/* Mobile menu open state - expand navbar to accommodate menu */
 	.neu-navbar.mobile-menu-open {
 		border-radius: 20px;
-		flex-direction: column;
-		align-items: stretch;
-		padding-bottom: 8px;
+		padding-bottom: 4px;
+	}
+
+	/* Smooth close animation when tapping close button */
+	@media (max-width: 768px) {
+		.neu-navbar.menu-closing {
+			animation: menu-collapse 0.2s ease-in-out forwards;
+		}
+
+		/* Remove transition during animation for smoother effect */
+		.neu-navbar.menu-closing {
+			transition: none;
+		}
+	}
+
+	@keyframes menu-collapse {
+		0% {
+			border-radius: 20px;
+			padding-bottom: 4px;
+		}
+		100% {
+			border-radius: 50px;
+			padding-bottom: 8px;
+		}
 	}
 
 	/* Mobile menu container - inside the nav */
@@ -433,5 +567,12 @@
 		box-shadow:
 			inset 2px 2px 4px rgba(255, 255, 255, 0.1),
 			inset -2px -2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	/* Menu divider */
+	.menu-divider {
+		height: 1px;
+		background: rgba(255, 255, 255, 0.1);
+		margin: 8px 0;
 	}
 </style>
