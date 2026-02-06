@@ -254,30 +254,8 @@
 		]
 	};
 
-	// Client testimonials (fallback data, updated from API if available)
-	let testimonials = $state([
-		{
-			name: 'Sandra Espinoza',
-			date: '05/2013',
-			quote: "Working with Jamaal has been the most fluid and easy going experience I've ever had with a director. Jamaal's highly motivated about his work and is delightfully thorough in both his marketing efforts and the acting direction provided for the project! He goes the extra mile to provide talents with the opportunity to have access to things they might not have otherwise, and it makes the project feel all the more like a community effort. I'm happy to work with him and hope to see him produce more great works in the future!",
-			rating: 5,
-			categories: ['creative', 'productions']
-		},
-		{
-			name: 'Jeremiah Caudle',
-			date: '05/2012',
-			quote: "This guy has got to be one of the most talented person I have ever met. A worthy rival in writing and producing/mixing. A genius musician, and to top it all off; a freakin' amazing voice. Not only can he sing like nobodies business, but both his voices for protagonists as well as antagonists are nothing short of genius. Not to mention his evil laugh is one that will give you shivers!",
-			rating: 5,
-			categories: ['music', 'creative']
-		},
-		{
-			name: 'Nina M.',
-			date: '05/2016',
-			quote: "I worked with Jamaal for the first time in 2011 when I was cast to play Lida Garuzo in his radio play F.L.U.R. I was a fledgling when it came to voice acting at the time, and even though I was still rough around the edges, Jamaal made sure to not only provide guidance when required, but also support and words of encouragement. It was easy to work with him because he made it clear how he wanted his characters to be portrayed and what was expected from us, making the entire production smooth sailing. The thing I like most about Jamaal is how he empowers his peers, but also gives it his all. It never feels like you're doing a job, it feels like you're part of a family, maybe something bigger. He is driven, organized, and someone I would gladly work for again.",
-			rating: 5,
-			categories: ['creative', 'productions']
-		}
-	]);
+	// Client testimonials - from Directus only (no fallback)
+	let testimonials = $state([]);
 
 	// Tab content descriptions
 	const tabDescriptions = {

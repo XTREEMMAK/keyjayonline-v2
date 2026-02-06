@@ -46,8 +46,8 @@
 			</div>
 		</div>
 		
-		<div class="p-4">
-			<h3 class="font-semibold text-white mb-1 line-clamp-2 min-h-[3.5rem]" style="font-size: 0.9rem;">{album.title}</h3>
+		<div class="p-4 sm:p-4 album-info">
+			<h3 class="album-title font-semibold text-white mb-1 line-clamp-2">{album.title}</h3>
 			{#if album.artist}
 				<p class="text-gray-400 text-sm mb-2">{album.artist}</p>
 			{/if}
@@ -87,6 +87,24 @@
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	/* Album title - responsive sizing */
+	.album-title {
+		font-size: 0.9rem;
+		min-height: 3.5rem;
+	}
+
+	/* Small screens: smaller text and padding for 2-column layout */
+	@media (max-width: 480px) {
+		.album-info {
+			padding: 0.5rem;
+		}
+
+		.album-title {
+			font-size: 0.75rem;
+			min-height: 2.5rem;
+		}
 	}
 
 	/* Mobile: Disable expensive effects to fix render issues */

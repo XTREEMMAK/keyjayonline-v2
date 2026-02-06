@@ -6,6 +6,7 @@
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import FloatingButtonContainer from '$lib/components/ui/FloatingButtonContainer.svelte';
 	import PersistentMusicPlayer from '$lib/components/music/PersistentMusicPlayer.svelte';
+	import ScrollToTop from '$lib/components/ui/ScrollToTop.svelte';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
 
 	let { children, data } = $props();
@@ -132,6 +133,9 @@
 
 <!-- Floating Button Container (Mobile Only) -->
 <FloatingButtonContainer socialLinks={data?.socialLinks ?? []} />
+
+<!-- Scroll to Top Button (Mobile Only) -->
+<ScrollToTop />
 
 <!-- Persistent Music Player -->
 <PersistentMusicPlayer />

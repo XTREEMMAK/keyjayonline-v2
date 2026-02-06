@@ -8,6 +8,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 
 	let {
 		isOpen = $bindable(false),
@@ -32,6 +33,7 @@
 
 	function close() {
 		if (closeable) {
+			popModalState(); // Go back in history if we pushed a state
 			isOpen = false;
 			dispatch('close');
 		}
@@ -49,14 +51,29 @@
 		}
 	}
 
-	// Manage body scroll lock with scrollbar compensation
+	// Manage body scroll lock with scrollbar compensation and back button handling
 	$effect(() => {
 		if (browser) {
 			if (isOpen) {
+				// Push history state for back button handling
+				pushModalState('native-modal');
+
+				// Setup popstate listener for back button
+				const cleanupPopstate = setupPopstateHandler(() => {
+					isOpen = false;
+					dispatch('close');
+				});
+
 				// Calculate scrollbar width for compensation
 				const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 				document.documentElement.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
 				document.body.classList.add('modal-open');
+
+				return () => {
+					cleanupPopstate();
+					document.body.classList.remove('modal-open');
+					document.documentElement.style.removeProperty('--scrollbar-width');
+				};
 			} else {
 				document.body.classList.remove('modal-open');
 				document.documentElement.style.removeProperty('--scrollbar-width');

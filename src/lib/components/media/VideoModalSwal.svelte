@@ -3,6 +3,7 @@
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 	import { fade } from 'svelte/transition';
 	import { getYouTubeThumbnail } from '$lib/utils/youtube.js';
+	import { pushModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 	import '$lib/styles/album-modal.css';
 	
 	let {
@@ -12,7 +13,13 @@
 	
 	export async function showModal() {
 		const modalContent = createModalContent();
-		
+
+		// Push history state for back button handling
+		pushModalState(`video-${featuredWork.id || featuredWork.title}`);
+
+		// Track cleanup function for popstate listener
+		let cleanupPopstate;
+
 		const result = await Swal.fire({
 			title: featuredWork.title,
 			html: modalContent,
@@ -27,6 +34,11 @@
 			background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
 			color: '#ffffff',
 			didOpen: () => {
+				// Setup back button handler
+				cleanupPopstate = setupPopstateHandler(() => {
+					Swal.close();
+				});
+
 				// Initialize any components that need mounting
 				initializeModalComponents();
 
@@ -43,11 +55,14 @@
 				document.body.classList.add('modal-open');
 			},
 			willClose: () => {
+				// Cleanup popstate listener
+				if (cleanupPopstate) cleanupPopstate();
+
 				document.body.classList.remove('modal-open');
 				document.documentElement.style.removeProperty('--scrollbar-width');
 			}
 		});
-		
+
 		return result;
 	}
 	

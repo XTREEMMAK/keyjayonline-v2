@@ -14,6 +14,7 @@
 	import Icon from '@iconify/svelte';
 	import { browser } from '$app/environment';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
+	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 
 	// Props
 	let {
@@ -66,6 +67,7 @@
 
 	// Close modal
 	function handleClose() {
+		popModalState(); // Go back in history if we pushed a state
 		currentPage = 0;
 		zoomLevel = 1;
 		onClose();
@@ -136,6 +138,16 @@
 
 			// Lock body scroll when modal is open
 			if (browser) {
+				// Push history state for back button handling
+				pushModalState('content-viewer');
+
+				// Setup popstate listener for back button
+				const cleanupPopstate = setupPopstateHandler(() => {
+					currentPage = 0;
+					zoomLevel = 1;
+					onClose();
+				});
+
 				// Store original overflow value
 				const originalOverflow = document.body.style.overflow;
 				const originalPaddingRight = document.body.style.paddingRight;
@@ -154,6 +166,7 @@
 
 				// Cleanup function to restore scroll
 				return () => {
+					cleanupPopstate();
 					document.body.style.overflow = originalOverflow;
 					document.body.style.paddingRight = originalPaddingRight;
 					window.removeEventListener('keydown', handleKeydown);

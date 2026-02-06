@@ -7,10 +7,11 @@
 	import { formatTime } from '$lib/utils/time.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
-import { 
-	getTrackPlayerConfig, 
-	setupTrackPlayerEvents, 
-	pauseOthersAndToggle, 
+	import { pushModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
+import {
+	getTrackPlayerConfig,
+	setupTrackPlayerEvents,
+	pauseOthersAndToggle,
 	cleanupTrackPlayer,
 	PLAYER_ICONS,
 	createTrackPlayerConfig
@@ -72,6 +73,12 @@ import {
 
 		const modalContent = createModalContent(samples);
 
+		// Push history state for back button handling
+		pushModalState(`album-${album.id}`);
+
+		// Track cleanup function for popstate listener
+		let cleanupPopstate;
+
 		const result = await Swal.fire({
 			title: album.title,
 			html: modalContent,
@@ -89,10 +96,18 @@ import {
 				: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
 			color: '#ffffff',
 			didOpen: () => {
+				// Setup back button handler
+				cleanupPopstate = setupPopstateHandler(() => {
+					Swal.close();
+				});
+
 				// Initialize any components that need mounting
 				initializeModalComponents();
 			},
 			willClose: () => {
+				// Cleanup popstate listener
+				if (cleanupPopstate) cleanupPopstate();
+
 				// Clean up global function when modal closes
 				delete window.handleAlbumShare;
 			}

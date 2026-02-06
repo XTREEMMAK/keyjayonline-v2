@@ -45,34 +45,8 @@
 	// Projects are ready for MixItUp - categorySlugs provides space-separated class names
 	const allSamples = $derived(projects);
 
-	// Fallback testimonials (used if Directus data not available)
-	const fallbackTestimonials = [
-		{
-			name: 'Sandra Espinoza',
-			date: '05/2013',
-			quote: "Working with Jamaal has been the most fluid and easy going experience I've ever had with a director. Jamaal's highly motivated about his work and is delightfully thorough in both his marketing efforts and the acting direction provided for the project! He goes the extra mile to provide talents with the opportunity to have access to things they might not have otherwise, and it makes the project feel all the more like a community effort. I'm happy to work with him and hope to see him produce more great works in the future!",
-			rating: 5
-		},
-		{
-			name: 'Jeremiah Caudle',
-			date: '05/2012',
-			quote: "This guy has got to be one of the most talented person I have ever met. A worthy rival in writing and producing/mixing. A genius musician, and to top it all off; a freakin' amazing voice. Not only can he sing like nobodies business, but both his voices for protagonists as well as antagonists are nothing short of genius. Not to mention his evil laugh is one that will give you shivers!",
-			rating: 5
-		},
-		{
-			name: 'Nina M.',
-			date: '05/2016',
-			quote: "I worked with Jamaal for the first time in 2011 when I was cast to play Lida Garuzo in his radio play F.L.U.R. I was a fledgling when it came to voice acting at the time, and even though I was still rough around the edges, Jamaal made sure to not only provide guidance when required, but also support and words of encouragement. It was easy to work with him because he made it clear how he wanted his characters to be portrayed and what was expected from us, making the entire production smooth sailing. The thing I like most about Jamaal is how he empowers his peers, but also gives it his all. It never feels like you're doing a job, it feels like you're part of a family, maybe something bigger. He is driven, organized, and someone I would gladly work for again.",
-			rating: 5
-		}
-	];
-
-	// Client testimonials - from Directus or fallback
-	const testimonials = $derived(
-		voiceData.testimonials && voiceData.testimonials.length > 0
-			? voiceData.testimonials
-			: fallbackTestimonials
-	);
+	// Client testimonials - from Directus only (no fallback)
+	const testimonials = $derived(voiceData.testimonials || []);
 
 	onMount(async () => {
 		if (!browser) return;
@@ -191,24 +165,38 @@
 			{:else if isLoaded}
 				<!-- Category Tabs -->
 				<div class="flex justify-center mb-12">
-					<div class="flex flex-wrap gap-2 neu-card-inset p-2 rounded-xl">
+					<div class="voice-filter-container flex flex-wrap gap-2 md:gap-2 gap-3 neu-card-inset p-2 rounded-xl">
 						<button
 							onclick={() => setActiveCategory('all')}
-							class="px-6 py-3 rounded-lg font-medium transition-all duration-300 {activeCategory ===
+							class="voice-filter-btn px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 {activeCategory === 'all' ? 'active' : 'inactive'} {activeCategory ===
 							'all'
 								? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
-								: 'bg-transparent text-gray-400 hover:text-white'}"
+								: 'bg-transparent text-gray-400 hover:text-white hover:scale-105'}"
 						>
+							<Icon icon="mdi:view-grid" class="md:hidden text-lg" />
 							All
 						</button>
 						{#each categories as category}
+							{@const categoryIcons = {
+								'animation': 'mdi:animation',
+								'commercial': 'mdi:bullhorn',
+								'narration': 'mdi:book-open-variant',
+								'character': 'lucide:drama',
+								'audiobook': 'mdi:book-open-page-variant',
+								'gaming': 'mdi:gamepad-variant',
+								'documentary': 'mdi:movie-open',
+								'corporate': 'mdi:domain',
+								'singing': 'streamline-freehand:voice-id-user',
+								'default': 'mdi:microphone'
+							}}
 							<button
 								onclick={() => setActiveCategory(category.slug)}
-								class="px-6 py-3 rounded-lg font-medium transition-all duration-300 {activeCategory ===
+								class="voice-filter-btn px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 {activeCategory === category.slug ? 'active' : 'inactive'} {activeCategory ===
 								category.slug
 									? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
-									: 'bg-transparent text-gray-400 hover:text-white'}"
+									: 'bg-transparent text-gray-400 hover:text-white hover:scale-105'}"
 							>
+								<Icon icon={categoryIcons[category.slug] || categoryIcons['default']} class="md:hidden text-lg" />
 								{category.name}
 							</button>
 						{/each}
@@ -416,62 +404,64 @@
 		</div>
 	</section>
 
-	<!-- Testimonials Section -->
-	<section class="bg-gradient-to-br from-indigo-900/20 via-[var(--neu-bg)] to-purple-900/20 py-20">
-		<div class="container mx-auto px-4">
-			<div class="text-center mb-12">
-				<h2 class="text-3xl font-bold text-white mb-4">Client Testimonials</h2>
-				<p class="text-gray-400 max-w-2xl mx-auto">
-					What clients say about working with me on their voice-over projects
-				</p>
-			</div>
+	<!-- Testimonials Section (hidden if no testimonials) -->
+	{#if testimonials.length > 0}
+		<section class="bg-gradient-to-br from-indigo-900/20 via-[var(--neu-bg)] to-purple-900/20 py-20">
+			<div class="container mx-auto px-4">
+				<div class="text-center mb-12">
+					<h2 class="text-3xl font-bold text-white mb-4">Client Testimonials</h2>
+					<p class="text-gray-400 max-w-2xl mx-auto">
+						What clients say about working with me on their voice-over projects
+					</p>
+				</div>
 
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-				{#each testimonials as testimonial}
-					<div class="neu-card p-8 hover:scale-[1.02] transition-all duration-300">
-						<div class="flex items-center mb-4">
-							{#each Array(testimonial.rating) as _}
-								<Icon icon="mdi:star" class="text-yellow-400 text-lg" />
-							{/each}
-						</div>
-						<blockquote class="text-gray-300 mb-6 italic testimonial-content">
-							{@html testimonial.quote}
-						</blockquote>
-						<div class="border-t border-gray-700 pt-4 flex items-center gap-4">
-							{#if testimonial.avatarUrl}
-								<img
-									src={testimonial.avatarUrl}
-									alt={testimonial.name}
-									class="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
-								/>
-							{:else}
-								<div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
-									{testimonial.name?.charAt(0) || '?'}
-								</div>
-							{/if}
-							<div class="flex-1 min-w-0">
-								<div class="text-white font-semibold">
-									{testimonial.name}{#if testimonial.title}<span class="text-gray-400 font-normal">, {testimonial.title}</span>{/if}
-								</div>
-								{#if testimonial.company}
-									<div class="text-gray-300 text-sm">{testimonial.company}</div>
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+					{#each testimonials as testimonial}
+						<div class="neu-card p-8 hover:scale-[1.02] transition-all duration-300">
+							<div class="flex items-center mb-4">
+								{#each Array(testimonial.rating) as _}
+									<Icon icon="mdi:star" class="text-yellow-400 text-lg" />
+								{/each}
+							</div>
+							<blockquote class="text-gray-300 mb-6 italic testimonial-content">
+								{@html testimonial.quote}
+							</blockquote>
+							<div class="border-t border-gray-700 pt-4 flex items-center gap-4">
+								{#if testimonial.avatarUrl}
+									<img
+										src={testimonial.avatarUrl}
+										alt={testimonial.name}
+										class="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
+									/>
+								{:else}
+									<div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+										{testimonial.name?.charAt(0) || '?'}
+									</div>
 								{/if}
-								<div class="flex items-center gap-2 text-gray-400 text-sm">
-									{#if testimonial.projectName}
-										<span class="text-indigo-400">Re: {testimonial.projectName}</span>
-										{#if testimonial.date}<span>•</span>{/if}
+								<div class="flex-1 min-w-0">
+									<div class="text-white font-semibold">
+										{testimonial.name}{#if testimonial.title}<span class="text-gray-400 font-normal">, {testimonial.title}</span>{/if}
+									</div>
+									{#if testimonial.company}
+										<div class="text-gray-300 text-sm">{testimonial.company}</div>
 									{/if}
-									{#if testimonial.date}
-										<span>{testimonial.date}</span>
-									{/if}
+									<div class="flex items-center gap-2 text-gray-400 text-sm">
+										{#if testimonial.projectName}
+											<span class="text-indigo-400">Re: {testimonial.projectName}</span>
+											{#if testimonial.date}<span>•</span>{/if}
+										{/if}
+										{#if testimonial.date}
+											<span>{testimonial.date}</span>
+										{/if}
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-				{/each}
+					{/each}
+				</div>
 			</div>
-		</div>
-	</section>
+		</section>
+	{/if}
 
 	<!-- Contact CTA Section -->
 	<section
@@ -585,5 +575,42 @@
 	}
 	.testimonial-content :global(a:hover) {
 		color: #a5b4fc;
+	}
+
+	/* Mobile: Productions-style filter buttons */
+	@media (max-width: 768px) {
+		.voice-filter-container {
+			background: transparent !important;
+			box-shadow: none !important;
+			padding: 0 !important;
+			border-radius: 0 !important;
+			justify-content: center;
+		}
+
+		.voice-filter-btn {
+			border-radius: 9999px !important;
+			padding: 0.625rem 1.25rem !important;
+			font-size: 0.875rem !important;
+			font-weight: 600 !important;
+		}
+
+		.voice-filter-btn.inactive {
+			background: var(--neu-bg, #2a2d35) !important;
+			box-shadow: 4px 4px 8px rgba(18, 20, 24, 0.8),
+			            -4px -4px 8px rgba(60, 64, 72, 0.5) !important;
+			color: #d1d5db !important;
+		}
+
+		.voice-filter-btn.inactive:hover {
+			color: white !important;
+			transform: scale(1.05);
+		}
+
+		.voice-filter-btn.active {
+			background: linear-gradient(to right, #4f46e5, #7c3aed) !important;
+			box-shadow: none !important;
+			color: white !important;
+			transform: scale(1.05);
+		}
 	}
 </style>

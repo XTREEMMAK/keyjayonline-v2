@@ -2,6 +2,7 @@
 	import Swal from 'sweetalert2';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 	import { fade } from 'svelte/transition';
+	import { pushModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 	
 	let {
 		snippet
@@ -9,7 +10,13 @@
 	
 	export async function showModal() {
 		const modalContent = createModalContent();
-		
+
+		// Push history state for back button handling
+		pushModalState(`code-snippet-${snippet.id || snippet.title}`);
+
+		// Track cleanup function for popstate listener
+		let cleanupPopstate;
+
 		const result = await Swal.fire({
 			title: snippet.title,
 			html: modalContent,
@@ -24,6 +31,11 @@
 			background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
 			color: '#ffffff',
 			didOpen: () => {
+				// Setup back button handler
+				cleanupPopstate = setupPopstateHandler(() => {
+					Swal.close();
+				});
+
 				initializeModalComponents();
 				// Calculate scrollbar width for compensation
 				const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -32,11 +44,14 @@
 				document.body.classList.add('modal-open');
 			},
 			willClose: () => {
+				// Cleanup popstate listener
+				if (cleanupPopstate) cleanupPopstate();
+
 				document.body.classList.remove('modal-open');
 				document.documentElement.style.removeProperty('--scrollbar-width');
 			}
 		});
-		
+
 		return result;
 	}
 

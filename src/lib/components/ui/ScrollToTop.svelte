@@ -80,6 +80,8 @@
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
 		cursor: pointer;
+		/* Hide on desktop - page has its own desktop scroll button */
+		display: none;
 	}
 
 	.scroll-to-top-btn:hover {
@@ -108,9 +110,10 @@
 		bottom: 1rem; /* 16px - normal position */
 	}
 
-	/* Mobile: Position above bottom nav bar (player overlays, doesn't affect position) */
+	/* Mobile: Show and position above bottom nav bar */
 	@media (max-width: 768px) {
 		.scroll-to-top-btn {
+			display: block; /* Show on mobile */
 			right: 1rem;
 			padding: 0.625rem; /* 10px - slightly smaller */
 		}

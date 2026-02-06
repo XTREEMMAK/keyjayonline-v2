@@ -1,6 +1,7 @@
 <script>
 	import Swal from 'sweetalert2';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
+	import { pushModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 	import '$lib/styles/new-release-modal.css';
 
 	let {
@@ -11,6 +12,12 @@
 		if (!release) return;
 
 		const modalContent = createModalContent();
+
+		// Push history state for back button handling
+		pushModalState(`new-release-${release.id || release.title}`);
+
+		// Track cleanup function for popstate listener
+		let cleanupPopstate;
 
 		const result = await Swal.fire({
 			title: '',
@@ -26,10 +33,18 @@
 			background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
 			color: '#ffffff',
 			didOpen: () => {
+				// Setup back button handler
+				cleanupPopstate = setupPopstateHandler(() => {
+					Swal.close();
+				});
+
 				// Lock body scroll on mobile
 				document.body.classList.add('swal2-shown');
 			},
 			willClose: () => {
+				// Cleanup popstate listener
+				if (cleanupPopstate) cleanupPopstate();
+
 				// Unlock body scroll
 				document.body.classList.remove('swal2-shown');
 			}

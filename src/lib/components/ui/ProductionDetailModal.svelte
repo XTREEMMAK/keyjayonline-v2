@@ -19,6 +19,7 @@
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 	import { extractYouTubeId } from '$lib/utils/youtube.js';
 	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
+	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 
 	// Props
 	let {
@@ -60,6 +61,7 @@
 
 	// Close modal
 	function handleClose() {
+		popModalState(); // Go back in history if we pushed a state
 		onClose();
 	}
 
@@ -101,11 +103,25 @@
 	// Reset state when modal opens
 	$effect(() => {
 		if (isOpen) {
-			// Add keyboard listener
+			// Add keyboard listener and history handling
 			if (browser) {
+				// Push history state for back button handling
+				pushModalState('production-detail');
+
+				// Setup popstate listener for back button
+				const cleanupPopstate = setupPopstateHandler(() => {
+					onClose();
+				});
+
 				window.addEventListener('keydown', handleKeydown);
 				// Prevent body scroll
 				document.body.style.overflow = 'hidden';
+
+				return () => {
+					cleanupPopstate();
+					window.removeEventListener('keydown', handleKeydown);
+					document.body.style.overflow = '';
+				};
 			}
 		} else {
 			// Remove keyboard listener

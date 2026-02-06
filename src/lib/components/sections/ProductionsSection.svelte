@@ -665,11 +665,26 @@
 
 	.line-clamp-2 {
 		display: -webkit-box;
-		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
-		min-height: 3rem;
-		line-clamp: 2;
+	}
+
+	/* Mobile: Show more lines for descriptions */
+	@media (max-width: 768px) {
+		.line-clamp-2 {
+			-webkit-line-clamp: 4;
+			line-clamp: 4;
+			min-height: 5rem;
+		}
+	}
+
+	/* Desktop: Keep 2 lines */
+	@media (min-width: 769px) {
+		.line-clamp-2 {
+			-webkit-line-clamp: 2;
+			line-clamp: 2;
+			min-height: 3rem;
+		}
 	}
 
 	/* Neumorphic card styles (fallback if not in global CSS) */

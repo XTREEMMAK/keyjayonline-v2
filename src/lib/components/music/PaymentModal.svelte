@@ -1,6 +1,9 @@
 <script>
 	import { fade, fly } from 'svelte/transition';
 	import Icon from '@iconify/svelte';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
+	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 	
 	let {
 		item,
@@ -21,6 +24,23 @@
 		Math.max(25, minimumPrice),
 		Math.max(50, minimumPrice)
 	];
+
+	// Handle back button closing modal
+	function handleClose() {
+		popModalState();
+		onClose();
+	}
+
+	// Setup history state and popstate listener on mount
+	onMount(() => {
+		if (browser) {
+			pushModalState('payment-modal');
+			const cleanup = setupPopstateHandler(() => {
+				onClose();
+			});
+			return cleanup;
+		}
+	});
 	
 	function selectAmount(amount) {
 		selectedAmount = amount;
@@ -64,7 +84,7 @@
 			const data = await response.json();
 			
 			onSuccess(data);
-			onClose();
+			handleClose();
 		} catch (err) {
 			error = 'Payment processing failed. Please try again.';
 		} finally {
@@ -73,9 +93,9 @@
 	}
 </script>
 
-<div 
+<div
 	class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-	onclick={onClose}
+	onclick={handleClose}
 	transition:fade={{ duration: 200 }}
 >
 	<div 
@@ -83,8 +103,8 @@
 		onclick={(e) => e.stopPropagation()}
 		transition:fly={{ y: 50, duration: 300 }}
 	>
-		<button 
-			onclick={onClose}
+		<button
+			onclick={handleClose}
 			class="absolute top-4 right-4 p-2 hover:bg-gray-800 rounded-full transition-colors"
 		>
 			<Icon icon="mdi:close" width={20} height={20} class="text-gray-400" />

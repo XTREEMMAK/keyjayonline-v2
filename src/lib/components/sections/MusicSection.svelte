@@ -544,9 +544,10 @@
 		style="top: {$navbarVisible ? '88px' : '0px'}"
 	>
 		<div class="container mx-auto px-4">
-			<!-- Main view switcher row -->
-			<div class="flex items-center justify-between py-4">
-				<div class="flex gap-2 flex-wrap">
+			<!-- Main view switcher - centered -->
+			<div class="flex flex-col items-center gap-4 py-4">
+				<!-- Main category buttons - centered -->
+				<div class="flex gap-2 flex-wrap justify-center">
 					<button
 						onclick={() => switchView('albums')}
 						class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {
@@ -579,9 +580,9 @@
 					</button>
 				</div>
 
+				<!-- Filter buttons - centered below main buttons -->
 				{#if view === 'albums'}
-					<!-- Desktop filters -->
-					<div class="hidden md:flex gap-2 flex-wrap">
+					<div class="flex gap-2 flex-wrap justify-center">
 						<button
 							onclick={() => setFilter('all')}
 							class="px-3 py-1 text-sm rounded-full transition-all duration-300 {
@@ -607,36 +608,6 @@
 					</div>
 				{/if}
 			</div>
-
-			<!-- Mobile filters row -->
-			{#if view === 'albums'}
-				<div class="md:hidden border-t border-gray-800 py-3">
-					<div class="flex gap-2 flex-wrap justify-center">
-						<button
-							onclick={() => setFilter('all')}
-							class="px-3 py-1 text-sm rounded-full transition-all duration-300 {
-								activeFilter === 'all'
-									? 'bg-blue-600/20 text-blue-400 border border-blue-600'
-									: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
-							}"
-						>
-							All
-						</button>
-						{#each releaseTypes() as releaseType}
-							<button
-								onclick={() => setFilter(releaseType)}
-								class="px-3 py-1 text-sm rounded-full transition-all duration-300 capitalize {
-									activeFilter === releaseType
-										? 'bg-blue-600/20 text-blue-400 border border-blue-600'
-										: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
-								}"
-							>
-								{releaseType.charAt(0).toUpperCase() + releaseType.slice(1).replace(/_/g, ' ')}
-							</button>
-						{/each}
-					</div>
-				</div>
-			{/if}
 		</div>
 	</div>
 
@@ -681,7 +652,7 @@
 						<p class="text-gray-400">Check back soon for new releases!</p>
 					</div>
 				{:else}
-					<div bind:this={container} class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+					<div bind:this={container} class="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
 						{#each albums as album, i}
 							<div class="mix-item {album.release_type ? album.release_type.toLowerCase().replace(/\s+/g, '-') : 'unknown'}">
 								<AlbumCard
