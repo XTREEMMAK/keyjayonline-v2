@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { extractCoverArt, preloadCoverArt } from '$lib/utils/coverArtExtractor.js';
 import { getAudioUrl } from '$lib/utils/environment.js';
 
@@ -13,6 +13,7 @@ function transformTrackUrls(track) {
 
 // Player state
 export const playerVisible = writable(false);
+export const playerMinimized = writable(false); // Track minimized state
 export const isPlaying = writable(false);
 export const currentTrack = writable(null);
 export const currentTrackArtwork = writable(null); // Extracted cover art
@@ -35,8 +36,56 @@ export function hidePlayer() {
 	playerVisible.set(false);
 }
 
+/**
+ * Close the player completely and clear track state.
+ * Used when user explicitly closes the player (not just minimize).
+ * Next time player opens, it will load a fresh track.
+ */
+export function closePlayerCompletely() {
+	playerVisible.set(false);
+	currentTrack.set(null);
+	currentTrackArtwork.set(null);
+	playlist.set([]);
+	currentTrackIndex.set(0);
+	playerPosition.set(0);
+	playerDuration.set(0);
+}
+
 export function togglePlayer() {
 	playerVisible.update(visible => !visible);
+}
+
+/**
+ * Pause the global music player.
+ * Used to stop music when other audio (voice samples) starts playing.
+ */
+export function pauseMusic() {
+	const instance = get(wavesurferInstance);
+	if (instance?.isPlaying()) {
+		instance.pause();
+		isPlaying.set(false);
+	}
+}
+
+/**
+ * Expand the music player (set minimized to false)
+ */
+export function expandPlayer() {
+	playerMinimized.set(false);
+}
+
+/**
+ * Minimize the music player (set minimized to true)
+ */
+export function minimizePlayer() {
+	playerMinimized.set(true);
+}
+
+/**
+ * Check if a track is currently loaded
+ */
+export function hasTrackLoaded() {
+	return get(currentTrack) !== null;
 }
 
 export function loadPlaylist(tracks, startIndex = 0) {

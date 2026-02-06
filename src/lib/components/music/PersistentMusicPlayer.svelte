@@ -4,20 +4,23 @@
 	import WaveSurfer from 'wavesurfer.js';
 	import Icon from '@iconify/svelte';
 	import { getAudioUrl } from '$lib/utils/environment.js';
-import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
-	import { 
-		playerVisible, 
-		isPlaying, 
-		currentTrack, 
+	import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
+	import { activeSection } from '$lib/stores/navigation.js';
+	import {
+		playerVisible,
+		playerMinimized,
+		isPlaying,
+		currentTrack,
 		currentTrackArtwork,
 		artworkLoading,
-		playlist, 
+		playlist,
 		currentTrackIndex,
 		playerPosition,
 		playerDuration,
 		volume,
 		wavesurferInstance,
 		hidePlayer,
+		closePlayerCompletely,
 		nextTrack,
 		previousTrack
 	} from '$lib/stores/musicPlayer.js';
@@ -29,7 +32,7 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 	let visualContainer = $state();
 	let wavesurfer = $state(null);
 	let visualWavesurfer = $state(null);
-	let isMinimized = $state(false);
+	// $playerMinimized now managed by store (playerMinimized)
 	let showPlaylist = $state(false);
 	let showBrowser = $state(false);
 	let currentTime = $state('0:00');
@@ -38,8 +41,7 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 	let wavesurferReady = $state(false);
 	let visualWavesurferReady = $state(false);
 	let thumbnailError = $state(false);
-	
-	
+
 	// Initialize wavesurfer when container becomes available
 	$effect(() => {
 		console.log('PersistentMusicPlayer effect, container:', !!container);
@@ -60,7 +62,42 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 			
 			// Store the instance for other components to access
 			wavesurferInstance.set(wavesurfer);
-			
+
+			// Setup Media Session API for car/Bluetooth controls
+			if ('mediaSession' in navigator) {
+				navigator.mediaSession.setActionHandler('play', () => {
+					wavesurfer.play();
+				});
+
+				navigator.mediaSession.setActionHandler('pause', () => {
+					wavesurfer.pause();
+				});
+
+				navigator.mediaSession.setActionHandler('seekbackward', () => {
+					const currentTime = wavesurfer.getCurrentTime();
+					const duration = wavesurfer.getDuration();
+					if (duration > 0) {
+						wavesurfer.seekTo(Math.max(0, currentTime - 10) / duration);
+					}
+				});
+
+				navigator.mediaSession.setActionHandler('seekforward', () => {
+					const currentTime = wavesurfer.getCurrentTime();
+					const duration = wavesurfer.getDuration();
+					if (duration > 0) {
+						wavesurfer.seekTo(Math.min(duration, currentTime + 10) / duration);
+					}
+				});
+
+				navigator.mediaSession.setActionHandler('previoustrack', () => {
+					previousTrack();
+				});
+
+				navigator.mediaSession.setActionHandler('nexttrack', () => {
+					nextTrack();
+				});
+			}
+
 			// Set initial volume
 			wavesurfer.setVolume($volume);
 			
@@ -88,11 +125,19 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 			wavesurfer.on('play', () => {
 				console.log('Wavesurfer play event');
 				isPlaying.set(true);
+				// Sync Media Session playback state
+				if ('mediaSession' in navigator) {
+					navigator.mediaSession.playbackState = 'playing';
+				}
 			});
-			
+
 			wavesurfer.on('pause', () => {
 				console.log('Wavesurfer pause event');
 				isPlaying.set(false);
+				// Sync Media Session playback state
+				if ('mediaSession' in navigator) {
+					navigator.mediaSession.playbackState = 'paused';
+				}
 			});
 			
 			wavesurfer.on('finish', () => {
@@ -114,8 +159,11 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 	
 	// Create visual wavesurfer for expanded view
 	$effect(() => {
-		if (isMinimized) {
-			// Clean up visual wavesurfer when minimized
+		// Track player visibility to trigger recreation when reopening after close
+		const isVisible = $playerVisible;
+
+		if ($playerMinimized || !isVisible) {
+			// Clean up visual wavesurfer when minimized OR player is hidden
 			if (visualWavesurfer) {
 				visualWavesurfer.destroy();
 				visualWavesurfer = null;
@@ -189,15 +237,34 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 	$effect(() => {
 		const track = $currentTrack;
 		console.log('Track changed:', track, 'Wavesurfer ready:', wavesurferReady);
-		
+
 		// Reset thumbnail error state when track changes
 		thumbnailError = false;
-		
+
 		if (track && track.audioUrl && wavesurfer && wavesurferReady) {
 			console.log('Loading track:', track.audioUrl);
 			loadTrack(track, true); // Auto-play when track is selected
 		} else if (track && track.audioUrl && !wavesurferReady) {
 			console.log('Track set but wavesurfer not ready yet, will load when ready');
+		}
+	});
+
+	// Sync visual wavesurfer when it becomes available or track changes
+	$effect(() => {
+		// Only sync when visual wavesurfer exists, we're not minimized, and there's a track
+		if (!visualWavesurfer || $playerMinimized || !$currentTrack?.audioUrl) {
+			return;
+		}
+
+		// Check if visual wavesurfer needs to load the track
+		const visualDuration = visualWavesurfer.getDuration();
+		if (visualDuration === 0 || !visualWavesurferReady) {
+			console.log('Syncing visual wavesurfer with current track');
+			visualWavesurferReady = false;
+			const transformedUrl = getAudioUrl($currentTrack.audioUrl);
+			visualWavesurfer.load(transformedUrl).catch(error => {
+				console.error('Error loading visual wavesurfer:', error);
+			});
 		}
 	});
 	
@@ -215,7 +282,43 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 			loadTrack($currentTrack, true);
 		}
 	});
-	
+
+	// Handle player reopening after being closed - reload existing track
+	let wasVisible = $state(false);
+	$effect(() => {
+		const isNowVisible = $playerVisible;
+
+		// Detect when player transitions from hidden to visible
+		if (isNowVisible && !wasVisible) {
+			// Player just became visible - if we have a track and wavesurfer is ready, reload it
+			if (wavesurferReady && wavesurfer && $currentTrack?.audioUrl) {
+				console.log('Player reopened, reloading track:', $currentTrack.title);
+				// Use setTimeout to ensure wavesurfer is fully initialized
+				setTimeout(() => {
+					if (wavesurfer && wavesurfer.getDuration() === 0) {
+						loadTrack($currentTrack, true);
+					}
+				}, 100);
+			}
+		}
+
+		wasVisible = isNowVisible;
+	});
+
+	// Update Media Session metadata when track or artwork changes
+	$effect(() => {
+		if ('mediaSession' in navigator && $currentTrack) {
+			navigator.mediaSession.metadata = new MediaMetadata({
+				title: $currentTrack.title || 'Unknown Track',
+				artist: $currentTrack.artist || 'KEY JAY',
+				album: $currentTrack.album || 'Streaming',
+				artwork: $currentTrackArtwork ? [
+					{ src: $currentTrackArtwork, sizes: '512x512', type: 'image/png' }
+				] : []
+			});
+		}
+	});
+
 	async function loadTrack(track, autoPlay = false) {
 		if (!wavesurfer || !track.audioUrl) {
 			console.log('Cannot load track:', { wavesurfer: !!wavesurfer, audioUrl: track?.audioUrl });
@@ -310,7 +413,7 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 				}
 
 				// Safety check: ensure visual waveform is synced when starting playback
-				if (visualWavesurfer && !isMinimized) {
+				if (visualWavesurfer && !$playerMinimized) {
 					const visualDuration = visualWavesurfer.getDuration();
 					const mainDuration = wavesurfer.getDuration();
 
@@ -346,8 +449,9 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 	}
 	
 	async function toggleMinimize() {
-		const wasMinimized = isMinimized;
-		isMinimized = !isMinimized;
+		const wasMinimized = $playerMinimized;
+
+		playerMinimized.update(v => !v);
 
 		// Resize wavesurfer after animation completes
 		if (wavesurfer) {
@@ -359,7 +463,7 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 		}
 
 		// Safety check: sync visual waveform when expanding
-		if (wasMinimized && !isMinimized && $currentTrack?.audioUrl) {
+		if (wasMinimized && !$playerMinimized && $currentTrack?.audioUrl) {
 			// Wait for animation and visual effect to complete
 			setTimeout(async () => {
 				if (!visualWavesurfer) {
@@ -394,7 +498,8 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 		if (wavesurfer) {
 			wavesurfer.pause();
 		}
-		hidePlayer();
+		// Clear all track state so next open loads a fresh track
+		closePlayerCompletely();
 	}
 	
 	onDestroy(() => {
@@ -408,14 +513,15 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 </script>
 
 {#if $playerVisible}
-	<div 
-		class="fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-md border-t border-white/10 shadow-2xl"
+	<div
+		class="music-player fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-md border-t border-white/10 shadow-2xl"
+		class:minimized={$playerMinimized}
 		transition:slide={{ duration: 300 }}>
 		
 		<!-- Persistent waveform container - always present -->
 		<div bind:this={container} class="waveform-container" style="position: absolute; top: -1000px; width: 300px; height: 50px; visibility: hidden;"></div>
 		
-		{#if !isMinimized}
+		{#if !$playerMinimized}
 			<!-- Full Player -->
 			<div class="p-4" transition:slide={{ duration: 300 }}>
 				<!-- Track Info & Controls Row -->
@@ -541,7 +647,7 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 				<div class="mb-2">
 					<!-- Waveform Container with Skeleton Loader -->
 					<div class="relative mb-2" style="height: 50px;">
-						{#if !visualWavesurferReady && !isMinimized}
+						{#if !visualWavesurferReady && !$playerMinimized}
 							<!-- Skeleton Loader -->
 							<div class="skeleton-waveform"></div>
 						{/if}
@@ -778,5 +884,18 @@ import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
 	/* Smooth fade-in when waveform becomes visible */
 	.waveform-container {
 		transition: opacity 0.3s ease-in-out;
+	}
+
+	/* Mobile: Animate player sliding out when minimized (keeps DOM alive so music continues) */
+	@media (max-width: 768px) {
+		.music-player {
+			transition: transform 0.3s ease, opacity 0.3s ease;
+		}
+
+		.music-player.minimized {
+			transform: translateY(100%);
+			opacity: 0;
+			pointer-events: none;
+		}
 	}
 </style>

@@ -6,7 +6,7 @@
 	import NeumorphicNavbar from '$lib/components/ui/NeumorphicNavbar.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
 	import { showPlayer, loadRandomTrack, playerVisible, isPlaying } from '$lib/stores/musicPlayer.js';
-	import { scrollButtonVisible } from '$lib/stores/scrollButton.js';
+	import { browser } from '$app/environment';
 	import {
 		activeSection,
 		isContentVisible,
@@ -41,6 +41,10 @@
 	// Reference to AboutSection for tab switching
 	let aboutSectionRef = $state(null);
 
+	// Track scroll position for desktop scroll button
+	let scrollY = $state(0);
+	let showDesktopScrollButton = $derived(scrollY > 300);
+
 	onMount(() => {
 		// Initialize disabled pages from server data before hash navigation
 		if (data?.siteSettings?.pages) {
@@ -49,6 +53,25 @@
 
 		// Normal hash-based navigation
 		initFromHash();
+
+		// Track scroll position for desktop scroll button
+		if (browser) {
+			let ticking = false;
+			function handleScroll() {
+				if (ticking) return;
+				ticking = true;
+				requestAnimationFrame(() => {
+					scrollY = window.scrollY;
+					ticking = false;
+				});
+			}
+
+			window.addEventListener('scroll', handleScroll, { passive: true });
+
+			return () => {
+				window.removeEventListener('scroll', handleScroll);
+			};
+		}
 	});
 
 	onDestroy(() => {
@@ -89,12 +112,19 @@
 
 	const pageDescription = $derived(sectionDescriptions[$activeSection] || sectionDescriptions.home);
 
-	// Show play button when on music section AND player is not visible
+	// Show play button when on music section AND player is not visible (desktop only)
 	const showPlayButton = $derived($activeSection === 'music' && !$playerVisible);
 
 	function handlePlayButtonClick() {
 		loadRandomTrack();
 		showPlayer();
+	}
+
+	// Show scroll button when scrolled down (desktop only)
+	const showScrollButton = $derived(showDesktopScrollButton && $activeSection !== 'home');
+
+	function handleScrollToTop() {
+		window.scrollTo({ top: 0, behavior: 'smooth' });
 	}
 </script>
 
@@ -152,17 +182,32 @@
 	<AboutStickyNav onTabSwitch={handleAboutTabSwitch} />
 {/if}
 
-<!-- Fixed Play Button - Outside transition containers for proper fixed positioning -->
+<!-- Fixed Play Button (Desktop Only) - Outside transition containers for proper fixed positioning -->
 {#if showPlayButton}
 	<div
-		class="fixed-play-button"
+		class="fixed-play-button desktop-only"
 		class:pulsing={$isPlaying}
-		class:scroll-hidden={!$scrollButtonVisible}
 		in:fade={{ duration: 300 }}
 		out:fade={{ duration: 200 }}
 	>
 		<SpinningPlayButton onClick={handlePlayButtonClick} />
 	</div>
+{/if}
+
+<!-- Fixed Scroll to Top Button (Desktop Only) - Above play button -->
+{#if showScrollButton}
+	<button
+		class="fixed-scroll-button desktop-only"
+		style="bottom: {$activeSection === 'music' ? '188px' : '76px'}; right: {$activeSection === 'music' ? '76px' : '44px'};"
+		onclick={handleScrollToTop}
+		aria-label="Scroll to top"
+		in:fade={{ duration: 300 }}
+		out:fade={{ duration: 200 }}
+	>
+		<svg class="scroll-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path>
+		</svg>
+	</button>
 {/if}
 
 <style>
@@ -179,77 +224,90 @@
 
 	/* Section transition container */
 	.section-transition-container {
-		overflow: visible !important;
+		/* Content can overflow vertically but horizontal overflow hidden to prevent
+		   fly animations from causing viewport shift (which affects fixed elements) */
+		overflow-x: hidden;
+		overflow-y: visible;
 	}
 
-	/* Fixed Play Button - positioned above scroll-to-top button on right */
-	.fixed-play-button {
-		position: fixed;
-		bottom: 72px; /* Above scroll-to-top button (16px + ~40px button + 16px gap) */
-		right: 16px; /* Align with scroll-to-top */
-		z-index: 35;
-		transform: scale(0.67); /* Scale 60px to ~40px to match scroll button */
-		transform-origin: bottom right;
-		pointer-events: auto;
-		visibility: visible;
-		opacity: 1;
-		transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	/* Content container - prevent horizontal overflow from fly transitions */
+	.neu-content-container {
+		overflow-x: hidden;
 	}
 
-	/* When scroll button is hidden, move play button to scroll button's position */
-	.fixed-play-button.scroll-hidden {
-		bottom: 16px; /* Same position as scroll-to-top button */
+	/* Desktop Only - Hide on mobile */
+	.desktop-only {
+		display: none !important;
 	}
 
-	/* Mobile: Ensure button is visible and properly sized */
-	@media (max-width: 639px) {
+	/* Desktop Only Buttons (hidden on mobile where FloatingButtonContainer provides buttons) */
+	@media (min-width: 769px) {
+		.desktop-only {
+			display: block !important;
+		}
+
+		/* Fixed Play Button - Lower position */
 		.fixed-play-button {
-			bottom: 72px !important;
-			right: 16px !important;
-			transform: scale(0.67) !important;
-			z-index: 40 !important;
-		}
-
-		.fixed-play-button.scroll-hidden {
-			bottom: 16px !important;
-		}
-	}
-
-	@media (min-width: 640px) {
-		.fixed-play-button {
-			bottom: 76px;
-			transform: scale(0.75);
-		}
-
-		.fixed-play-button.scroll-hidden {
-			bottom: 16px;
-		}
-	}
-
-	@media (min-width: 1024px) {
-		.fixed-play-button {
-			bottom: 88px;
-			right: 0px;
-			transform: scale(0.85);
-		}
-
-		.fixed-play-button.scroll-hidden {
+			position: fixed;
 			bottom: 24px;
 			right: 32px;
+			z-index: 35;
+			transform: scale(0.85);
+			transform-origin: bottom right;
+			pointer-events: auto;
+			visibility: visible;
+			opacity: 1;
 		}
-	}
 
-	/* Pulse animation when music is playing */
-	.fixed-play-button.pulsing {
-		animation: pulse-glow 2s ease-in-out infinite;
-	}
-
-	@keyframes pulse-glow {
-		0%, 100% {
-			filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+		/* Pulse animation when music is playing */
+		.fixed-play-button.pulsing {
+			animation: pulse-glow 2s ease-in-out infinite;
 		}
-		50% {
-			filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
+
+		@keyframes pulse-glow {
+			0%, 100% {
+				filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+			}
+			50% {
+				filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
+			}
+		}
+
+		/* Fixed Scroll to Top Button - Above play button */
+		.fixed-scroll-button {
+			position: fixed;
+			/* bottom and right set via inline styles based on active section */
+			z-index: 36;
+			width: 56px;
+			height: 56px;
+			border-radius: 50%;
+			background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+			border: none;
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+			transition: all 0.2s ease;
+		}
+
+		.fixed-scroll-button:hover {
+			transform: scale(1.1);
+			box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4),
+			           0 0 20px rgba(139, 92, 246, 0.5);
+		}
+
+		.fixed-scroll-button:active {
+			transform: scale(0.95);
+		}
+
+		.fixed-scroll-button .scroll-icon {
+			width: 28px;
+			height: 28px;
+			display: block;
+			margin: auto;
+			flex-shrink: 0;
 		}
 	}
 </style>

@@ -411,7 +411,7 @@
 	<SectionBackground section="about" opacity={0.1} />
 
 	<!-- Section Header -->
-	<div class="section-header pt-28 pb-8 text-center">
+	<div class="section-header pt-16 md:pt-28 pb-8 text-center">
 		<h1 class="text-4xl md:text-5xl font-bold text-white mb-3">About</h1>
 		<p class="text-lg text-gray-400">Jamaal "Key Jay" Ephriam</p>
 	</div>

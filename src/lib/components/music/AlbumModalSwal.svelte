@@ -271,7 +271,7 @@ import {
 	function createModalContent(samples = []) {
 		// Use real credits from album data, or empty array if none
 		const albumCredits = album.credits || [];
-		
+
 		// Use external links from database
 		/** @type {ExternalLink[]} */
 		const albumLinks = (album.external_links || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
@@ -526,6 +526,19 @@ import {
 	}
 	
 	function initializeModalComponents() {
+		// Hide skeleton loader once image loads
+		const artwork = document.querySelector('.album-artwork');
+		const img = artwork?.querySelector('img');
+		if (img) {
+			img.onload = () => {
+				if (artwork) artwork.style.setProperty('--img-loaded', '1');
+			};
+			// If image is already cached/loaded
+			if (img.complete) {
+				if (artwork) artwork.style.setProperty('--img-loaded', '1');
+			}
+		}
+
 		// Setup streaming links scroll-based visibility animation
 		setupStreamingLinksVisibility();
 		
@@ -662,7 +675,7 @@ import {
 		// Get all tabs and contents
 		const tabs = document.querySelectorAll('.tab-button');
 		const contents = document.querySelectorAll('.tab-panel');
-		
+
 		// Update tab buttons
 		tabs.forEach(tab => {
 			const tabEl = /** @type {HTMLElement} */ (tab);
@@ -676,7 +689,7 @@ import {
 				tabEl.style.borderBottomColor = 'transparent';
 			}
 		});
-		
+
 		// Fade out current content, then fade in new content
 		contents.forEach(content => {
 			const contentEl = /** @type {HTMLElement} */ (content);
@@ -747,29 +760,36 @@ import {
 		const content = document.getElementById(accordionId);
 		const header = content?.previousElementSibling;
 		const arrow = header?.querySelector('.accordion-arrow');
-		
+
 		if (!content || !arrow) return;
-		
+
 		const isCollapsed = content.classList.contains('collapsed');
-		
+
 		if (isCollapsed) {
 			// Expand animation
 			const innerContent = content.querySelector('.accordion-content-inner');
 			const fullHeight = innerContent ? innerContent.scrollHeight : content.scrollHeight;
-			
+
 			// Remove collapsed class and set initial height
 			content.classList.remove('collapsed');
 			content.style.maxHeight = '0px';
-			
+
 			// Force reflow to ensure starting state
 			content.offsetHeight;
-			
+
 			// Start expansion with requestAnimationFrame for smooth animation
 			requestAnimationFrame(() => {
 				content.style.maxHeight = fullHeight + 'px';
 				arrow.style.transform = 'rotate(180deg)';
 			});
-			
+
+			// Scroll to accordion header on mobile after expansion starts
+			if (window.innerWidth <= 768 && header) {
+				setTimeout(() => {
+					header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}, 100); // Small delay to let expansion start
+			}
+
 			// After animation completes, set to auto for dynamic content
 			setTimeout(() => {
 				if (!content.classList.contains('collapsed')) {

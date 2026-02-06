@@ -5,6 +5,7 @@
 	import { formatTime } from '$lib/utils/time.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { getAudioPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
+	import { pauseMusic } from '$lib/stores/musicPlayer.js';
 	
 	let {
 		audioUrl,
@@ -72,6 +73,10 @@
 	
 	function togglePlayPause() {
 		if (wavesurfer) {
+			// Pause global music player before playing this sample
+			if (!isPlaying) {
+				pauseMusic();
+			}
 			wavesurfer.playPause();
 		}
 	}

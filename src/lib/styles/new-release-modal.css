@@ -1,3 +1,9 @@
+/* Prevent body scroll when modal is open */
+body.swal2-shown {
+	overflow: hidden !important;
+	touch-action: none !important;
+}
+
 /* New Release Modal Global Styles */
 .new-release-modal-popup {
 	border-radius: 16px !important;
@@ -253,8 +259,19 @@
 
 /* Responsive Styles */
 @media (max-width: 768px) {
+	.new-release-modal-popup {
+		max-height: 100vh !important;
+		max-height: 100dvh !important; /* Dynamic viewport height for mobile browsers */
+		margin: 0 !important;
+		border-radius: 0 !important; /* Fullscreen on mobile */
+		/* Reduce expensive backdrop-filter for better scroll performance */
+		backdrop-filter: blur(6px) !important;
+		-webkit-backdrop-filter: blur(6px) !important;
+	}
+
 	.new-release-modal-content {
 		max-height: calc(100vh - 60px) !important;
+		max-height: calc(100dvh - 60px) !important;
 	}
 
 	.new-release-modal-container {

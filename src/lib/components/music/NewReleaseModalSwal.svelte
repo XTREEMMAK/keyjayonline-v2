@@ -24,7 +24,15 @@
 				htmlContainer: 'new-release-modal-content'
 			},
 			background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
-			color: '#ffffff'
+			color: '#ffffff',
+			didOpen: () => {
+				// Lock body scroll on mobile
+				document.body.classList.add('swal2-shown');
+			},
+			willClose: () => {
+				// Unlock body scroll
+				document.body.classList.remove('swal2-shown');
+			}
 		});
 
 		return result;

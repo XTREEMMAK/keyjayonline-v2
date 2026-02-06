@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { fly } from 'svelte/transition';
-	import { playerVisible } from '$lib/stores/musicPlayer.js';
+	import { playerVisible, playerMinimized } from '$lib/stores/musicPlayer.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { scrollButtonVisible } from '$lib/stores/scrollButton.js';
 
@@ -37,23 +37,26 @@
 
 	function scrollToTop() {
 		if (!browser) return;
-		
+
 		window.scrollTo({
 			top: 0,
 			behavior: 'smooth'
 		});
 	}
+
+	// Calculate bottom position based on player visibility
+	const bottomClass = $derived(
+		$playerVisible && !$playerMinimized ? 'with-player' : 'without-player'
+	);
 </script>
 
 {#if visible && !$contentViewerOpen}
 	<button
 		onclick={scrollToTop}
-		class="fixed right-8 z-30 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 hover:shadow-blue-500/25 focus:outline-none focus:ring-4 focus:ring-blue-500/50 {
-			$playerVisible ? 'bottom-24' : 'bottom-4'
-		}"
+		class="scroll-to-top-btn {bottomClass}"
 		aria-label="Scroll to top"
-		in:fly={{ x: 100, duration: 400 }}
-		out:fly={{ x: 100, duration: 400 }}
+		in:fly={{ y: 20, duration: 300 }}
+		out:fly={{ y: 20, duration: 200 }}
 	>
 		<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
@@ -62,27 +65,65 @@
 {/if}
 
 <style>
-	button {
-		backdrop-filter: blur(8px);
+	.scroll-to-top-btn {
+		position: fixed;
+		right: 2rem;
+		z-index: 30;
+		background: linear-gradient(to right, #2563eb, #7c3aed);
+		color: white;
+		padding: 1rem;
+		border-radius: 50%;
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+		           0 10px 10px -5px rgba(0, 0, 0, 0.04);
+		transition: all 0.3s ease;
 		border: 1px solid rgba(255, 255, 255, 0.1);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		cursor: pointer;
 	}
 
-	button:hover {
+	.scroll-to-top-btn:hover {
+		transform: scale(1.1);
 		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
 		           0 10px 10px -5px rgba(0, 0, 0, 0.04),
 		           0 0 20px rgba(59, 130, 246, 0.3);
 	}
 
-	/* Mobile: Reduce size slightly to match play button */
+	.scroll-to-top-btn:focus {
+		outline: none;
+	}
+
+	.scroll-to-top-btn:focus-visible {
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+		           0 10px 10px -5px rgba(0, 0, 0, 0.04),
+		           0 0 0 4px rgba(59, 130, 246, 0.5);
+	}
+
+	/* Desktop: Adjust bottom based on player visibility */
+	.scroll-to-top-btn.with-player {
+		bottom: 6rem; /* 96px - above player */
+	}
+
+	.scroll-to-top-btn.without-player {
+		bottom: 1rem; /* 16px - normal position */
+	}
+
+	/* Mobile: Position above bottom nav bar (player overlays, doesn't affect position) */
 	@media (max-width: 768px) {
-		button {
-			padding: 0.625rem !important; /* 10px - slightly smaller than desktop */
-			right: 1rem !important; /* Match play button offset */
+		.scroll-to-top-btn {
+			right: 1rem;
+			padding: 0.625rem; /* 10px - slightly smaller */
 		}
 
-		button :global(svg) {
-			width: 20px !important;
-			height: 20px !important;
+		.scroll-to-top-btn :global(svg) {
+			width: 20px;
+			height: 20px;
+		}
+
+		/* Fixed position above bottom bar (64px + 16px spacing) - player overlays */
+		.scroll-to-top-btn.without-player,
+		.scroll-to-top-btn.with-player {
+			bottom: 80px;
 		}
 	}
 </style>

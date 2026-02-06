@@ -325,30 +325,50 @@
 	// Touch/Swipe handling for carousel
 	let touchStartX = 0;
 	let touchEndX = 0;
-	const swipeThreshold = 50; // Minimum distance for swipe
+	let touchStartY = 0;
+	let touchEndY = 0;
+	const swipeThreshold = 80; // Minimum horizontal distance for swipe
+	const verticalThreshold = 60; // Maximum vertical drift allowed
 
 	function handleTouchStart(e) {
 		touchStartX = e.touches[0].clientX;
+		touchStartY = e.touches[0].clientY;
 		touchEndX = touchStartX;
+		touchEndY = touchStartY;
 	}
 
 	function handleTouchMove(e) {
 		touchEndX = e.touches[0].clientX;
+		touchEndY = e.touches[0].clientY;
 	}
 
 	function handleTouchEnd() {
-		const swipeDistance = touchStartX - touchEndX;
-		if (Math.abs(swipeDistance) > swipeThreshold) {
-			if (swipeDistance > 0) {
-				// Swiped left - go to next
-				nextProject();
+		const horizontalDiff = touchStartX - touchEndX;
+		const verticalDiff = Math.abs(touchStartY - touchEndY);
+
+		// Only trigger swipe if:
+		// 1. Horizontal movement exceeds threshold (80px)
+		// 2. Vertical movement is minimal (<60px, not scrolling)
+		// 3. Not currently transitioning
+		// 4. Horizontal movement significantly larger than vertical (1.5x ratio)
+		if (
+			Math.abs(horizontalDiff) > swipeThreshold &&
+			verticalDiff < verticalThreshold &&
+			!isTransitioning &&
+			Math.abs(horizontalDiff) > verticalDiff * 1.5
+		) {
+			if (horizontalDiff > 0) {
+				nextProject(); // Swiped left
 			} else {
-				// Swiped right - go to previous
-				prevProject();
+				prevProject(); // Swiped right
 			}
 		}
+
+		// Reset all touch coordinates
 		touchStartX = 0;
 		touchEndX = 0;
+		touchStartY = 0;
+		touchEndY = 0;
 	}
 
 	function observeElement(node, key) {
@@ -373,7 +393,7 @@
 	<SectionBackground section="music" opacity={0.12} />
 
 	<!-- Section Header with Blue Accent -->
-	<div class="pt-28 pb-8 text-center relative">
+	<div class="pt-16 md:pt-28 pb-8 text-center relative">
 		<div class="absolute inset-0 bg-gradient-to-b from-blue-600/20 via-blue-500/5 to-transparent pointer-events-none"></div>
 		<h1 class="text-4xl md:text-5xl font-bold text-white mb-3 relative">
 			{#each titleLetters as letter, i}
@@ -954,6 +974,23 @@
 		50% {
 			transform: scale(1.1);
 			opacity: 0.8;
+		}
+	}
+
+	/* Mobile: Disable expensive effects to fix render issues */
+	@media (max-width: 768px) {
+		.carousel-nav-zone:hover .carousel-nav-arrow {
+			transform: none; /* Disable scale transform */
+		}
+
+		.notice-icon-pulse {
+			animation: none; /* Disable pulse animation */
+		}
+
+		.neu-card,
+		.neu-button-primary {
+			/* Simplify shadows on mobile */
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 		}
 	}
 </style>

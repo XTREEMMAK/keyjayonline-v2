@@ -36,7 +36,7 @@
 	<SectionBackground section="contact" opacity={0.12} />
 
 	<!-- Section Header -->
-	<div class="pt-28 pb-8 text-center">
+	<div class="pt-16 md:pt-28 pb-8 text-center">
 		<h1 class="text-4xl md:text-5xl font-bold text-white mb-3">Contact</h1>
 		<p class="text-lg text-gray-400">Let's start a conversation</p>
 	</div>

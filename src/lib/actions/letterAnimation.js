@@ -12,11 +12,13 @@ let sharedPauseDuration = null;
 export function letterPulse(node, options = {}) {
 	const { delay = 0, duration = 800 } = options;
 
-	// On mobile, skip animation to avoid Chromium bg-clip-text + transform repaint bug.
-	// The gradient text renders fine statically — only the wave animation is lost.
-	if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1024px)').matches) {
-		node.style.display = 'inline-block';
-		return { destroy() {}, update() {} };
+	// Disable on mobile (≤1024px) to prevent scroll performance issues
+	// background-clip: text + ongoing transforms causes text to disappear on scroll in Chromium mobile
+	if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+		return {
+			destroy() {},
+			update() {}
+		};
 	}
 
 	// Initialize shared pause duration once (same for all letters on the page)
