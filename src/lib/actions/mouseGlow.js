@@ -30,7 +30,9 @@ export function mouseGlow(node, options = {}) {
 	if (computedStyle.position === 'static') {
 		node.style.position = 'relative';
 	}
-	node.style.overflow = 'hidden';
+	// Clip the glow to the node's shape without hiding overflow on the node itself
+	glowElement.style.borderRadius = 'inherit';
+	glowElement.style.clipPath = 'inset(0 round inherit)';
 	node.appendChild(glowElement);
 
 	const handleMouseMove = (e) => {

@@ -78,6 +78,10 @@
 		if (!isOpen) return;
 
 		if (event.key === 'Escape') {
+			// Don't close if ContentViewerModal is open on top
+			let viewerOpen = false;
+			contentViewerOpen.subscribe(v => viewerOpen = v)();
+			if (viewerOpen) return;
 			handleClose();
 		}
 	}

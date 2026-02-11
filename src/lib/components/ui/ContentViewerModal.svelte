@@ -89,6 +89,25 @@
 		}
 	}
 
+	// Scroll wheel zoom
+	function handleWheel(event) {
+		event.preventDefault();
+		if (event.deltaY < 0) {
+			// Scroll up → zoom in
+			const idx = zoomLevels.indexOf(zoomLevel);
+			if (idx < zoomLevels.length - 1) {
+				zoomLevel = zoomLevels[idx + 1];
+			}
+		} else {
+			// Scroll down → zoom out
+			const idx = zoomLevels.indexOf(zoomLevel);
+			if (idx > 0) {
+				zoomLevel = zoomLevels[idx - 1];
+				if (zoomLevel === 1) { panX = 0; panY = 0; }
+			}
+		}
+	}
+
 	// Drag-to-pan handlers (mouse)
 	function handleMouseDown(event) {
 		if (zoomLevel <= 1) return;
@@ -246,6 +265,13 @@
 		}
 	});
 
+	// Collapse caption when zooming in
+	$effect(() => {
+		if (zoomLevel > 1) {
+			captionExpanded = false;
+		}
+	});
+
 	// Cleanup on unmount
 	$effect(() => {
 		return () => {
@@ -337,6 +363,7 @@
 						onmousemove={handleMouseMove}
 						onmouseup={handleMouseUp}
 						onmouseleave={() => { if (isPanning) isPanning = false; }}
+						onwheel={handleWheel}
 						role="presentation"
 					>
 						{#if imageLoading}
@@ -357,43 +384,39 @@
 						/>
 					</div>
 
-					<!-- Caption panel -->
-					{#if currentPageData.caption || currentPageData.title}
-						<div
-							class="w-full mt-2 rounded-lg bg-black/80 backdrop-blur-sm transition-all duration-300 ease-in-out caption-panel"
-							class:caption-expanded={captionExpanded}
-						>
-							<!-- Caption header (always visible) -->
+					<!-- Caption panel (hidden when zoomed) -->
+					{#if (currentPageData.caption || currentPageData.title) && zoomLevel <= 1}
+						<div class="w-full mt-2 rounded-lg bg-black/80 backdrop-blur-sm">
+							<!-- Caption header (always visible, centered when collapsed) -->
 							<button
-								class="w-full flex items-center justify-between px-4 py-2.5 text-left"
+								class="w-full flex items-center justify-center px-4 py-2.5 gap-2"
 								onclick={() => (captionExpanded = !captionExpanded)}
 							>
-								<div class="flex items-center gap-2 min-w-0 flex-1">
-									{#if currentPageData.title}
-										<span class="text-white font-medium text-sm truncate">
-											{currentPageData.title}
-										</span>
-									{/if}
-									{#if currentPageData.caption && !captionExpanded}
-										<span class="text-gray-400 text-xs truncate hidden md:inline">
-											— {currentPageData.caption.replace(/<[^>]*>/g, '').substring(0, 80)}{currentPageData.caption.replace(/<[^>]*>/g, '').length > 80 ? '...' : ''}
-										</span>
-									{/if}
-								</div>
-								<Icon
-									icon={captionExpanded ? 'mdi:chevron-down' : 'mdi:chevron-up'}
-									class="text-lg text-gray-400 flex-shrink-0 ml-2"
-								/>
+								{#if currentPageData.title}
+									<span class="text-white font-medium text-sm truncate">
+										{currentPageData.title}
+									</span>
+								{/if}
+								<span class="flex-shrink-0 caption-chevron" class:caption-chevron-hint={!captionExpanded}>
+									<Icon
+										icon={captionExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down'}
+										class="text-lg text-white/70"
+									/>
+								</span>
 							</button>
 
-							<!-- Expandable caption content -->
-							{#if captionExpanded && currentPageData.caption}
-								<div class="px-4 pb-3 caption-content custom-scrollbar">
-									<div class="caption-rich-content text-gray-300 text-sm leading-relaxed">
-										{@html sanitizeHtml(currentPageData.caption, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'], ALLOWED_ATTR: ['href', 'target', 'rel'] })}
-									</div>
+							<!-- Expandable caption body (CSS grid for smooth open/close) -->
+							<div class="caption-body" class:caption-body-open={captionExpanded}>
+								<div class="overflow-hidden">
+									{#if currentPageData.caption}
+										<div class="px-4 pb-3 caption-content custom-scrollbar">
+											<div class="caption-rich-content text-gray-300 text-sm leading-relaxed">
+												{@html sanitizeHtml(currentPageData.caption, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'], ALLOWED_ATTR: ['href', 'target', 'rel'] })}
+											</div>
+										</div>
+									{/if}
 								</div>
-							{/if}
+							</div>
 						</div>
 					{/if}
 				</div>
@@ -456,14 +479,43 @@
 {/if}
 
 <style>
-	/* Caption panel */
-	.caption-panel {
-		max-height: 3rem;
-		overflow: hidden;
+	/* Ghost ring glow — expanding ring pulse when collapsed */
+	.caption-chevron {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
 	}
 
-	.caption-panel.caption-expanded {
-		max-height: 40vh;
+	.caption-chevron-hint::before,
+	.caption-chevron-hint::after {
+		content: '';
+		position: absolute;
+		inset: -4px;
+		border-radius: 50%;
+		border: 1.5px solid rgba(255, 255, 255, 0.5);
+		animation: ring-glow 2s ease-out infinite;
+	}
+
+	.caption-chevron-hint::after {
+		animation-delay: 1s;
+	}
+
+	@keyframes ring-glow {
+		0% { transform: scale(1); opacity: 0.6; }
+		100% { transform: scale(2.2); opacity: 0; }
+	}
+
+	/* Caption body — CSS grid expand/collapse for smooth animation in both directions */
+	.caption-body {
+		display: grid;
+		grid-template-rows: 0fr;
+		transition: grid-template-rows 300ms ease-in-out;
+	}
+
+	.caption-body-open {
+		grid-template-rows: 1fr;
 	}
 
 	.caption-content {
