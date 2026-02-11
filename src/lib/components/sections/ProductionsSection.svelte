@@ -10,7 +10,7 @@
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
-
+	import { loadPlaylist, showPlayer, expandPlayer } from '$lib/stores/musicPlayer.js';
 	// Title letters for animation
 	const titleLetters = 'Productions'.split('');
 
@@ -106,22 +106,22 @@
 		}
 	});
 
-	// Open content viewer for comic pages
-	async function openContentViewer(production) {
-		if (production.viewerType !== 'comic_pages') return;
+	// Open gallery viewer — fetches albums from a gallery by ID
+	async function openContentViewer(galleryId, title = '') {
+		if (!galleryId) return;
 
-		viewerTitle = production.title;
+		viewerTitle = title;
 		viewerLoading = true;
 		viewerOpen = true;
 
 		try {
-			const response = await fetch(`/api/productions/${production.id}/pages`);
+			const response = await fetch(`/api/galleries/${galleryId}/albums`);
 			if (response.ok) {
 				const data = await response.json();
-				viewerPages = data.pages || [];
+				viewerPages = data.albums || [];
 			}
 		} catch (err) {
-			console.error('Failed to load pages:', err);
+			console.error('Failed to load gallery albums:', err);
 			viewerPages = [];
 		} finally {
 			viewerLoading = false;
@@ -169,10 +169,46 @@
 		selectedProduction = null;
 	}
 
-	// Handle view pages from detail modal (for comics)
-	function handleViewPagesFromDetail(production) {
-		closeDetailModal();
-		openContentViewer(production);
+	// Load and play an audio playlist in the persistent music player
+	async function playProductionPlaylist(playlistId) {
+		if (!playlistId) return;
+		try {
+			const response = await fetch(`/api/playlists/${playlistId}/tracks`);
+			if (!response.ok) throw new Error('Failed to load playlist');
+			const data = await response.json();
+			if (data.tracks?.length > 0) {
+				loadPlaylist(data.tracks, 0, 'production');
+				showPlayer();
+				expandPlayer();
+			}
+		} catch (err) {
+			console.error('Failed to play production playlist:', err);
+		}
+	}
+
+	// Handle unified production actions from detail modal
+	// Keep detail modal open underneath (z-50 vs z-99999) so user returns to it after closing viewer
+	function handleProductionAction(action) {
+		switch (action.actionType) {
+			case 'viewer':
+				openContentViewer(action.galleryId, selectedProduction?.title || action.label);
+				break;
+			case 'audio_player':
+				playProductionPlaylist(action.playlistId);
+				break;
+		}
+	}
+
+	// Handle actions from featured production section (no detail modal context)
+	function handleFeaturedAction(action) {
+		switch (action.actionType) {
+			case 'viewer':
+				openContentViewer(action.galleryId, featuredProduction?.title || action.label);
+				break;
+			case 'audio_player':
+				playProductionPlaylist(action.playlistId);
+				break;
+		}
 	}
 </script>
 
@@ -181,16 +217,17 @@
 	isOpen={detailModalOpen}
 	production={selectedProduction}
 	onClose={closeDetailModal}
-	onViewPages={handleViewPagesFromDetail}
+	onAction={handleProductionAction}
 />
 
-<!-- Content Viewer Modal (for comic pages) -->
+<!-- Gallery Viewer Modal -->
 <ContentViewerModal
 	isOpen={viewerOpen}
 	pages={viewerPages}
 	title={viewerTitle}
 	loading={viewerLoading}
 	onClose={closeContentViewer}
+	manageOverlayStore={!detailModalOpen}
 />
 
 <!-- ============================================================================ -->
@@ -291,36 +328,37 @@
 										{/if}
 									</div>
 
-									<div class="flex flex-wrap gap-4">
-										{#if featuredProduction.links?.listen}
-											<a href={featuredProduction.links.listen} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
-												<Icon icon="mdi:headphones" class="text-xl" />
-												Listen Now
-											</a>
-										{/if}
-										{#if featuredProduction.links?.watch}
-											<a href={featuredProduction.links.watch} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
-												<Icon icon="mdi:play" class="text-xl" />
-												Watch Now
-											</a>
-										{/if}
-										{#if featuredProduction.links?.read}
-											<a href={featuredProduction.links.read} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
-												<Icon icon="mdi:book-open-variant" class="text-xl" />
-												Read Now
-											</a>
-										{/if}
-										{#if featuredProduction.viewerType === 'comic_pages'}
-											<button onclick={() => openContentViewer(featuredProduction)} class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
-												<Icon icon="mdi:book-open-variant" class="text-xl" />
-												View Pages
-											</button>
-										{/if}
-										{#if featuredProduction.externalLinks && featuredProduction.externalLinks.length > 0}
-											<a href={featuredProduction.externalLinks[0].url} target="_blank" rel="noopener noreferrer" class="neu-button px-6 py-3 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
-												<Icon icon="mdi:information-outline" class="text-xl" />
-												Learn More
-											</a>
+									<div class="flex flex-col items-center gap-4">
+										{#each (featuredProduction.actions || []).filter(a => a.isPrimary) as action}
+											{#if action.actionType === 'external_link'}
+												<a href={action.url} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+													<Icon icon={action.icon} class="text-xl" />
+													{action.label}
+												</a>
+											{:else}
+												<button onclick={() => handleFeaturedAction(action)} class="neu-button-primary px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+													<Icon icon={action.icon} class="text-xl" />
+													{action.label}
+												</button>
+											{/if}
+										{/each}
+										{#if (featuredProduction.actions || []).filter(a => !a.isPrimary).length > 0}
+											<p class="text-xs text-gray-400 uppercase tracking-wider">Additional Links</p>
+											<div class="w-full flex flex-wrap justify-center gap-3">
+												{#each (featuredProduction.actions || []).filter(a => !a.isPrimary) as action}
+													{#if action.actionType === 'external_link'}
+														<a href={action.url} target="_blank" rel="noopener noreferrer" class="neu-button px-5 py-2.5 text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2 text-sm">
+															<Icon icon={action.icon} class="text-xl" style={action.color ? `color: ${action.color}` : ''} />
+															{action.label}
+														</a>
+													{:else}
+														<button onclick={() => handleFeaturedAction(action)} class="neu-button px-5 py-2.5 text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2 text-sm">
+															<Icon icon={action.icon} class="text-xl" />
+															{action.label}
+														</button>
+													{/if}
+												{/each}
+											</div>
 										{/if}
 									</div>
 								</div>
@@ -620,7 +658,6 @@
 		.line-clamp-2 {
 			-webkit-line-clamp: 4;
 			line-clamp: 4;
-			min-height: 5rem;
 		}
 	}
 
@@ -629,7 +666,6 @@
 		.line-clamp-2 {
 			-webkit-line-clamp: 2;
 			line-clamp: 2;
-			min-height: 3rem;
 		}
 	}
 

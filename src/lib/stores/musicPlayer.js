@@ -23,6 +23,7 @@ export const currentTrackIndex = writable(0);
 export const playerPosition = writable(0);
 export const playerDuration = writable(0);
 export const volume = writable(0.6);
+export const playlistSource = writable('library'); // 'library' | 'production'
 
 // Player instance (for sharing across components)
 export const wavesurferInstance = writable(null);
@@ -49,6 +50,7 @@ export function closePlayerCompletely() {
 	currentTrackIndex.set(0);
 	playerPosition.set(0);
 	playerDuration.set(0);
+	playlistSource.set('library');
 }
 
 export function togglePlayer() {
@@ -88,7 +90,8 @@ export function hasTrackLoaded() {
 	return get(currentTrack) !== null;
 }
 
-export function loadPlaylist(tracks, startIndex = 0) {
+export function loadPlaylist(tracks, startIndex = 0, source = 'library') {
+	playlistSource.set(source);
 	// Transform URLs from Directus to proxy URLs
 	const transformedTracks = tracks.map(transformTrackUrls);
 
@@ -270,22 +273,26 @@ export function nextTrack() {
 	let tracks, currentIndex;
 	playlist.subscribe(val => tracks = val)();
 	currentTrackIndex.subscribe(val => currentIndex = val)();
-	
+
 	if (tracks && tracks.length > 0) {
 		const nextIndex = (currentIndex + 1) % tracks.length;
 		playTrack(nextIndex);
+		return tracks[nextIndex];
 	}
+	return null;
 }
 
 export function previousTrack() {
 	let tracks, currentIndex;
 	playlist.subscribe(val => tracks = val)();
 	currentTrackIndex.subscribe(val => currentIndex = val)();
-	
+
 	if (tracks && tracks.length > 0) {
 		const prevIndex = currentIndex === 0 ? tracks.length - 1 : currentIndex - 1;
 		playTrack(prevIndex);
+		return tracks[prevIndex];
 	}
+	return null;
 }
 
 // Utility to get current store values (for use in components)

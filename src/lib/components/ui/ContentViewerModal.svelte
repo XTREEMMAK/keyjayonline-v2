@@ -1,6 +1,6 @@
 <script>
 	/**
-	 * ContentViewerModal - Full-screen modal for viewing comic pages and image galleries
+	 * ContentViewerModal - Full-screen modal for viewing image galleries and page content
 	 *
 	 * Features:
 	 * - Pinch-zoom on mobile
@@ -24,7 +24,8 @@
 		initialPage = 0,
 		title = '',
 		onClose = () => {},
-		loading = false
+		loading = false,
+		manageOverlayStore = true
 	} = $props();
 
 	// State
@@ -33,6 +34,16 @@
 	let imageLoading = $state(true);
 	let containerRef = $state(null);
 	let captionExpanded = $state(false);
+
+	// Drag-to-pan state (active when zoomed in)
+	let panX = $state(0);
+	let panY = $state(0);
+	let isPanning = $state(false);
+	let dragStartX = 0;
+	let dragStartY = 0;
+	let dragStartPanX = 0;
+	let dragStartPanY = 0;
+	let totalDragDistance = 0;
 
 	// Computed
 	const currentPageData = $derived(pages[currentPage] || null);
@@ -48,6 +59,8 @@
 		if (hasNext) {
 			currentPage++;
 			zoomLevel = 1;
+			panX = 0;
+			panY = 0;
 			imageLoading = true;
 			captionExpanded = false;
 		}
@@ -57,6 +70,8 @@
 		if (hasPrev) {
 			currentPage--;
 			zoomLevel = 1;
+			panX = 0;
+			panY = 0;
 			imageLoading = true;
 			captionExpanded = false;
 		}
@@ -67,6 +82,45 @@
 		const currentIndex = zoomLevels.indexOf(zoomLevel);
 		const nextIndex = (currentIndex + 1) % zoomLevels.length;
 		zoomLevel = zoomLevels[nextIndex];
+		// Reset pan when zooming back to fit
+		if (zoomLevel === 1) {
+			panX = 0;
+			panY = 0;
+		}
+	}
+
+	// Drag-to-pan handlers (mouse)
+	function handleMouseDown(event) {
+		if (zoomLevel <= 1) return;
+		isPanning = true;
+		dragStartX = event.clientX;
+		dragStartY = event.clientY;
+		dragStartPanX = panX;
+		dragStartPanY = panY;
+		totalDragDistance = 0;
+		event.preventDefault();
+	}
+
+	function handleMouseMove(event) {
+		if (!isPanning) return;
+		const dx = event.clientX - dragStartX;
+		const dy = event.clientY - dragStartY;
+		totalDragDistance = Math.sqrt(dx * dx + dy * dy);
+		panX = dragStartPanX + dx;
+		panY = dragStartPanY + dy;
+	}
+
+	function handleMouseUp() {
+		if (!isPanning) {
+			// Not panning — treat as click for zoom toggle
+			toggleZoom();
+			return;
+		}
+		isPanning = false;
+		// If barely moved, treat as click (zoom toggle)
+		if (totalDragDistance < 5) {
+			toggleZoom();
+		}
 	}
 
 	// Close modal
@@ -74,6 +128,8 @@
 		popModalState(); // Go back in history if we pushed a state
 		currentPage = 0;
 		zoomLevel = 1;
+		panX = 0;
+		panY = 0;
 		onClose();
 	}
 
@@ -135,19 +191,21 @@
 		if (isOpen) {
 			currentPage = initialPage;
 			zoomLevel = 1;
+			panX = 0;
+			panY = 0;
 			imageLoading = true;
 			captionExpanded = false;
 
-			// Update store to hide navbar and scroll button
-			contentViewerOpen.set(true);
+			// Update store to hide navbar and scroll button (skip if parent modal handles it)
+			if (manageOverlayStore) contentViewerOpen.set(true);
 
 			// Lock body scroll when modal is open
 			if (browser) {
 				// Push history state for back button handling
 				pushModalState('content-viewer');
 
-				// Setup popstate listener for back button
-				const cleanupPopstate = setupPopstateHandler(() => {
+				// Setup popstate listener for back button (modal-aware)
+				const cleanupPopstate = setupPopstateHandler('content-viewer', () => {
 					currentPage = 0;
 					zoomLevel = 1;
 					onClose();
@@ -178,8 +236,8 @@
 				};
 			}
 		} else {
-			// Update store to show navbar and scroll button again
-			contentViewerOpen.set(false);
+			// Update store to show navbar and scroll button again (skip if parent modal handles it)
+			if (manageOverlayStore) contentViewerOpen.set(false);
 
 			// Remove keyboard listener
 			if (browser) {
@@ -272,8 +330,14 @@
 				<div class="flex flex-col items-center max-w-[90vw]" class:max-h-full={!captionExpanded}>
 					<!-- Image container with zoom -->
 					<div
-						class="relative transition-transform duration-200 ease-out"
-						style="transform: scale({zoomLevel}); touch-action: pinch-zoom;"
+						class="relative ease-out select-none"
+						class:transition-transform={!isPanning}
+						style="transform: scale({zoomLevel}) translate({panX / zoomLevel}px, {panY / zoomLevel}px); touch-action: pinch-zoom;"
+						onmousedown={handleMouseDown}
+						onmousemove={handleMouseMove}
+						onmouseup={handleMouseUp}
+						onmouseleave={() => { if (isPanning) isPanning = false; }}
+						role="presentation"
 					>
 						{#if imageLoading}
 							<div
@@ -287,9 +351,7 @@
 						<img
 							src={currentPageData.imageUrl}
 							alt={currentPageData.title || `Page ${currentPage + 1}`}
-							class="max-w-[90vw] object-contain cursor-zoom-in rounded-lg shadow-2xl {currentPageData.caption || currentPageData.title ? 'max-h-[65vh]' : 'max-h-[80vh]'}"
-							class:cursor-zoom-out={zoomLevel > 1}
-							onclick={toggleZoom}
+							class="max-w-[90vw] object-contain rounded-lg shadow-2xl {currentPageData.caption || currentPageData.title ? 'max-h-[65vh]' : 'max-h-[80vh]'} {zoomLevel > 1 ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'}"
 							onload={handleImageLoad}
 							draggable="false"
 						/>
@@ -375,6 +437,8 @@
 							onclick={() => {
 								currentPage = index;
 								zoomLevel = 1;
+								panX = 0;
+								panY = 0;
 								imageLoading = true;
 								captionExpanded = false;
 							}}

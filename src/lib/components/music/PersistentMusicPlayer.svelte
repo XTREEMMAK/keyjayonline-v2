@@ -22,7 +22,8 @@
 		hidePlayer,
 		closePlayerCompletely,
 		nextTrack,
-		previousTrack
+		previousTrack,
+		playlistSource
 	} from '$lib/stores/musicPlayer.js';
 	import { extractCoverArt } from '$lib/utils/coverArtExtractor.js';
 	import { formatTime } from '$lib/utils/time.js';
@@ -41,6 +42,7 @@
 	let wavesurferReady = $state(false);
 	let visualWavesurferReady = $state(false);
 	let thumbnailError = $state(false);
+	let isLoadingTrack = false; // Guard: ignore spurious 'finish' events during wavesurfer.load()
 
 	// Initialize wavesurfer when container becomes available
 	$effect(() => {
@@ -141,9 +143,14 @@
 			});
 			
 			wavesurfer.on('finish', () => {
-				console.log('Wavesurfer finish event');
+				// Ignore spurious 'finish' events emitted by wavesurfer.load()
+				// when it cleans up the old audio that was at the end position
+				if (isLoadingTrack) {
+					console.log('Ignoring spurious finish event during track loading');
+					return;
+				}
+				console.log('Wavesurfer finish event — advancing');
 				isPlaying.set(false);
-				// Auto-play next track
 				nextTrack();
 			});
 			
@@ -233,20 +240,30 @@
 		});
 	});
 	
-	// React to track changes
+	// React to track changes via direct store subscription.
+	// Store .subscribe() callbacks fire synchronously on .set(), so they always
+	// receive the fresh value. Svelte 5 $effect can deliver stale $currentTrack
+	// when the store is updated from external (non-Svelte) callbacks like
+	// WaveSurfer's 'finish' event, causing the OLD track to reload.
 	$effect(() => {
-		const track = $currentTrack;
-		console.log('Track changed:', track, 'Wavesurfer ready:', wavesurferReady);
+		if (!wavesurfer || !wavesurferReady) return;
 
-		// Reset thumbnail error state when track changes
-		thumbnailError = false;
+		let isFirst = true;
+		const unsub = currentTrack.subscribe(track => {
+			// Skip the initial call (current value at subscribe time)
+			if (isFirst) {
+				isFirst = false;
+				return;
+			}
+			console.log('Track changed (subscription):', track?.title, 'ready:', wavesurferReady);
+			thumbnailError = false;
 
-		if (track && track.audioUrl && wavesurfer && wavesurferReady) {
-			console.log('Loading track:', track.audioUrl);
-			loadTrack(track, true); // Auto-play when track is selected
-		} else if (track && track.audioUrl && !wavesurferReady) {
-			console.log('Track set but wavesurfer not ready yet, will load when ready');
-		}
+			if (track?.audioUrl) {
+				loadTrack(track, true);
+			}
+		});
+
+		return unsub;
 	});
 
 	// Sync visual wavesurfer when it becomes available or track changes
@@ -277,9 +294,14 @@
 	
 	// Load track when wavesurfer becomes ready if track was set before
 	$effect(() => {
-		if (wavesurferReady && wavesurfer && $currentTrack?.audioUrl && wavesurfer.getDuration() === 0) {
-			console.log('Wavesurfer became ready, loading pending track:', $currentTrack.title);
-			loadTrack($currentTrack, true);
+		if (wavesurferReady && wavesurfer && wavesurfer.getDuration() === 0) {
+			// Read store directly to avoid stale $currentTrack
+			let track;
+			currentTrack.subscribe(t => track = t)();
+			if (track?.audioUrl) {
+				console.log('Wavesurfer became ready, loading pending track:', track.title);
+				loadTrack(track, true);
+			}
 		}
 	});
 
@@ -324,67 +346,40 @@
 			console.log('Cannot load track:', { wavesurfer: !!wavesurfer, audioUrl: track?.audioUrl });
 			return;
 		}
-		
+
 		isLoading = true;
-		console.log('Loading track:', track.audioUrl, 'Auto-play:', autoPlay);
-		
-		// Test if the audio file exists by creating a temporary audio element
-		const testAudio = new Audio();
-		testAudio.src = track.audioUrl;
-		
-		testAudio.addEventListener('loadedmetadata', () => {
-			console.log('Audio file exists and has metadata:', {
-				duration: testAudio.duration,
-				src: testAudio.src
-			});
-		});
-		
-		testAudio.addEventListener('error', (e) => {
-			console.error('Audio file test failed:', e, 'URL:', track.audioUrl);
-		});
-		
+		isLoadingTrack = true; // Block spurious 'finish' events during load
+		const url = getAudioUrl(track.audioUrl);
+		console.log('loadTrack:', track.title, 'autoPlay:', autoPlay);
+
 		try {
-			// Stop current playback if playing
 			if (wavesurfer.isPlaying()) {
 				wavesurfer.pause();
 			}
-			
-			const transformedUrl = getAudioUrl(track.audioUrl);
-			await wavesurfer.load(transformedUrl);
-			console.log('Track loaded successfully:', track.title);
-			
-			// Load into visual wavesurfer as well
+
+			await wavesurfer.load(url);
+			console.log('Track loaded:', track.title);
+
+			// Sync visual wavesurfer
 			if (visualWavesurfer) {
 				try {
-					visualWavesurferReady = false;  // Show skeleton while loading
-					const transformedVisualUrl = getAudioUrl(track.audioUrl);
-					await visualWavesurfer.load(transformedVisualUrl);
-					console.log('Visual wavesurfer loaded successfully');
-					// Note: ready state set by 'ready' event handler
-				} catch (error) {
-					console.error('Error loading visual wavesurfer:', error);
+					visualWavesurferReady = false;
+					await visualWavesurfer.load(url);
+				} catch (err) {
+					console.error('Visual wavesurfer load error:', err);
 					visualWavesurferReady = false;
 				}
 			}
-			
-			// Extract cover artwork
-			try {
-				const artwork = await extractCoverArt(track.audioUrl);
-				currentTrackArtwork.set(artwork);
-				console.log('Cover artwork extracted:', !!artwork);
-			} catch (error) {
-				console.error('Error extracting cover artwork:', error);
-				currentTrackArtwork.set(null);
-			}
-			
-			// Auto-play if requested
+
 			if (autoPlay) {
-				console.log('Auto-playing track:', track.title);
+				console.log('Auto-playing:', track.title);
 				await wavesurfer.play();
 			}
 		} catch (error) {
-			console.error('Error loading track:', error, 'URL:', track.audioUrl);
+			console.error('loadTrack error:', error, track.audioUrl);
 			isLoading = false;
+		} finally {
+			isLoadingTrack = false; // Re-enable finish event handling
 		}
 	}
 	
@@ -685,14 +680,16 @@
 								Playlist
 							</button>
 						{/if}
-						<button 
-							onclick={() => showBrowser = !showBrowser}
-							class="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full transition-colors"
-							title="Browse music library"
-						>
-							<Icon icon="mdi:folder-music" width={16} height={16} class="inline mr-1" />
-							Library
-						</button>
+						{#if $playlistSource === 'library'}
+							<button
+								onclick={() => showBrowser = !showBrowser}
+								class="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full transition-colors"
+								title="Browse music library"
+							>
+								<Icon icon="mdi:folder-music" width={16} height={16} class="inline mr-1" />
+								Library
+							</button>
+						{/if}
 					</div>
 				</div>
 				
@@ -723,7 +720,7 @@
 				{/if}
 				
 				<!-- Library Browser Panel -->
-				{#if showBrowser}
+				{#if showBrowser && $playlistSource === 'library'}
 					<div class="mt-4" transition:slide={{ duration: 400 }}>
 						<PlaylistBrowser />
 					</div>

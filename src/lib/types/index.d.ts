@@ -70,15 +70,72 @@ export interface ProductionEmbed {
 	featured?: boolean;
 }
 
+export interface AudioPlaylist {
+	id: string | number;
+	title: string;
+	description?: string;
+	playlistType?: 'music' | 'radio_play' | 'podcast' | 'sound_design' | 'general';
+	coverArt?: string;
+}
+
+export interface AudioPlaylistTrack {
+	id: string | number;
+	title: string;
+	artist: string;
+	audioUrl: string | null;
+	thumbnail: string | null;
+	genre?: string;
+	duration?: string;
+	album?: string;
+}
+
+export interface NetworkReference {
+	id: string | number;
+	name: string;
+	url?: string;
+	icon?: string;
+	color?: string;
+}
+
 export interface ExternalLink {
 	id: string | number;
 	platform?: string;
 	url: string;
 	label?: string;
+	linkType?: string;
+	iconType?: 'custom' | 'iconify';
+	iconValue?: string;
+	network?: NetworkReference | null;
+	isPrimary?: boolean;
+	// Raw Directus field names (pre-transform)
 	icon_type?: 'custom' | 'iconify';
-	icon_value?: string;
+	icon_value?: string | { icon_reference_id: string };
 	display_order?: number;
 	is_primary?: boolean;
+}
+
+export type ProductionActionType = 'viewer' | 'audio_player' | 'external_link';
+
+export interface ProductionAction {
+	id: string | number;
+	actionType: ProductionActionType;
+	url?: string;
+	label: string;
+	icon: string;
+	color?: string;
+	isPrimary: boolean;
+	sortOrder: number;
+	// viewer-specific
+	viewerType?: 'comic_pages' | 'gallery';
+	viewerText?: string;
+	galleryId?: string | number;
+	// audio_player-specific
+	playlistId?: string | number;
+	trackIndex?: number;
+	// external_link-specific
+	linkType?: string;
+	network?: NetworkReference | null;
+	openInNewTab?: boolean;
 }
 
 export interface CreditRole {

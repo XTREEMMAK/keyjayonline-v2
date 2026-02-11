@@ -296,23 +296,33 @@
 				{/if}
 			</div>
 
-			<!-- External Links -->
-			{#if production.externalLinks && production.externalLinks.length > 0}
+			<!-- Actions & Links -->
+			{#if production.actions && production.actions.length > 0}
 				<div class="external-links">
-					<h3>View On</h3>
+					<h3>Links & Actions</h3>
 					<div class="links-row">
-						{#each production.externalLinks as link}
-							<a
-								href={link.url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="external-link"
-								class:primary={link.isPrimary}
-								title={link.label}
-							>
-								<Icon icon={link.iconValue || 'mdi:open-in-new'} width={24} height={24} />
-								<span>{link.label}</span>
-							</a>
+						{#each production.actions as action}
+							{#if action.actionType === 'external_link'}
+								<a
+									href={action.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="external-link"
+									title={action.label}
+								>
+									<Icon icon={action.icon} width={24} height={24} />
+									<span>{action.label}</span>
+								</a>
+							{:else}
+								<a
+									href="/#productions"
+									class="external-link"
+									title={action.label}
+								>
+									<Icon icon={action.icon} width={24} height={24} />
+									<span>{action.label}</span>
+								</a>
+							{/if}
 						{/each}
 					</div>
 				</div>
@@ -639,15 +649,6 @@
 	.external-link:hover {
 		background: rgba(255, 255, 255, 0.2);
 		transform: translateY(-2px);
-	}
-
-	.external-link.primary {
-		background: rgba(236, 72, 153, 0.3);
-		border-color: rgba(236, 72, 153, 0.5);
-	}
-
-	.external-link.primary:hover {
-		background: rgba(236, 72, 153, 0.5);
 	}
 
 	/* Embed Preview */

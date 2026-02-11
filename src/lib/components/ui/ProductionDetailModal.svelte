@@ -7,8 +7,8 @@
 	 * - Hero image with status badge
 	 * - Description and rich content
 	 * - Video/media embed support
-	 * - Links (watch, listen, read, play)
-	 * - Comic page viewer integration
+	 * - Directus-driven action buttons (primary/secondary from external_links)
+	 * - Gallery viewer integration
 	 * - Keyboard support (escape to close)
 	 * - Share button for shareable links
 	 */
@@ -21,13 +21,12 @@
 	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
 	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
-
 	// Props
 	let {
 		isOpen = false,
 		production = null,
 		onClose = () => {},
-		onViewPages = () => {},
+		onAction = (action) => {},
 		loading = false
 	} = $props();
 
@@ -57,43 +56,16 @@
 
 	const showTabs = $derived(availableTabs().length >= 2);
 
-	// Get primary action based on content type
-	const primaryAction = $derived(() => {
-		if (!production) return null;
-		if (production.viewerType === 'comic_pages') {
-			return { label: 'Read Now', icon: 'mdi:book-open-page-variant', action: 'pages' };
-		}
-		if (production.links?.watch) {
-			return { label: 'Watch Now', icon: 'mdi:play-circle', url: production.links.watch };
-		}
-		if (production.links?.listen) {
-			return { label: 'Listen Now', icon: 'mdi:headphones', url: production.links.listen };
-		}
-		if (production.links?.read) {
-			return { label: 'Read Now', icon: 'mdi:book-open-variant', url: production.links.read };
-		}
-		if (production.links?.play) {
-			return { label: 'Play Now', icon: 'mdi:gamepad-variant', url: production.links.play };
-		}
-		return null;
-	});
+	// Unified production actions (viewer, audio_player, external_link)
+	const actions = $derived(production?.actions || []);
+	const primaryActions = $derived(actions.filter(a => a.isPrimary));
+	const secondaryActions = $derived(actions.filter(a => !a.isPrimary));
+	const hasActions = $derived(actions.length > 0);
 
 	// Close modal
 	function handleClose() {
 		popModalState(); // Go back in history if we pushed a state
 		onClose();
-	}
-
-	// Handle primary action
-	function handlePrimaryAction() {
-		const action = primaryAction();
-		if (!action) return;
-
-		if (action.action === 'pages') {
-			onViewPages(production);
-		} else if (action.url && action.url !== '#') {
-			window.open(action.url, '_blank');
-		}
 	}
 
 	// Switch active tab
@@ -140,8 +112,8 @@
 				// Push history state for back button handling
 				pushModalState('production-detail');
 
-				// Setup popstate listener for back button
-				const cleanupPopstate = setupPopstateHandler(() => {
+				// Setup popstate listener for back button (modal-aware)
+				const cleanupPopstate = setupPopstateHandler('production-detail', () => {
 					onClose();
 				});
 
@@ -343,7 +315,7 @@
 										<div class="border-t border-white/10 pt-6">
 											<h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
 												<Icon icon="mdi:account-group" class="text-lg" />
-												Credits
+												Additional Credits
 											</h3>
 											<div class="flex flex-col gap-3">
 												{#each production.credits as credit}
@@ -491,79 +463,60 @@
 						{/if}
 
 						<!-- Action Footer -->
-						{#if primaryAction() || (production.links?.watch && production.links.watch !== primaryAction()?.url) || (production.links?.listen && production.links.listen !== primaryAction()?.url) || (production.links?.read && production.links.read !== primaryAction()?.url) || (production.externalLinks && production.externalLinks.length > 0)}
+						{#if hasActions}
 							<div class="border-t border-white/10 pt-6 mt-8">
-								<!-- Primary Action -->
-								{#if primaryAction()}
-									<div class="mb-4">
-										<button
-											onclick={handlePrimaryAction}
-											class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-900/30"
-										>
-											<Icon icon={primaryAction().icon} class="text-xl" />
-											{primaryAction().label}
-										</button>
-									</div>
-								{/if}
-
-								<!-- Secondary Links -->
-								{#if (production.links?.watch && production.links.watch !== primaryAction()?.url) || (production.links?.listen && production.links.listen !== primaryAction()?.url) || (production.links?.read && production.links.read !== primaryAction()?.url)}
-									<div class="flex flex-wrap gap-3 mb-4">
-										{#if production.links?.watch && production.links.watch !== primaryAction()?.url}
-											<a
-												href={production.links.watch}
-												target="_blank"
-												rel="noopener noreferrer"
-												class="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors flex items-center gap-2"
-											>
-												<Icon icon="mdi:play-circle" class="text-lg" />
-												Watch
-											</a>
-										{/if}
-
-										{#if production.links?.listen && production.links.listen !== primaryAction()?.url}
-											<a
-												href={production.links.listen}
-												target="_blank"
-												rel="noopener noreferrer"
-												class="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors flex items-center gap-2"
-											>
-												<Icon icon="mdi:headphones" class="text-lg" />
-												Listen
-											</a>
-										{/if}
-
-										{#if production.links?.read && production.links.read !== primaryAction()?.url}
-											<a
-												href={production.links.read}
-												target="_blank"
-												rel="noopener noreferrer"
-												class="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors flex items-center gap-2"
-											>
-												<Icon icon="mdi:book-open-variant" class="text-lg" />
-												Read
-											</a>
-										{/if}
-									</div>
-								{/if}
-
-								<!-- External Links -->
-								{#if production.externalLinks && production.externalLinks.length > 0}
-									<div class="pt-4 border-t border-white/5">
-										<h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
-											More Links
-										</h3>
-										<div class="flex flex-wrap gap-3">
-											{#each production.externalLinks as link}
+								<!-- Primary Actions -->
+								{#if primaryActions.length > 0}
+									<div class="flex flex-wrap justify-center gap-4 mb-6">
+										{#each primaryActions as action}
+											{#if action.actionType === 'external_link'}
 												<a
-													href={link.url}
+													href={action.url}
 													target="_blank"
 													rel="noopener noreferrer"
-													class="px-4 py-2 bg-white/5 hover:bg-white/15 text-gray-300 hover:text-white rounded-lg transition-colors flex items-center gap-2 text-sm"
+													class="px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-900/30"
 												>
-													<Icon icon={link.iconValue || 'mdi:link'} class="text-lg" />
-													{link.label || 'Link'}
+													<Icon icon={action.icon} class="text-xl" />
+													{action.label}
 												</a>
+											{:else}
+												<button
+													onclick={() => onAction(action)}
+													class="px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-900/30"
+												>
+													<Icon icon={action.icon} class="text-xl" />
+													{action.label}
+												</button>
+											{/if}
+										{/each}
+									</div>
+								{/if}
+
+								<!-- Secondary Actions -->
+								{#if secondaryActions.length > 0}
+									<div class="w-full text-center">
+										<p class="text-xs text-gray-400 uppercase tracking-wider mb-3">Additional Links</p>
+										<div class="flex flex-wrap justify-center gap-3">
+											{#each secondaryActions as action}
+												{#if action.actionType === 'external_link'}
+													<a
+														href={action.url}
+														target="_blank"
+														rel="noopener noreferrer"
+														class="px-5 py-2.5 bg-white/5 hover:bg-white/15 text-gray-300 hover:text-white rounded-full transition-colors flex items-center gap-2 text-sm"
+													>
+														<Icon icon={action.icon} class="text-lg" style={action.color ? `color: ${action.color}` : ''} />
+														{action.label}
+													</a>
+												{:else}
+													<button
+														onclick={() => onAction(action)}
+														class="px-5 py-2.5 bg-white/5 hover:bg-white/15 text-gray-300 hover:text-white rounded-full transition-colors flex items-center gap-2 text-sm"
+													>
+														<Icon icon={action.icon} class="text-lg" />
+														{action.label}
+													</button>
+												{/if}
 											{/each}
 										</div>
 									</div>

@@ -35,16 +35,36 @@ export function popModalState() {
 }
 
 /**
- * Setup popstate listener for modal closing
- * @param {() => void} closeCallback - Function to close the modal
+ * Setup popstate listener for modal closing.
+ * When modalId is provided, the handler only fires when navigating
+ * AWAY from this modal's state (i.e. current state's modalId differs).
+ * This prevents stacked modals from all closing on a single popstate.
+ * @param {string|(() => void)} modalIdOrCallback - Modal identifier, or callback for legacy usage
+ * @param {(() => void)} [closeCallback] - Function to close the modal
  * @returns {() => void} Cleanup function
  */
-export function setupPopstateHandler(closeCallback) {
+export function setupPopstateHandler(modalIdOrCallback, closeCallback) {
 	if (!browser) return () => {};
 
+	// Support legacy signature: setupPopstateHandler(callback)
+	let modalId = null;
+	let callback;
+	if (typeof modalIdOrCallback === 'function') {
+		callback = modalIdOrCallback;
+	} else {
+		modalId = modalIdOrCallback;
+		callback = closeCallback;
+	}
+
 	const handler = () => {
-		// If we're navigating back from a modal state, close the modal
-		closeCallback();
+		if (modalId) {
+			// Only close if current state is NOT this modal's state
+			if (!history.state || history.state.modalId !== modalId) {
+				callback();
+			}
+		} else {
+			callback();
+		}
 	};
 
 	window.addEventListener('popstate', handler);

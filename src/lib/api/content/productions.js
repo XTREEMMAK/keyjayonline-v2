@@ -8,6 +8,7 @@
 import { getDirectusInstance, readItems, readItem } from '../core/client.js';
 import { buildAssetUrl } from '../core/assets.js';
 import { extractYouTubeId } from '../../utils/youtube.js';
+import { getExternalLinkIcon } from '../../utils/externalLinks.js';
 
 /**
  * Credit fields to fetch from Directus (shared between queries)
@@ -181,25 +182,97 @@ function parseTags(raw) {
 }
 
 /**
- * Build quick-access links object and normalized externalLinks array
- * @param {Array} rawLinks - Raw external_links from Directus
- * @returns {{ links: Object, externalLinks: Array }}
+ * Action fields to fetch from Directus (shared between queries).
+ * Collection: kjov2_productions_actions (renamed from kjov2_productions_external_links)
  */
-function buildExternalLinks(rawLinks) {
-  const sorted = (rawLinks || []).sort((a, b) => (a.sort || 0) - (b.sort || 0));
+const ACTION_FIELDS = [
+  'id',
+  'action_type',
+  'url',
+  'link_text',
+  'link_type',
+  { icon: ['id', 'icon_reference_id'] },
+  'gallery_id',
+  'audio_playlist_id'
+];
+
+/**
+ * Build unified production actions from DB action records.
+ *
+ * @param {Object} production - Raw Directus production record
+ * @param {Array} rawActions - Raw actions from kjov2_productions_actions
+ * @returns {{ actions: Array, links: Object, externalLinks: Array }}
+ */
+function buildProductionActions(production, rawActions) {
+  const actions = [];
   const links = {};
-  for (const link of sorted) {
-    if (link.link_type && link.url) links[link.link_type] = link.url;
+
+  const records = rawActions || [];
+
+  for (let i = 0; i < records.length; i++) {
+    const raw = records[i];
+    const actionType = raw.action_type || 'external_link';
+    const label = raw.link_text || '';
+    // icon is M2O → kjov2_icon_references; extract icon_reference_id string
+    const icon = (raw.icon && typeof raw.icon === 'object') ? raw.icon.icon_reference_id : null;
+
+    if (actionType === 'audio_player') {
+      actions.push({
+        id: raw.id,
+        actionType: 'audio_player',
+        label: label || 'Listen',
+        icon: icon || 'mdi:headphones',
+        isPrimary: i === 0,
+        sortOrder: i,
+        playlistId: raw.audio_playlist_id,
+        linkType: raw.link_type,
+        openInNewTab: false
+      });
+    } else if (actionType === 'viewer') {
+      actions.push({
+        id: raw.id,
+        actionType: 'viewer',
+        label: label || 'View Gallery',
+        icon: icon || (raw.link_type === 'comic_pages' ? 'mdi:book-open-variant' : 'mdi:image-multiple'),
+        isPrimary: i === 0,
+        sortOrder: i,
+        viewerType: raw.link_type || 'gallery',
+        galleryId: raw.gallery_id,
+        openInNewTab: false
+      });
+    } else {
+      // external_link (default) — auto-detect icon from URL if none set
+      const normalizedLink = { linkType: raw.link_type, url: raw.url };
+      actions.push({
+        id: raw.id,
+        actionType: 'external_link',
+        url: raw.url,
+        label: label || 'Link',
+        icon: icon || getExternalLinkIcon(normalizedLink),
+        isPrimary: i === 0,
+        sortOrder: i,
+        linkType: raw.link_type,
+        openInNewTab: true
+      });
+
+      if (raw.link_type && raw.url) {
+        links[raw.link_type] = raw.url;
+      }
+    }
   }
-  const externalLinks = sorted.map(link => ({
-    id: link.id,
-    url: link.url,
-    label: link.label,
-    linkType: link.link_type,
-    iconValue: link.icon_value,
-    isPrimary: link.is_primary
-  }));
-  return { links, externalLinks };
+
+  // Backward-compatible externalLinks array (only external_link type)
+  const externalLinks = actions
+    .filter(a => a.actionType === 'external_link')
+    .map(a => ({
+      id: a.id,
+      url: a.url,
+      label: a.label,
+      linkType: a.linkType,
+      isPrimary: a.isPrimary
+    }));
+
+  return { actions, links, externalLinks };
 }
 
 /**
@@ -218,7 +291,9 @@ function transformProduction(production, metaBySlug) {
   }
 
   const tags = parseTags(production.tags);
-  const { links, externalLinks } = buildExternalLinks(production.external_links);
+  // Support both new field name (actions) and legacy (external_links)
+  const rawActions = production.actions || production.external_links || [];
+  const { actions, links, externalLinks } = buildProductionActions(production, rawActions);
 
   // Parse categories - may be JSON array, single string, or already an array
   let rawCategories = [];
@@ -269,7 +344,7 @@ function transformProduction(production, metaBySlug) {
     issues: production.issues_count,
     duration: production.duration,
     viewerType: production.viewer_type || null,
-    embeds: processEmbeds(production.embeds),
+    embeds: processEmbeds(production.production_embeds || production.embeds),
     tagline: production.tagline || null,
     roles: production.roles || null,
     toolsMedium: production.tools_medium || null,
@@ -278,8 +353,10 @@ function transformProduction(production, metaBySlug) {
     credits: (production.credits || [])
       .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
       .map(transformCredit),
+    actions,
     links,
-    externalLinks
+    externalLinks,
+    comicsViewerText: production.comics_viewer_text || null
   };
 }
 
@@ -306,19 +383,9 @@ export async function getProductions() {
           fields: [
             '*',
             { cover_image: ['id', 'filename_disk', 'filename_download'] },
-            {
-              external_links: [
-                'id',
-                'sort',
-                'url',
-                'label',
-                'link_type',
-                'icon_value',
-                'is_primary'
-              ]
-            },
+            { actions: ACTION_FIELDS },
             { credits: CREDIT_FIELDS },
-            { embeds: EMBED_FIELDS }
+            { production_embeds: EMBED_FIELDS }
           ],
           sort: ['sort', '-date_created']
         })
@@ -340,11 +407,11 @@ export async function getProductions() {
       const productionIds = productions.map(p => p.id);
 
       // Fetch external links, embeds, and credits for all productions
-      const [allLinks, allEmbeds, allCredits] = await Promise.all([
+      const [allActions, allEmbeds, allCredits] = await Promise.all([
         directus.request(
-          readItems('kjov2_productions_external_links', {
+          readItems('kjov2_productions_actions', {
             filter: { production_id: { _in: productionIds } },
-            fields: ['id', 'production_id', 'sort', 'url', 'label', 'link_type', 'icon_value', 'is_primary'],
+            fields: ['production_id', ...ACTION_FIELDS],
             sort: ['sort']
           })
         ).catch(() => []),
@@ -366,8 +433,8 @@ export async function getProductions() {
 
       // Attach relations to productions
       for (const prod of productions) {
-        prod.external_links = allLinks.filter(l => l.production_id === prod.id);
-        prod.embeds = allEmbeds.filter(e => e.production_id === prod.id);
+        prod.actions = allActions.filter(a => a.production_id === prod.id);
+        prod.production_embeds = allEmbeds.filter(e => e.production_id === prod.id);
         prod.credits = allCredits.filter(c => c.production_id === prod.id);
       }
     }
@@ -417,19 +484,19 @@ export async function getCategoryChoices() {
 }
 
 /**
- * Fetches pages for a specific production (lazy loaded)
- * Used for comic pages and image galleries
- * @param {string} productionId - The production ID to fetch pages for
- * @returns {Promise<Array>} Array of page objects with image URLs
+ * Fetches albums (pages/images) for a specific gallery.
+ * Replaces the former getProductionPages() — galleries are now decoupled from productions.
+ * @param {string|number} galleryId - The gallery ID to fetch albums for
+ * @returns {Promise<Array>} Array of album objects with image URLs
  */
-export async function getProductionPages(productionId) {
+export async function getGalleryAlbums(galleryId) {
   try {
     const directus = getDirectusInstance();
 
-    const pages = await directus.request(
-      readItems('kjov2_productions_pages', {
+    const albums = await directus.request(
+      readItems('kjov2_gallery_albums', {
         filter: {
-          production_id: { _eq: productionId }
+          gallery_id: { _eq: galleryId }
         },
         fields: [
           'id',
@@ -442,21 +509,99 @@ export async function getProductionPages(productionId) {
       })
     );
 
-    return pages.map(page => ({
-      id: page.id,
-      sort: page.sort,
-      title: page.title,
-      caption: page.caption,
-      imageUrl: page.page_image
-        ? buildAssetUrl(page.page_image.filename_disk || page.page_image.id)
+    return albums.map(album => ({
+      id: album.id,
+      sort: album.sort,
+      title: album.title,
+      caption: album.caption,
+      imageUrl: album.page_image
+        ? buildAssetUrl(album.page_image.filename_disk || album.page_image.id)
         : null,
-      width: page.page_image?.width,
-      height: page.page_image?.height
+      width: album.page_image?.width,
+      height: album.page_image?.height
     }));
 
   } catch (error) {
-    console.error('Error fetching production pages:', error);
+    console.error('Error fetching gallery albums:', error);
     return [];
+  }
+}
+
+/**
+ * Fetches tracks for a specific audio playlist.
+ * Playlists are decoupled from productions (like galleries).
+ * Returns tracks in the shape expected by the music player store's loadPlaylist().
+ * @param {string|number} playlistId - The audio playlist ID
+ * @returns {Promise<{playlist: Object|null, tracks: Array}>}
+ */
+export async function getAudioPlaylistTracks(playlistId) {
+  try {
+    const directus = getDirectusInstance();
+
+    const playlist = await directus.request(
+      readItem('kjov2_audio_playlist', playlistId, {
+        fields: [
+          'id',
+          'title',
+          'description',
+          'playlist_type',
+          { cover_art: ['id', 'filename_disk'] }
+        ]
+      })
+    );
+
+    const tracks = await directus.request(
+      readItems('kjov2_audio_playlist_tracks', {
+        filter: {
+          playlist_id: { _eq: playlistId }
+        },
+        fields: [
+          'id',
+          'sort',
+          'title',
+          'artist',
+          'duration',
+          'description',
+          { audio_file: ['id', 'filename_disk'] },
+          { cover_art: ['id', 'filename_disk'] }
+        ],
+        sort: ['sort']
+      })
+    );
+
+    const playlistCoverArt = playlist?.cover_art
+      ? buildAssetUrl(playlist.cover_art.filename_disk || playlist.cover_art.id)
+      : null;
+
+    const transformedTracks = tracks.map(track => ({
+      id: track.id,
+      title: track.title,
+      artist: track.artist || 'Key Jay',
+      audioUrl: track.audio_file
+        ? buildAssetUrl(track.audio_file.filename_disk || track.audio_file.id)
+        : null,
+      thumbnail: track.cover_art
+        ? buildAssetUrl(track.cover_art.filename_disk || track.cover_art.id)
+        : playlistCoverArt,
+      genre: playlist?.playlist_type || 'general',
+      duration: track.duration || null,
+      album: playlist?.title || null
+    }));
+
+    return {
+      playlist: playlist ? {
+        id: playlist.id,
+        title: playlist.title,
+        description: playlist.description,
+        playlistType: playlist.playlist_type,
+        coverArt: playlistCoverArt
+      } : null,
+      tracks: transformedTracks
+    };
+
+  } catch (error) {
+    console.error('Error fetching audio playlist tracks:', error);
+    return { playlist: null, tracks: [] };
   }
 }
 
@@ -474,28 +619,9 @@ export async function getProductionById(productionId) {
         fields: [
           '*',
           { cover_image: ['id', 'filename_disk', 'filename_download'] },
-          {
-            external_links: [
-              'id',
-              'sort',
-              'url',
-              'label',
-              'link_type',
-              'icon_value',
-              'is_primary'
-            ]
-          },
+          { actions: ACTION_FIELDS },
           { credits: CREDIT_FIELDS },
-          { embeds: EMBED_FIELDS },
-          {
-            pages: [
-              'id',
-              'sort',
-              'title',
-              'caption',
-              { page_image: ['id', 'filename_disk', 'width', 'height'] }
-            ]
-          }
+          { production_embeds: EMBED_FIELDS }
         ]
       })
     );
@@ -506,24 +632,7 @@ export async function getProductionById(productionId) {
     const choices = await getCategoryChoices();
     const metaBySlug = Object.fromEntries(choices.map(c => [c.slug, c]));
 
-    const result = transformProduction(production, metaBySlug);
-
-    // Pages are only included in getProductionById (lazy-loaded elsewhere)
-    result.pages = (production.pages || [])
-      .sort((a, b) => (a.sort || 0) - (b.sort || 0))
-      .map(page => ({
-        id: page.id,
-        sort: page.sort,
-        title: page.title,
-        caption: page.caption,
-        imageUrl: page.page_image
-          ? buildAssetUrl(page.page_image.filename_disk || page.page_image.id)
-          : null,
-        width: page.page_image?.width,
-        height: page.page_image?.height
-      }));
-
-    return result;
+    return transformProduction(production, metaBySlug);
 
   } catch (error) {
     console.error('Error fetching production by ID:', error);
@@ -555,19 +664,9 @@ export async function getProductionBySlug(slug) {
           fields: [
             '*',
             { cover_image: ['id', 'filename_disk', 'filename_download'] },
-            {
-              external_links: [
-                'id',
-                'sort',
-                'url',
-                'label',
-                'link_type',
-                'icon_value',
-                'is_primary'
-              ]
-            },
+            { actions: ACTION_FIELDS },
             { credits: CREDIT_FIELDS },
-            { embeds: EMBED_FIELDS }
+            { production_embeds: EMBED_FIELDS }
           ],
           limit: 1
         })
@@ -595,11 +694,11 @@ export async function getProductionBySlug(slug) {
 
     // If we need separate relation queries, fetch them
     if (needsSeparateRelations) {
-      const [allLinks, allEmbeds, allCredits] = await Promise.all([
+      const [allActions, allEmbeds, allCredits] = await Promise.all([
         directus.request(
-          readItems('kjov2_productions_external_links', {
+          readItems('kjov2_productions_actions', {
             filter: { production_id: { _eq: production.id } },
-            fields: ['id', 'production_id', 'sort', 'url', 'label', 'link_type', 'icon_value', 'is_primary'],
+            fields: ['production_id', ...ACTION_FIELDS],
             sort: ['sort']
           })
         ).catch(() => []),
@@ -619,8 +718,8 @@ export async function getProductionBySlug(slug) {
         ).catch(() => [])
       ]);
 
-      production.external_links = allLinks;
-      production.embeds = allEmbeds;
+      production.actions = allActions;
+      production.production_embeds = allEmbeds;
       production.credits = allCredits;
     }
 

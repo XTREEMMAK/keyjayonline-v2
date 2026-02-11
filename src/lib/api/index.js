@@ -63,7 +63,8 @@ export {
 export {
   getProductions,
   getCategoryChoices,
-  getProductionPages,
+  getGalleryAlbums,
+  getAudioPlaylistTracks,
   getProductionById,
   getProductionBySlug
 } from './content/productions.js';
