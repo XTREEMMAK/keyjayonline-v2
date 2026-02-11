@@ -57,6 +57,19 @@ export interface YouTubeVideo {
 	featured?: boolean;
 }
 
+export interface ProductionEmbed {
+	id: string;
+	url: string;
+	embedUrl: string;
+	embedId?: string;
+	type: 'youtube' | 'vimeo';
+	title?: string;
+	description?: string;
+	thumbnailUrl?: string;
+	displayOrder?: number;
+	featured?: boolean;
+}
+
 export interface ExternalLink {
 	id: string | number;
 	platform?: string;

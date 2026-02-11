@@ -9,6 +9,7 @@
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
+	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 
 	// Title letters for animation
 	const titleLetters = 'Productions'.split('');
@@ -32,36 +33,23 @@
 	const sectionState = $derived($sectionData.productions);
 	const productionsData = $derived(sectionState.data || {});
 	const productions = $derived(productionsData.productions || []);
-	const dbCategories = $derived(productionsData.categories || []);
 	const socialLinks = $derived(productionsData.socialLinks || []);
 	const testimonials = $derived(productionsData.testimonials || []);
 	const isLoading = $derived(sectionState.status === 'loading');
 	const isLoaded = $derived(sectionState.status === 'loaded');
 	const hasError = $derived(sectionState.status === 'error');
 
-	// Build categories from database + default "All"
-	const categories = $derived([
+	// Build categories from API response + default "All"
+	const apiCategories = $derived(productionsData.categories || []);
+	const displayCategories = $derived([
 		{ id: 'all', label: 'All', icon: 'mdi:view-grid', slug: 'all' },
-		...dbCategories.map(cat => ({
+		...apiCategories.map(cat => ({
 			id: cat.slug,
 			label: cat.name,
-			icon: cat.icon || getCategoryIconBySlug(cat.slug),
-			slug: cat.slug,
-			color: cat.color
+			icon: cat.icon || 'mdi:folder',
+			slug: cat.slug
 		}))
 	]);
-
-	// Fallback categories if database is empty
-	const fallbackCategories = [
-		{ id: 'all', label: 'All', icon: 'mdi:view-grid' },
-		{ id: 'video', label: 'Videos', icon: 'mdi:video' },
-		{ id: 'comic', label: 'Comics', icon: 'mdi:book-open-page-variant' },
-		{ id: 'game', label: 'Games', icon: 'mdi:gamepad-variant' },
-		{ id: 'audio', label: 'Audio Dramas', icon: 'mdi:headphones' }
-	];
-
-	// Use fallback if no categories from DB
-	const displayCategories = $derived(categories.length > 1 ? categories : fallbackCategories);
 
 	// Get featured production
 	const featuredProduction = $derived(
@@ -70,17 +58,6 @@
 		productions[0] ||
 		null
 	);
-
-	// Helper to get icon by slug
-	function getCategoryIconBySlug(slug) {
-		const icons = {
-			video: 'mdi:video',
-			comic: 'mdi:book-open-page-variant',
-			game: 'mdi:gamepad-variant',
-			audio: 'mdi:headphones'
-		};
-		return icons[slug] || 'mdi:folder';
-	}
 
 	// Filter productions with MixItUp
 	function filterProductions(category) {
@@ -131,7 +108,7 @@
 
 	// Open content viewer for comic pages
 	async function openContentViewer(production) {
-		if (production.contentType !== 'comic_pages') return;
+		if (production.viewerType !== 'comic_pages') return;
 
 		viewerTitle = production.title;
 		viewerLoading = true;
@@ -165,26 +142,6 @@
 			case 'In Development': return 'text-yellow-400 border-yellow-600/30 bg-yellow-600/20';
 			case 'Ongoing': return 'text-blue-400 border-blue-600/30 bg-blue-600/20';
 			default: return 'text-gray-400 border-gray-600/30 bg-gray-600/20';
-		}
-	}
-
-	function getCategoryColor(category) {
-		switch(category) {
-			case 'video': return 'text-red-400 border-red-600/30 bg-red-600/20';
-			case 'comic': return 'text-purple-400 border-purple-600/30 bg-purple-600/20';
-			case 'game': return 'text-blue-400 border-blue-600/30 bg-blue-600/20';
-			case 'audio': return 'text-green-400 border-green-600/30 bg-green-600/20';
-			default: return 'text-gray-400 border-gray-600/30 bg-gray-600/20';
-		}
-	}
-
-	function getCategoryIcon(category) {
-		switch(category) {
-			case 'video': return 'mdi:video';
-			case 'comic': return 'mdi:book-open-page-variant';
-			case 'game': return 'mdi:gamepad-variant';
-			case 'audio': return 'mdi:headphones';
-			default: return 'mdi:folder';
 		}
 	}
 
@@ -299,9 +256,13 @@
 
 								<!-- Featured Content -->
 								<div class="p-8 lg:p-12 flex flex-col justify-center">
-									<div class="flex items-center gap-3 mb-4">
-										<Icon icon={getCategoryIcon(featuredProduction.category)} class="text-orange-400 text-2xl" />
-										<span class="text-orange-400 font-semibold uppercase tracking-wider text-sm">{featuredProduction.type}</span>
+									<div class="flex items-center gap-3 mb-4 flex-wrap">
+										{#each featuredProduction.categories as cat}
+											<span class="flex items-center gap-1.5 text-orange-400 font-semibold uppercase tracking-wider text-sm">
+												<Icon icon={cat.icon} class="text-2xl" />
+												{cat.name}
+											</span>
+										{/each}
 									</div>
 
 									<h2 class="text-3xl lg:text-4xl font-bold text-white mb-4">{featuredProduction.title}</h2>
@@ -319,19 +280,13 @@
 										{#if featuredProduction.year}
 											<span class="flex items-center gap-2">
 												<Icon icon="mdi:calendar" class="text-lg" />
-												{featuredProduction.year}
+												{featuredProduction.year}{#if featuredProduction.yearEnd && featuredProduction.yearEnd !== featuredProduction.year}–{featuredProduction.yearEnd}{/if}
 											</span>
 										{/if}
 										{#if featuredProduction.episodes}
 											<span class="flex items-center gap-2">
 												<Icon icon="mdi:playlist-play" class="text-lg" />
 												{featuredProduction.episodes}
-											</span>
-										{/if}
-										{#if featuredProduction.platform}
-											<span class="flex items-center gap-2">
-												<Icon icon="mdi:devices" class="text-lg" />
-												{featuredProduction.platform}
 											</span>
 										{/if}
 									</div>
@@ -355,7 +310,7 @@
 												Read Now
 											</a>
 										{/if}
-										{#if featuredProduction.contentType === 'comic_pages'}
+										{#if featuredProduction.viewerType === 'comic_pages'}
 											<button onclick={() => openContentViewer(featuredProduction)} class="neu-button-primary px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
 												<Icon icon="mdi:book-open-variant" class="text-xl" />
 												View Pages
@@ -411,7 +366,7 @@
 				{:else}
 					<div bind:this={container} class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 						{#each productions as production (production.id)}
-							<div class="mix-item {production.categorySlugs || production.category}">
+							<div class="mix-item {production.categorySlugs}">
 								<article
 									class="neu-card overflow-hidden hover:scale-[1.02] transition-transform duration-300 group cursor-pointer"
 									onclick={() => handleCardClick(production)}
@@ -430,12 +385,15 @@
 										/>
 										<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent group-hover:scale-110 transition-transform duration-500"></div>
 
-										<!-- Category Badge -->
-										<div class="absolute top-4 left-4">
-											<span class="px-2 py-1 text-xs rounded-full border {getCategoryColor(production.category)} flex items-center gap-1">
-												<Icon icon={getCategoryIcon(production.category)} class="text-sm" />
-												{production.type}
-											</span>
+										<!-- Category Badges -->
+										<div class="absolute top-4 left-4 flex flex-wrap gap-1">
+											{#each production.categories as cat}
+												<span class="px-2 py-1 text-xs rounded-full border flex items-center gap-1"
+													style="color: {cat.color}; border-color: {cat.color}4D; background-color: {cat.color}33;">
+													<Icon icon={cat.icon} class="text-sm" />
+													{cat.name}
+												</span>
+											{/each}
 										</div>
 
 										<!-- Status Badge -->
@@ -446,9 +404,9 @@
 										<!-- Play/View Overlay -->
 										<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
 											<div class="bg-white/20 rounded-full p-4">
-												{#if production.category === 'video' || production.category === 'audio'}
+												{#if production.category.includes('video') || production.category.includes('audio')}
 													<Icon icon="mdi:play" class="text-white text-3xl" />
-												{:else if production.category === 'comic'}
+												{:else if production.category.includes('comic')}
 													<Icon icon="mdi:book-open-variant" class="text-white text-3xl" />
 												{:else}
 													<Icon icon="mdi:gamepad-variant" class="text-white text-3xl" />
@@ -464,7 +422,7 @@
 												{production.title}
 											</h3>
 											{#if production.year}
-												<span class="text-gray-500 text-xs ml-2 flex-shrink-0">{production.year}</span>
+												<span class="text-gray-500 text-xs ml-2 flex-shrink-0">{production.year}{#if production.yearEnd && production.yearEnd !== production.year}–{production.yearEnd}{/if}</span>
 											{/if}
 										</div>
 
@@ -486,22 +444,10 @@
 													{production.issues}
 												</span>
 											{/if}
-											{#if production.platform}
-												<span class="flex items-center gap-1">
-													<Icon icon="mdi:devices" />
-													{production.platform}
-												</span>
-											{/if}
 											{#if production.duration}
 												<span class="flex items-center gap-1">
 													<Icon icon="mdi:clock-outline" />
 													{production.duration}
-												</span>
-											{/if}
-											{#if production.count}
-												<span class="flex items-center gap-1">
-													<Icon icon="mdi:folder-multiple" />
-													{production.count}
 												</span>
 											{/if}
 										</div>
@@ -539,7 +485,7 @@
 						{#each upcomingProductions as project}
 							<div class="neu-card p-6 flex items-start gap-4">
 								<div class="flex-shrink-0 w-12 h-12 rounded-full bg-orange-600/20 flex items-center justify-center">
-									<Icon icon={getCategoryIcon(project.category)} class="text-orange-400 text-2xl" />
+									<Icon icon={project.categoryIcon} class="text-orange-400 text-2xl" />
 								</div>
 								<div class="flex-1">
 									<div class="flex items-center gap-2 mb-1">
@@ -576,7 +522,7 @@
 									{/each}
 								</div>
 								<blockquote class="text-gray-300 mb-6 italic testimonial-content">
-									{@html testimonial.quote}
+									{@html sanitizeHtml(testimonial.quote, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'], ALLOWED_ATTR: ['href', 'target', 'rel'] })}
 								</blockquote>
 								<div class="border-t border-gray-700 pt-4 flex items-center gap-4">
 									{#if testimonial.avatarUrl}

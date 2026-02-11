@@ -15,6 +15,7 @@
 	import { browser } from '$app/environment';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
+	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 
 	// Props
 	let {
@@ -31,6 +32,7 @@
 	let zoomLevel = $state(1); // 1 = fit, 1.5 = 150%, 2 = 200%
 	let imageLoading = $state(true);
 	let containerRef = $state(null);
+	let captionExpanded = $state(false);
 
 	// Computed
 	const currentPageData = $derived(pages[currentPage] || null);
@@ -47,6 +49,7 @@
 			currentPage++;
 			zoomLevel = 1;
 			imageLoading = true;
+			captionExpanded = false;
 		}
 	}
 
@@ -55,6 +58,7 @@
 			currentPage--;
 			zoomLevel = 1;
 			imageLoading = true;
+			captionExpanded = false;
 		}
 	}
 
@@ -132,6 +136,7 @@
 			currentPage = initialPage;
 			zoomLevel = 1;
 			imageLoading = true;
+			captionExpanded = false;
 
 			// Update store to hide navbar and scroll button
 			contentViewerOpen.set(true);
@@ -263,37 +268,71 @@
 					<p>No pages available</p>
 				</div>
 			{:else}
-				<!-- Image container with zoom -->
-				<div
-					class="relative max-w-full max-h-full transition-transform duration-200 ease-out"
-					style="transform: scale({zoomLevel}); touch-action: pinch-zoom;"
-				>
-					{#if imageLoading}
+				<!-- Image + caption container -->
+				<div class="flex flex-col items-center max-w-[90vw]" class:max-h-full={!captionExpanded}>
+					<!-- Image container with zoom -->
+					<div
+						class="relative transition-transform duration-200 ease-out"
+						style="transform: scale({zoomLevel}); touch-action: pinch-zoom;"
+					>
+						{#if imageLoading}
+							<div
+								class="absolute inset-0 flex items-center justify-center bg-gray-900/50 rounded-lg"
+							>
+								<Icon icon="mdi:loading" class="text-4xl text-white/70 animate-spin" />
+							</div>
+						{/if}
+
+						<!-- Image -->
+						<img
+							src={currentPageData.imageUrl}
+							alt={currentPageData.title || `Page ${currentPage + 1}`}
+							class="max-w-[90vw] object-contain cursor-zoom-in rounded-lg shadow-2xl {currentPageData.caption || currentPageData.title ? 'max-h-[65vh]' : 'max-h-[80vh]'}"
+							class:cursor-zoom-out={zoomLevel > 1}
+							onclick={toggleZoom}
+							onload={handleImageLoad}
+							draggable="false"
+						/>
+					</div>
+
+					<!-- Caption panel -->
+					{#if currentPageData.caption || currentPageData.title}
 						<div
-							class="absolute inset-0 flex items-center justify-center bg-gray-900/50 rounded-lg"
+							class="w-full mt-2 rounded-lg bg-black/80 backdrop-blur-sm transition-all duration-300 ease-in-out caption-panel"
+							class:caption-expanded={captionExpanded}
 						>
-							<Icon icon="mdi:loading" class="text-4xl text-white/70 animate-spin" />
+							<!-- Caption header (always visible) -->
+							<button
+								class="w-full flex items-center justify-between px-4 py-2.5 text-left"
+								onclick={() => (captionExpanded = !captionExpanded)}
+							>
+								<div class="flex items-center gap-2 min-w-0 flex-1">
+									{#if currentPageData.title}
+										<span class="text-white font-medium text-sm truncate">
+											{currentPageData.title}
+										</span>
+									{/if}
+									{#if currentPageData.caption && !captionExpanded}
+										<span class="text-gray-400 text-xs truncate hidden md:inline">
+											— {currentPageData.caption.replace(/<[^>]*>/g, '').substring(0, 80)}{currentPageData.caption.replace(/<[^>]*>/g, '').length > 80 ? '...' : ''}
+										</span>
+									{/if}
+								</div>
+								<Icon
+									icon={captionExpanded ? 'mdi:chevron-down' : 'mdi:chevron-up'}
+									class="text-lg text-gray-400 flex-shrink-0 ml-2"
+								/>
+							</button>
+
+							<!-- Expandable caption content -->
+							{#if captionExpanded && currentPageData.caption}
+								<div class="px-4 pb-3 caption-content custom-scrollbar">
+									<div class="caption-rich-content text-gray-300 text-sm leading-relaxed">
+										{@html sanitizeHtml(currentPageData.caption, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'], ALLOWED_ATTR: ['href', 'target', 'rel'] })}
+									</div>
+								</div>
+							{/if}
 						</div>
-					{/if}
-
-					<!-- Image -->
-					<img
-						src={currentPageData.imageUrl}
-						alt={currentPageData.title || `Page ${currentPage + 1}`}
-						class="max-w-[90vw] max-h-[80vh] object-contain cursor-zoom-in rounded-lg shadow-2xl"
-						class:cursor-zoom-out={zoomLevel > 1}
-						onclick={toggleZoom}
-						onload={handleImageLoad}
-						draggable="false"
-					/>
-
-					<!-- Caption -->
-					{#if currentPageData.caption}
-						<p
-							class="absolute bottom-0 left-0 right-0 p-3 bg-black/70 text-white text-sm text-center rounded-b-lg"
-						>
-							{currentPageData.caption}
-						</p>
 					{/if}
 				</div>
 			{/if}
@@ -337,6 +376,7 @@
 								currentPage = index;
 								zoomLevel = 1;
 								imageLoading = true;
+								captionExpanded = false;
 							}}
 							class="w-2 h-2 rounded-full transition-all duration-200 flex-shrink-0
                                    {index === currentPage
@@ -350,3 +390,68 @@
 		{/if}
 	</div>
 {/if}
+
+<style>
+	/* Caption panel */
+	.caption-panel {
+		max-height: 3rem;
+		overflow: hidden;
+	}
+
+	.caption-panel.caption-expanded {
+		max-height: 40vh;
+	}
+
+	.caption-content {
+		max-height: 30vh;
+		overflow-y: auto;
+	}
+
+	/* Caption scrollbar */
+	.caption-content::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.caption-content::-webkit-scrollbar-track {
+		background: rgba(0, 0, 0, 0.3);
+		border-radius: 6px;
+	}
+
+	.caption-content::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 6px;
+	}
+
+	.caption-content::-webkit-scrollbar-thumb:hover {
+		background: rgba(255, 255, 255, 0.4);
+	}
+
+	.caption-content {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.3);
+	}
+
+	/* Rich content in captions */
+	.caption-rich-content :global(p) {
+		margin-bottom: 0.5rem;
+	}
+
+	.caption-rich-content :global(p:last-child) {
+		margin-bottom: 0;
+	}
+
+	.caption-rich-content :global(strong),
+	.caption-rich-content :global(b) {
+		font-weight: 600;
+		color: #fff;
+	}
+
+	.caption-rich-content :global(a) {
+		color: #fb923c;
+		text-decoration: underline;
+	}
+
+	.caption-rich-content :global(a:hover) {
+		color: #fdba74;
+	}
+</style>

@@ -178,22 +178,8 @@
 		goto('/#productions');
 	}
 
-	// Type icon mapping
-	function getTypeIcon(type) {
-		const icons = {
-			series: 'mdi:television',
-			film: 'mdi:movie',
-			game: 'mdi:gamepad-variant',
-			comic: 'mdi:book-open-page-variant',
-			podcast: 'mdi:podcast',
-			music: 'mdi:music',
-			other: 'mdi:star'
-		};
-		return icons[type] || 'mdi:star';
-	}
-
 	// Cover image URL (already processed by server via buildAssetUrl)
-	const coverImageUrl = $derived(production.coverImage || null);
+	const coverImageUrl = $derived(production.image || null);
 </script>
 
 <svelte:head>
@@ -246,26 +232,14 @@
 				</div>
 			{/if}
 
-			<!-- Categories -->
-			{#if production.categories && production.categories.length > 0}
-				<div class="categories">
-					{#each production.categories as category}
-						<span class="category-badge" style="--cat-color: {category.color || '#6366f1'}">
-							{#if category.icon}
-								<Icon icon={category.icon} width={14} height={14} />
-							{/if}
-							{category.name}
-						</span>
-					{/each}
-				</div>
-			{/if}
-
-			<!-- Production Info -->
+				<!-- Production Info -->
 			<div class="production-info">
-				<div class="type-badge">
-					<Icon icon={getTypeIcon(production.type)} width={16} height={16} />
-					{production.type || 'Production'}
-				</div>
+				{#each (production.categories || []) as cat}
+					<div class="type-badge">
+						<Icon icon={cat.icon} width={16} height={16} />
+						{cat.name}
+					</div>
+				{/each}
 
 				<h1>{production.title}</h1>
 
@@ -273,19 +247,13 @@
 					{#if production.year}
 						<span class="meta-item">
 							<Icon icon="mdi:calendar" width={16} height={16} />
-							{production.year}
+							{production.year}{#if production.yearEnd && production.yearEnd !== production.year}–{production.yearEnd}{/if}
 						</span>
 					{/if}
 					{#if production.status}
 						<span class="meta-item status-badge">
 							<Icon icon="mdi:check-circle" width={16} height={16} />
 							{production.status}
-						</span>
-					{/if}
-					{#if production.platform}
-						<span class="meta-item">
-							<Icon icon="mdi:monitor" width={16} height={16} />
-							{production.platform}
 						</span>
 					{/if}
 				</div>
@@ -351,17 +319,29 @@
 			{/if}
 
 			<!-- Embedded Content Preview -->
-			{#if production.contentType === 'embed' && production.contentEmbedUrl}
+			{#if production.embeds && production.embeds.length > 0}
 				<div class="embed-preview">
-					<h3>Preview</h3>
-					<div class="embed-container">
-						<iframe
-							src={production.contentEmbedUrl}
-							title={production.title}
-							frameborder="0"
-							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-							allowfullscreen
-						></iframe>
+					<h3>Videos & Media</h3>
+					<div class="embeds-list">
+						{#each production.embeds as embed (embed.id)}
+							<div class="embed-item">
+								{#if embed.title}
+									<h4 class="embed-title">
+										<Icon icon={embed.type === 'youtube' ? 'mdi:youtube' : 'mdi:play-circle-outline'} width={18} height={18} />
+										{embed.title}
+									</h4>
+								{/if}
+								<div class="embed-container">
+									<iframe
+										src={embed.embedUrl}
+										title={embed.title || production.title}
+										frameborder="0"
+										allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+										allowfullscreen
+									></iframe>
+								</div>
+							</div>
+						{/each}
 					</div>
 				</div>
 			{/if}
@@ -535,27 +515,6 @@
 		display: block;
 	}
 
-	.categories {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		justify-content: center;
-		margin-bottom: 1.5rem;
-	}
-
-	.category-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.4rem 0.8rem;
-		background: rgba(99, 102, 241, 0.3);
-		border: 1px solid var(--cat-color, rgba(99, 102, 241, 0.5));
-		border-radius: 50px;
-		color: white;
-		font-size: 0.8rem;
-		font-weight: 500;
-	}
-
 	.production-info {
 		margin-bottom: 2rem;
 	}
@@ -700,6 +659,22 @@
 		font-size: 1rem;
 		color: rgba(255, 255, 255, 0.9);
 		margin-bottom: 1rem;
+	}
+
+	.embeds-list {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.embed-title {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.9rem;
+		color: rgba(255, 255, 255, 0.8);
+		margin-bottom: 0.75rem;
+		font-weight: 500;
 	}
 
 	.embed-container {

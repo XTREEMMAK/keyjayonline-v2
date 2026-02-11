@@ -62,9 +62,10 @@ export {
 
 export {
   getProductions,
-  getProductionsCategories,
+  getCategoryChoices,
   getProductionPages,
-  getProductionById
+  getProductionById,
+  getProductionBySlug
 } from './content/productions.js';
 
 export {

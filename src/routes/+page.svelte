@@ -35,6 +35,7 @@
 
 	// Sticky nav store for About section portal
 	import { hideStickyNav } from '$lib/stores/stickyNav.js';
+	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 
 	let { data } = $props();
 
@@ -120,8 +121,8 @@
 		showPlayer();
 	}
 
-	// Show scroll button when scrolled down (desktop only)
-	const showScrollButton = $derived(showDesktopScrollButton && $activeSection !== 'home');
+	// Show scroll button when scrolled down (desktop only), hidden when modals are open
+	const showScrollButton = $derived(showDesktopScrollButton && $activeSection !== 'home' && !$contentViewerOpen);
 
 	function handleScrollToTop() {
 		window.scrollTo({ top: 0, behavior: 'smooth' });

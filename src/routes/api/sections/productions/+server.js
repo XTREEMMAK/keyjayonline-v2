@@ -4,7 +4,7 @@
  */
 
 import { json } from '@sveltejs/kit';
-import { getProductions, getProductionsCategories, getSiteSettings } from '$lib/api/index.js';
+import { getProductions, getCategoryChoices, getSiteSettings } from '$lib/api/index.js';
 import { getTestimonialsByServiceType } from '$lib/api/content/testimonials.js';
 
 // Helper to wrap promises with error handling
@@ -19,7 +19,7 @@ export async function GET() {
 		// Load all productions data in parallel
 		const [productions, categories, siteSettings, testimonials] = await Promise.all([
 			safePromise(getProductions(), 'getProductions'),
-			safePromise(getProductionsCategories(), 'getProductionsCategories'),
+			safePromise(getCategoryChoices(), 'getCategoryChoices'),
 			safePromise(getSiteSettings(), 'getSiteSettings'),
 			safePromise(getTestimonialsByServiceType('productions'), 'getTestimonials')
 		]);
