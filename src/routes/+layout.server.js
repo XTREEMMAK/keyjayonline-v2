@@ -1,9 +1,6 @@
 import { getSiteSettings } from '$lib/api/index.js';
 import { redirect, error } from '@sveltejs/kit';
 
-// Temporarily hidden pages - remove this when ready to re-enable
-const TEMPORARILY_HIDDEN_PAGES = ['games', 'tech', 'blog'];
-
 export async function load({ url }) {
 	try {
 		const siteSettings = await getSiteSettings();
@@ -24,11 +21,6 @@ export async function load({ url }) {
 		// Check if current page is disabled
 		const currentPath = url.pathname.slice(1) || 'home'; // Remove leading slash
 		const pageKey = currentPath.split('/')[0]; // Get first segment for nested routes
-
-		// Check if page is temporarily hidden
-		if (TEMPORARILY_HIDDEN_PAGES.includes(pageKey)) {
-			throw redirect(302, '/');
-		}
 
 		if (pageKey !== 'home' && pageKey !== '404' && pageKey !== 'maintenance') {
 			const pageConfig = siteSettings.pages[pageKey];

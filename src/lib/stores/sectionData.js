@@ -16,6 +16,7 @@ const initialState = {
 	music: { status: 'idle', data: null, error: null },
 	voice: { status: 'idle', data: null, error: null },
 	productions: { status: 'idle', data: null, error: null },
+	tech: { status: 'idle', data: null, error: null },
 	about: { status: 'idle', data: null, error: null },
 	contact: { status: 'idle', data: null, error: null }
 };

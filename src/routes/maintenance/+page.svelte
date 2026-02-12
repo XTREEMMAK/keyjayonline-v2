@@ -7,22 +7,43 @@
 	const PUBLIC_CONTACT_EMAIL = env.PUBLIC_CONTACT_EMAIL ?? 'contact@keyjayonline.com';
 
 	let currentTime = $state('');
+	let timezoneLabel = $state('ET');
 
 	onMount(() => {
-		// Update time every second
+		// Detect user's timezone, default to America/New_York (ET)
+		let userTimezone;
+		try {
+			userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		} catch {
+			userTimezone = 'America/New_York';
+		}
+
+		// Get short timezone abbreviation (e.g., "EST", "PST", "CST")
+		try {
+			const parts = new Intl.DateTimeFormat('en-US', {
+				timeZone: userTimezone,
+				timeZoneName: 'short'
+			}).formatToParts(new Date());
+			const tzPart = parts.find(p => p.type === 'timeZoneName');
+			if (tzPart) timezoneLabel = tzPart.value;
+		} catch {
+			timezoneLabel = 'ET';
+		}
+
 		function updateTime() {
 			const now = new Date();
-			currentTime = now.toLocaleTimeString('en-US', { 
-				hour12: false,
+			currentTime = now.toLocaleTimeString('en-US', {
+				hour12: true,
 				hour: '2-digit',
 				minute: '2-digit',
-				second: '2-digit'
+				second: '2-digit',
+				timeZone: userTimezone
 			});
 		}
-		
+
 		updateTime();
 		const interval = setInterval(updateTime, 1000);
-		
+
 		return () => clearInterval(interval);
 	});
 </script>
@@ -56,7 +77,7 @@
 			
 			<!-- Time Display -->
 			<div class="bg-black/20 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-2xl mb-8">
-				<div class="text-gray-400 text-sm uppercase tracking-wider mb-2">Current Time (UTC)</div>
+				<div class="text-gray-400 text-sm uppercase tracking-wider mb-2">Current Time ({timezoneLabel})</div>
 				<div class="text-3xl md:text-4xl font-mono text-white">{currentTime}</div>
 			</div>
 			

@@ -8,6 +8,7 @@ const sectionImages = {
 	music: '/img/hero-music-concert.webp',
 	voice: '/img/hero-voice-acting.webp',
 	productions: '/img/blog-music-studio.webp',
+	tech: '/img/hero-voice-acting.webp',
 	about: '/img/keyjay_about.webp',
 	contact: '/img/J_Header_2560.webp'
 };

@@ -124,6 +124,22 @@
   padding: 10px 20px;
 }
 
+.neu-filter-button {
+  background: var(--neu-bg);
+  border-radius: 50px;
+  border: 1px solid var(--neu-border);
+  box-shadow:
+    4px 4px 8px var(--neu-shadow-dark),
+    -4px -4px 8px var(--neu-shadow-light);
+  transition: all 0.2s ease;
+}
+
+.neu-filter-button:hover {
+  box-shadow:
+    2px 2px 4px var(--neu-shadow-dark),
+    -2px -2px 4px var(--neu-shadow-light);
+}
+
 .neu-button-icon {
   padding: 12px;
   border-radius: 12px;

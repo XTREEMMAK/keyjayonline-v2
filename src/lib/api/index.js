@@ -18,14 +18,7 @@ export {
   // getMusicSamples removed to avoid circular import issues - import directly from content/music.js if needed
 } from './content/music.js';
 
-export { 
-  getBlogPosts, 
-  searchBlogPosts, 
-  getBlogPost,
-  getBlogPageHeader 
-} from './content/blog.js';
-
-export { 
+export {
   getFeaturedWorks 
 } from './content/featured.js';
 
@@ -75,6 +68,11 @@ export {
   getTestimonialsForBio,
   getTestimonialsByCategory
 } from './content/testimonials.js';
+
+export {
+  getTechProjects,
+  getTechStack
+} from './content/tech.js';
 
 export {
   getMusicPageHeader,

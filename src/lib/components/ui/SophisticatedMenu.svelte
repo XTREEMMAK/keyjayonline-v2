@@ -13,9 +13,6 @@
 	
 	let isSmallScreen = $state(false);
 
-	// Temporarily hidden pages - remove this when ready to re-enable
-	const TEMPORARILY_HIDDEN_PAGES = ['games', 'tech', 'blog'];
-
 	const allMenuItems = [
 		{ name: 'Home', href: '/', icon: 'mdi:home-outline', description: 'Return to the main page', pageKey: 'home' },
 		{ name: 'Music', href: '/music', icon: 'mdi:music-note-outline', description: 'Explore albums, singles & beats', pageKey: 'music' },
@@ -23,40 +20,19 @@
 		{ name: 'Voice', href: '/voice', icon: 'mdi:microphone-outline', description: 'Voice work portfolio', pageKey: 'voice' },
 		{ name: 'Tech', href: '/tech', icon: 'mdi:code-tags', description: 'Projects & tutorials', pageKey: 'tech' },
 		{ name: 'Productions', href: '/productions', icon: 'mdi:video-outline', description: 'Creative services', pageKey: 'productions' },
-		{ name: 'Blog', href: '/blog', icon: 'mdi:pencil-outline', description: 'Latest thoughts & updates', pageKey: 'blog' },
 		{ name: 'About', href: '/about', icon: 'mdi:account-outline', description: 'Learn about Key Jay', pageKey: 'about' },
 		{ name: 'Contact', href: '/contact', icon: 'mdi:email-outline', description: 'Get in touch', pageKey: 'contact' }
 	];
 
-	// Filter out disabled pages and temporarily hidden pages
+	// Filter out disabled pages based on CMS settings
 	const menuItems = $derived(() => {
-		console.log('SophisticatedMenu - siteSettings:', siteSettings);
-
-		const filteredItems = allMenuItems.filter(item => {
-			// Always show home page
+		return allMenuItems.filter(item => {
 			if (item.pageKey === 'home') return true;
-
-			// Check if page is temporarily hidden
-			if (TEMPORARILY_HIDDEN_PAGES.includes(item.pageKey)) {
-				console.log(`SophisticatedMenu - ${item.pageKey}: temporarily hidden`);
-				return false;
-			}
-
-			// Check CMS-based disable setting if available
 			if (siteSettings?.pages) {
-				const pageConfig = siteSettings.pages[item.pageKey];
-				const isDisabled = pageConfig?.disabled;
-
-				console.log(`SophisticatedMenu - ${item.pageKey}:`, { pageConfig, isDisabled, shouldShow: !isDisabled });
-
-				return !isDisabled;
+				return !siteSettings.pages[item.pageKey]?.disabled;
 			}
-
 			return true;
 		});
-
-		console.log('SophisticatedMenu - Filtered menu items:', filteredItems.map(i => i.pageKey));
-		return filteredItems;
 	});
 	
 	onMount(() => {

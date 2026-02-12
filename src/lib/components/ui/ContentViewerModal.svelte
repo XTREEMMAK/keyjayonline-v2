@@ -4,7 +4,7 @@
 	 *
 	 * Features:
 	 * - Pinch-zoom on mobile
-	 * - Click-to-zoom toggle (fit → 150% → 200% → fit)
+	 * - Click-to-zoom toggle (100% → 120% → ... → 400% → 100%, step 20%)
 	 * - Swipe/arrow navigation
 	 * - Page counter
 	 * - Keyboard support (arrows, escape)
@@ -30,7 +30,7 @@
 
 	// State
 	let currentPage = $state(initialPage);
-	let zoomLevel = $state(1); // 1 = fit, 1.5 = 150%, 2 = 200%
+	let zoomLevel = $state(1); // 1 = fit (100%), up to 4 (400%)
 	let imageLoading = $state(true);
 	let containerRef = $state(null);
 	let captionExpanded = $state(false);
@@ -51,8 +51,10 @@
 	const hasNext = $derived(currentPage < totalPages - 1);
 	const hasPrev = $derived(currentPage > 0);
 
-	// Zoom levels for click-to-zoom toggle
-	const zoomLevels = [1, 1.5, 2];
+	// Zoom configuration
+	const ZOOM_MIN = 1;
+	const ZOOM_MAX = 4;
+	const ZOOM_STEP = 0.2;
 
 	// Navigate to next/prev page
 	function nextPage() {
@@ -79,13 +81,13 @@
 
 	// Toggle zoom on click
 	function toggleZoom() {
-		const currentIndex = zoomLevels.indexOf(zoomLevel);
-		const nextIndex = (currentIndex + 1) % zoomLevels.length;
-		zoomLevel = zoomLevels[nextIndex];
-		// Reset pan when zooming back to fit
-		if (zoomLevel === 1) {
+		const next = Math.round((zoomLevel + ZOOM_STEP) * 100) / 100;
+		if (next > ZOOM_MAX) {
+			zoomLevel = ZOOM_MIN;
 			panX = 0;
 			panY = 0;
+		} else {
+			zoomLevel = next;
 		}
 	}
 
@@ -94,16 +96,16 @@
 		event.preventDefault();
 		if (event.deltaY < 0) {
 			// Scroll up → zoom in
-			const idx = zoomLevels.indexOf(zoomLevel);
-			if (idx < zoomLevels.length - 1) {
-				zoomLevel = zoomLevels[idx + 1];
+			const next = Math.round((zoomLevel + ZOOM_STEP) * 100) / 100;
+			if (next <= ZOOM_MAX) {
+				zoomLevel = next;
 			}
 		} else {
 			// Scroll down → zoom out
-			const idx = zoomLevels.indexOf(zoomLevel);
-			if (idx > 0) {
-				zoomLevel = zoomLevels[idx - 1];
-				if (zoomLevel === 1) { panX = 0; panY = 0; }
+			const next = Math.round((zoomLevel - ZOOM_STEP) * 100) / 100;
+			if (next >= ZOOM_MIN) {
+				zoomLevel = next;
+				if (zoomLevel === ZOOM_MIN) { panX = 0; panY = 0; }
 			}
 		}
 	}

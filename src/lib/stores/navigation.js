@@ -6,8 +6,8 @@
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 
-// Available sections
-export const sections = ['home', 'music', 'voice', 'productions', 'about', 'contact'];
+// Available sections (visibility controlled by CMS disablers in kjov2_general)
+export const sections = ['home', 'music', 'games', 'voice', 'tech', 'productions', 'about', 'contact'];
 
 // Disabled pages configuration (set from server data)
 export const disabledPages = writable({});
@@ -38,7 +38,9 @@ export const isNavigatingToHome = writable(false);
 export const sectionMeta = {
 	home: { label: 'Home', icon: 'mdi:home', color: '#667eea' },
 	music: { label: 'Music', icon: 'mdi:music-note', color: '#3b82f6' },
+	games: { label: 'Games', icon: 'mdi:gamepad-variant', color: '#ef4444' },
 	voice: { label: 'Voice', icon: 'mdi:microphone', color: '#8b5cf6' },
+	tech: { label: 'Tech', icon: 'mdi:code-tags', color: '#06b6d4' },
 	productions: { label: 'Productions', icon: 'mdi:video', color: '#f97316' },
 	about: { label: 'About', icon: 'mdi:account', color: '#10b981' },
 	contact: { label: 'Contact', icon: 'mdi:email', color: '#ec4899' }

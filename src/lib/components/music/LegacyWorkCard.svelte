@@ -5,7 +5,7 @@
 	let { work } = $props();
 </script>
 
-<div class="neu-card p-4 hover:scale-[1.02] transition-all duration-300">
+<div class="neu-card p-4 scale-100 hover:scale-[1.02] transition-all duration-300 backdrop-blur-sm" style="background: rgba(42, 45, 53, 0.85);">
 	<div class="flex items-start justify-between mb-3">
 		<div>
 			<h4 class="text-lg font-semibold text-white">{work.title}</h4>
@@ -43,13 +43,3 @@
 		height={50}
 	/>
 </div>
-
-<style>
-	.neu-card {
-		background: var(--neu-bg, #2a2d35);
-		border-radius: 16px;
-		box-shadow:
-			8px 8px 16px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
-			-8px -8px 16px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
-	}
-</style>

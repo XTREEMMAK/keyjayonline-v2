@@ -14,11 +14,18 @@
 	let footerElement = $state();
 	let vantaEffect = $state();
 
-	// Navigation items from the navigation store (excludes hidden pages like games, tech, blog)
-	const navItems = sections.map((section) => ({
-		section,
-		label: sectionMeta[section]?.label || section
-	}));
+	// Navigation items filtered by CMS disable settings
+	const navItems = $derived(
+		sections
+			.filter((section) => {
+				if (section === 'home') return true;
+				return !siteSettings?.pages?.[section]?.disabled;
+			})
+			.map((section) => ({
+				section,
+				label: sectionMeta[section]?.label || section
+			}))
+	);
 
 	function handleNavClick(e, section) {
 		e.preventDefault();

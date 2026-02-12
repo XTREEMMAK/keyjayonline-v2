@@ -21,8 +21,6 @@ export async function getSiteSettings() {
   try {
     const directus = getDirectusInstance();
     
-    // Fetch general settings with explicit fields that exist in Directus
-    // Note: Only fetching fields that actually exist in the kjov2_general table
     const settings = await directus.request(
       readItems('kjov2_general', {
         fields: [
@@ -30,7 +28,9 @@ export async function getSiteSettings() {
           'status',
           'music_page_disabled',
           'games_page_disabled',
-          'tech_page_disabled'
+          'tech_page_disabled',
+          'voice_page_disabled',
+          'production_page_disabled'
         ],
         limit: 1
       })
@@ -161,7 +161,6 @@ export async function getSiteSettings() {
       socialLinks,
       supportPlatforms: processedSupportPlatforms,
       pages: {
-        // Only music, games, and tech have disable flags in the database currently
         music: {
           disabled: siteConfig.music_page_disabled || false
         },
@@ -169,22 +168,19 @@ export async function getSiteSettings() {
           disabled: siteConfig.games_page_disabled || false
         },
         voice: {
-          disabled: false // Not yet in database
+          disabled: siteConfig.voice_page_disabled || false
         },
         tech: {
           disabled: siteConfig.tech_page_disabled || false
         },
         productions: {
-          disabled: false // Not yet in database
-        },
-        blog: {
-          disabled: false // Not yet in database
+          disabled: siteConfig.production_page_disabled || false
         },
         about: {
-          disabled: false // Not yet in database
+          disabled: false
         },
         contact: {
-          disabled: false // Not yet in database
+          disabled: false
         }
       }
     };
@@ -206,7 +202,6 @@ export async function getSiteSettings() {
         voice: { disabled: false, header_background: null },
         tech: { disabled: false, header_background: null }, // Tech is NOT disabled in production
         productions: { disabled: false, header_background: null },
-        blog: { disabled: false, header_background: null },
         about: { disabled: false, header_background: null },
         contact: { disabled: false, header_background: null }
       }

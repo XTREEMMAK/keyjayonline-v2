@@ -29,6 +29,7 @@
 	import MusicSection from '$lib/components/sections/MusicSection.svelte';
 	import VoiceSection from '$lib/components/sections/VoiceSection.svelte';
 	import ProductionsSection from '$lib/components/sections/ProductionsSection.svelte';
+	import TechSection from '$lib/components/sections/TechSection.svelte';
 	import AboutSection from '$lib/components/sections/AboutSection.svelte';
 	import ContactSection from '$lib/components/sections/ContactSection.svelte';
 	import AboutStickyNav from '$lib/components/sections/AboutStickyNav.svelte';
@@ -105,7 +106,9 @@
 	const sectionDescriptions = {
 		home: 'KEY JAY ONLINE - The official website of musician, composer, and producer KEY JAY. Music, voice acting, productions, and creative works.',
 		music: 'Explore KEY JAY\'s music catalog including original compositions, albums, and beats. Listen to samples and discover new releases.',
+		games: 'Gaming content and reviews by KEY JAY. Game development projects, reviews, and gaming related content.',
 		voice: 'Professional voice acting services by KEY JAY. Animation, video games, audio dramas, and commercial voice work portfolio.',
+		tech: 'Technology projects and tutorials by KEY JAY. Software development, web projects, and technical content.',
 		productions: 'Creative productions by KEY JAY including webcomics, audio dramas, video content, and interactive media projects.',
 		about: 'Learn about KEY JAY\'s professional journey in music, technology, and creative arts. Skills, experience, and achievements.',
 		contact: 'Get in touch with KEY JAY for collaborations, commissions, and project inquiries. Start your creative project today.'
@@ -167,6 +170,8 @@
 						<VoiceSection />
 					{:else if $activeSection === 'productions'}
 						<ProductionsSection />
+					{:else if $activeSection === 'tech'}
+						<TechSection />
 					{:else if $activeSection === 'about'}
 						<AboutSection bind:this={aboutSectionRef} />
 					{:else if $activeSection === 'contact'}

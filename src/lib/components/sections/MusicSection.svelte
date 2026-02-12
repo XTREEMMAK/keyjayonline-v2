@@ -139,6 +139,40 @@
 		}
 	];
 
+	// Studio gear data
+	const studioGear = $derived(musicData.studioGear || []);
+
+	// Studio gear category config
+	const studioCategoryLabels = {
+		daw: 'DAW',
+		plugins: 'Plugins / VSTs',
+		microphones: 'Microphones',
+		instruments: 'Instruments',
+		outboard: 'Outboard',
+		monitoring: 'Monitoring'
+	};
+
+	const studioCategoryIcons = {
+		daw: 'mdi:music-circle',
+		plugins: 'mdi:puzzle',
+		microphones: 'mdi:microphone',
+		instruments: 'mdi:piano',
+		outboard: 'mdi:audio-input-stereo-minijack',
+		monitoring: 'mdi:headphones'
+	};
+
+	const studioCategoryOrder = ['daw', 'plugins', 'microphones', 'instruments', 'outboard', 'monitoring'];
+
+	const gearByCategory = $derived(() => {
+		const groups = {};
+		for (const item of studioGear) {
+			const cat = item.category || 'other';
+			if (!groups[cat]) groups[cat] = [];
+			groups[cat].push(item);
+		}
+		return groups;
+	});
+
 	// Legacy works data (grouped by year)
 	const legacyWorksByYear = $derived(getLegacyWorksByYear());
 
@@ -162,19 +196,6 @@
 		// Load section data if not already loaded
 		if (sectionState.status === 'idle') {
 			loadSection('music');
-		}
-
-		if (browser && container && view === 'albums' && sectionLoaded) {
-			const { default: mixitup } = await import('mixitup');
-			mixer = mixitup(container, {
-				selectors: {
-					target: '.mix-item'
-				},
-				animation: {
-					duration: 300,
-					effects: 'fade scale(0.5)'
-				}
-			});
 		}
 
 		// Scroll listener for parallax effect (rAF throttled)
@@ -242,54 +263,36 @@
 		}
 	}
 
-	async function switchView(newView) {
+	function switchView(newView) {
 		if (view === newView) return;
+		if (mixer) {
+			mixer.destroy();
+			mixer = null;
+		}
+		view = newView;
+	}
 
-		if (browser) {
-			const contentEl = document.querySelector('.content-container');
-			if (contentEl) {
-				contentEl.style.opacity = '0';
-				setTimeout(async () => {
-					view = newView;
-					if (mixer) {
-						mixer.destroy();
-						mixer = null;
-					}
-
-					await new Promise(resolve => setTimeout(resolve, 100));
-
-					if (newView === 'albums' && container) {
-						const { default: mixitup } = await import('mixitup');
-						mixer = mixitup(container, {
-							selectors: { target: '.mix-item' },
-							animation: { duration: 300, effects: 'fade scale(0.5)' }
-						});
-					}
-
-					setTimeout(() => {
-						if (contentEl) contentEl.style.opacity = '1';
-					}, 50);
-				}, 150);
-			} else {
-				view = newView;
-				if (mixer) {
-					mixer.destroy();
-					mixer = null;
-				}
-
-				if (newView === 'albums' && container) {
-					await new Promise(resolve => setTimeout(resolve, 100));
-					const { default: mixitup } = await import('mixitup');
+	// Reactive mixer init/destroy based on view and container
+	$effect(() => {
+		if (view === 'albums' && container && sectionLoaded && browser) {
+			let cancelled = false;
+			import('mixitup').then(({ default: mixitup }) => {
+				if (!cancelled && container && !mixer) {
 					mixer = mixitup(container, {
 						selectors: { target: '.mix-item' },
 						animation: { duration: 300, effects: 'fade scale(0.5)' }
 					});
 				}
-			}
-		} else {
-			view = newView;
+			});
+			return () => {
+				cancelled = true;
+				if (mixer) {
+					mixer.destroy();
+					mixer = null;
+				}
+			};
 		}
-	}
+	});
 
 	function handlePlayButtonClick() {
 		loadRandomTrack();
@@ -539,44 +542,58 @@
 	{/if}
 
 	<!-- View Switcher -->
-	<div
-		class="bg-[var(--neu-bg)] border-b border-gray-800 sticky z-30 transition-[top] duration-300"
+	<section
+		class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-6 sticky z-30 transition-[top] duration-300"
 		style="top: {$navbarVisible ? '88px' : '0px'}"
 	>
 		<div class="container mx-auto px-4">
 			<!-- Main view switcher - centered -->
-			<div class="flex flex-col items-center gap-4 py-4">
+			<div class="flex flex-col items-center gap-4">
 				<!-- Main category buttons - centered -->
 				<div class="flex gap-2 flex-wrap justify-center">
 					<button
 						onclick={() => switchView('albums')}
-						class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {
+						class="px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2 {
 							view === 'albums'
-								? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
-								: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+								? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white scale-105'
+								: 'neu-filter-button text-gray-300 hover:text-white hover:scale-105'
 						}"
 					>
+						<Icon icon="mdi:album" class="text-lg" />
 						Albums & Singles
 					</button>
 					<button
 						onclick={() => switchView('beats')}
-						class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {
+						class="px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2 {
 							view === 'beats'
-								? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
-								: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+								? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white scale-105'
+								: 'neu-filter-button text-gray-300 hover:text-white hover:scale-105'
 						}"
 					>
+						<Icon icon="mdi:music-note" class="text-lg" />
 						Beats for Licensing
 					</button>
 					<button
 						onclick={() => switchView('legacy')}
-						class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {
+						class="px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2 {
 							view === 'legacy'
-								? 'bg-amber-600 text-white shadow-lg shadow-amber-500/25'
-								: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+								? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white scale-105'
+								: 'neu-filter-button text-gray-300 hover:text-white hover:scale-105'
 						}"
 					>
+						<Icon icon="mdi:archive" class="text-lg" />
 						Legacy Works
+					</button>
+					<button
+						onclick={() => switchView('studio')}
+						class="px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2 {
+							view === 'studio'
+								? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white scale-105'
+								: 'neu-filter-button text-gray-300 hover:text-white hover:scale-105'
+						}"
+					>
+						<Icon icon="mdi:music-box-multiple" class="text-lg" />
+						Studio
 					</button>
 				</div>
 
@@ -609,11 +626,12 @@
 				{/if}
 			</div>
 		</div>
-	</div>
+	</section>
 
 	<!-- Content Section -->
 	<section class="container mx-auto px-4 py-12">
-		<div class="content-container" style="transition: opacity 0.3s ease-in-out;">
+		{#key view}
+		<div in:fade={{ duration: 250, delay: 50 }} out:fade={{ duration: 150 }}>
 			{#if view === 'albums'}
 				{#if sectionLoading}
 					<div class="flex justify-center items-center py-20">
@@ -755,8 +773,66 @@
 						<p class="text-gray-400">Content coming soon!</p>
 					</div>
 				{/if}
+			{:else if view === 'studio'}
+				<section class="py-12 relative">
+					<div class="max-w-6xl mx-auto">
+						<h2 class="text-2xl font-bold text-white mb-8 text-center">What I Use</h2>
+						<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+							<!-- Studio Photo -->
+							<div class="neu-card overflow-hidden">
+								{#if musicData.studioPhoto}
+									<img src={musicData.studioPhoto} alt="Studio setup" class="w-full h-full object-cover" loading="lazy" />
+								{:else}
+									<div class="aspect-[4/3] bg-gradient-to-br from-blue-900/30 to-purple-900/30 flex flex-col items-center justify-center gap-4">
+										<Icon icon="mdi:music-box-multiple" class="text-blue-400/30 text-8xl" />
+										<p class="text-gray-500 text-sm">Studio photo coming soon</p>
+									</div>
+								{/if}
+							</div>
+
+							<!-- Gear/Specs List -->
+							<div>
+								{#if studioGear.length === 0}
+									<div class="text-center py-16">
+										<Icon icon="mdi:music-box-multiple" class="text-gray-600 text-6xl mb-4 mx-auto" />
+										<h3 class="text-xl text-gray-400 mb-2">Studio gear coming soon</h3>
+										<p class="text-gray-500">Equipment and software will appear here.</p>
+									</div>
+								{:else}
+									<div class="space-y-6">
+										{#each studioCategoryOrder.filter(cat => gearByCategory()[cat]?.length > 0) as category}
+											<div>
+												<div class="flex items-center gap-2 mb-3">
+													<Icon icon={studioCategoryIcons[category]} class="text-blue-400 text-lg" />
+													<h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+														{studioCategoryLabels[category]}
+													</h3>
+													<div class="flex-1 h-px bg-gradient-to-r from-blue-600/30 to-transparent"></div>
+												</div>
+												<div class="space-y-2">
+													{#each gearByCategory()[category] as item (item.id)}
+														<div class="neu-card p-4 flex items-center gap-4" in:fly={{ y: 20, duration: 300 }}>
+															<div class="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
+																<Icon icon={item.icon} class="text-blue-400 text-xl" />
+															</div>
+															<div class="min-w-0">
+																<span class="text-white font-semibold text-sm">{item.name}</span>
+																<p class="text-gray-400 text-xs">{item.description}</p>
+															</div>
+														</div>
+													{/each}
+												</div>
+											</div>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						</div>
+					</div>
+				</section>
 			{/if}
 		</div>
+		{/key}
 	</section>
 
 	<!-- Listen On Section -->
@@ -828,26 +904,6 @@
 <style>
 	.music-section {
 		/* Container styles */
-	}
-
-	.content-container {
-		transition: opacity 0.3s ease-in-out;
-	}
-
-	/* Neumorphic card styles (fallback if not in global CSS) */
-	.neu-card {
-		background: var(--neu-bg, #2a2d35);
-		border-radius: 16px;
-		box-shadow:
-			8px 8px 16px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
-			-8px -8px 16px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
-	}
-
-	.neu-button-primary {
-		border-radius: 50px;
-		box-shadow:
-			6px 6px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
-			-6px -6px 12px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
 	}
 
 	/* Carousel Wrapper */
@@ -956,12 +1012,6 @@
 
 		.notice-icon-pulse {
 			animation: none; /* Disable pulse animation */
-		}
-
-		.neu-card,
-		.neu-button-primary {
-			/* Simplify shadows on mobile */
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 		}
 	}
 </style>

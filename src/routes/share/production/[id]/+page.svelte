@@ -5,9 +5,68 @@
 	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
 	import { onMount, onDestroy } from 'svelte';
 	import * as THREE from 'three';
+	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
+	import { loadPlaylist, showPlayer, expandPlayer } from '$lib/stores/musicPlayer.js';
 
 	let { data } = $props();
 	const { production, meta, siteSettings, socialLinks } = data;
+
+	// Content viewer state
+	let viewerOpen = $state(false);
+	let viewerPages = $state([]);
+	let viewerTitle = $state('');
+	let viewerLoading = $state(false);
+
+	async function openContentViewer(galleryId, title = '') {
+		if (!galleryId) return;
+		viewerTitle = title;
+		viewerLoading = true;
+		viewerOpen = true;
+		try {
+			const response = await fetch(`/api/galleries/${galleryId}/albums`);
+			if (response.ok) {
+				const data = await response.json();
+				viewerPages = data.albums || [];
+			}
+		} catch (err) {
+			console.error('Failed to load gallery albums:', err);
+			viewerPages = [];
+		} finally {
+			viewerLoading = false;
+		}
+	}
+
+	function closeContentViewer() {
+		viewerOpen = false;
+		viewerPages = [];
+	}
+
+	async function playProductionPlaylist(playlistId) {
+		if (!playlistId) return;
+		try {
+			const response = await fetch(`/api/playlists/${playlistId}/tracks`);
+			if (!response.ok) throw new Error('Failed to load playlist');
+			const data = await response.json();
+			if (data.tracks?.length > 0) {
+				loadPlaylist(data.tracks, 0, 'production');
+				showPlayer();
+				expandPlayer();
+			}
+		} catch (err) {
+			console.error('Failed to play production playlist:', err);
+		}
+	}
+
+	function handleAction(action) {
+		switch (action.actionType) {
+			case 'viewer':
+				openContentViewer(action.galleryId, production.title || action.label);
+				break;
+			case 'audio_player':
+				playProductionPlaylist(action.playlistId);
+				break;
+		}
+	}
 
 	// Support platforms from site settings
 	const supportPlatforms = $derived(siteSettings?.supportPlatforms || []);
@@ -314,14 +373,14 @@
 									<span>{action.label}</span>
 								</a>
 							{:else}
-								<a
-									href="/#productions"
+								<button
+									onclick={() => handleAction(action)}
 									class="external-link"
 									title={action.label}
 								>
 									<Icon icon={action.icon} width={24} height={24} />
 									<span>{action.label}</span>
-								</a>
+								</button>
 							{/if}
 						{/each}
 					</div>
@@ -406,6 +465,15 @@
 		</div>
 	</footer>
 </div>
+
+<!-- Gallery Viewer Modal -->
+<ContentViewerModal
+	isOpen={viewerOpen}
+	pages={viewerPages}
+	title={viewerTitle}
+	loading={viewerLoading}
+	onClose={closeContentViewer}
+/>
 
 <style>
 	/* Background gradient - darker rotating with warm tones for productions */
@@ -643,6 +711,7 @@
 		color: white;
 		text-decoration: none;
 		font-size: 0.9rem;
+		cursor: pointer;
 		transition: all 0.2s;
 	}
 
