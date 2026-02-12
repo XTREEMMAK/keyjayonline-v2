@@ -1,9 +1,11 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import Icon from '@iconify/svelte';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import { navbarVisible } from '$lib/stores/navigation.js';
+	import { showSectionSubNav, hideSectionSubNav, techActiveTab, portalScrollLock, setPortalScrollLock, sectionModalOpen } from '$lib/stores/stickyNav.js';
+	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
@@ -14,6 +16,13 @@
 
 	// Tab state
 	let activeTab = $state('projects');
+
+	// Sticky sub-nav state
+	let subNavSentinelRef = $state(null);
+	let bottomSentinelRef = $state(null);
+	let subNavSticky = $state(false);
+	let topSentinelAbove = $state(false);
+	let bottomSentinelReached = $state(false);
 
 	// Legend toggle
 	let showLegend = $state(false);
@@ -152,6 +161,95 @@
 			window.removeEventListener('keydown', handleKeydown);
 			document.body.style.overflow = '';
 		}
+	});
+
+	// Hide sticky nav portal when modal is open (modals are trapped in z-10 stacking context)
+	$effect(() => {
+		sectionModalOpen.set(detailModalOpen);
+	});
+
+	// Top sentinel observer
+	$effect(() => {
+		if (browser && subNavSentinelRef) {
+			const cleanup = createIntersectionObserver(
+				subNavSentinelRef,
+				(isVisible, entry) => {
+					if (portalScrollLock) return;
+					topSentinelAbove = !isVisible && entry.boundingClientRect.bottom <= 60;
+				},
+				{ threshold: 0, rootMargin: '-60px 0px 0px 0px' }
+			);
+			return cleanup;
+		}
+	});
+
+	// Bottom sentinel observer — hides portal when user scrolls past content into CTAs
+	$effect(() => {
+		if (browser && bottomSentinelRef) {
+			const cleanup = createIntersectionObserver(
+				bottomSentinelRef,
+				(isVisible, entry) => {
+					if (portalScrollLock) return;
+					bottomSentinelReached = entry.boundingClientRect.top <= 0;
+				},
+				{ threshold: 0, rootMargin: '0px' }
+			);
+			return cleanup;
+		}
+	});
+
+	// Reactive portal state: show when top sentinel above AND still in content area
+	$effect(() => {
+		if (topSentinelAbove && !bottomSentinelReached) {
+			subNavSticky = true;
+			showSectionSubNav('tech');
+		} else {
+			subNavSticky = false;
+			hideSectionSubNav();
+		}
+	});
+
+	function scrollToContent() {
+		if (!browser || !subNavSentinelRef) return;
+		setPortalScrollLock(true);
+		requestAnimationFrame(() => {
+			const portalBar = document.querySelector('.section-sticky-nav');
+			const offset = portalBar ? portalBar.offsetHeight : 0;
+			const absTop = subNavSentinelRef.getBoundingClientRect().top + window.scrollY;
+			window.scrollTo({ top: absTop - offset + 2, behavior: 'smooth' });
+			setTimeout(() => {
+				setPortalScrollLock(false);
+				// Re-check sentinel positions (observer may have missed events during lock)
+				if (subNavSentinelRef) {
+					const rect = subNavSentinelRef.getBoundingClientRect();
+					topSentinelAbove = rect.bottom <= 60;
+				}
+				if (bottomSentinelRef) {
+					const rect = bottomSentinelRef.getBoundingClientRect();
+					bottomSentinelReached = rect.top <= 0;
+				}
+			}, 600);
+		});
+	}
+
+	function switchTab(tab) {
+		if (tab === activeTab) return;
+		activeTab = tab;
+		scrollToContent();
+	}
+
+	// Sync activeTab with sticky nav store (bidirectional)
+	$effect(() => {
+		techActiveTab.set(activeTab);
+	});
+	// Store subscription: only sync state, no scroll (portal handles its own scroll)
+	const unsubTab = techActiveTab.subscribe(t => {
+		if (t !== activeTab) activeTab = t;
+	});
+
+	onDestroy(() => {
+		hideSectionSubNav();
+		unsubTab();
 	});
 </script>
 
@@ -304,15 +402,14 @@
 			</div>
 		</div>
 	{:else}
-		<!-- Tab Navigation -->
+		<!-- Tab Navigation (in-flow, stays rendered — already scrolled off-screen when portal activates) -->
 		<section
-			class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-6 sticky z-30 transition-[top] duration-300"
-			style="top: {$navbarVisible ? '88px' : '0px'}"
+			class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-6 z-30"
 		>
 			<div class="container mx-auto px-4">
 				<div class="flex justify-center gap-3">
 					<button
-						onclick={() => activeTab = 'stack'}
+						onclick={() => switchTab('stack')}
 						class="px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2
 							{activeTab === 'stack'
 								? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white scale-105'
@@ -322,7 +419,7 @@
 						Stack
 					</button>
 					<button
-						onclick={() => activeTab = 'projects'}
+						onclick={() => switchTab('projects')}
 						class="px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2
 							{activeTab === 'projects'
 								? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white scale-105'
@@ -332,7 +429,7 @@
 						Projects
 					</button>
 					<button
-						onclick={() => activeTab = 'showcase'}
+						onclick={() => switchTab('showcase')}
 						class="px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2
 							{activeTab === 'showcase'
 								? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white scale-105'
@@ -344,6 +441,9 @@
 				</div>
 			</div>
 		</section>
+
+		<!-- Sentinel for sticky sub-nav detection (below sub-nav so portal only triggers after it fully exits viewport) -->
+		<div bind:this={subNavSentinelRef} class="sub-nav-sentinel h-px w-full"></div>
 
 		<!-- Tab Content with Animated Transitions -->
 		{#key activeTab}
@@ -652,6 +752,9 @@
 				{/if}
 			</div>
 		{/key}
+
+		<!-- Bottom sentinel: hides sticky nav when scrolling into CTA sections -->
+		<div bind:this={bottomSentinelRef} class="sub-nav-bottom-sentinel h-px w-full"></div>
 
 		<!-- J2IT Service CTA -->
 		<section class="bg-gradient-to-b from-[var(--neu-bg)] via-[var(--neu-bg-light)]/50 to-[var(--neu-bg)] py-16 relative">

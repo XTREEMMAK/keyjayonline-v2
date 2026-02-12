@@ -192,6 +192,79 @@ import {
 	}
 
 	/**
+	 * Resolve an iconify icon string for a social network.
+	 * Used in HTML string context (SweetAlert2) where we can't import getExternalLinkIcon.
+	 * @param {{ network: string, network_url: string }} social
+	 * @returns {string} Iconify icon string
+	 */
+	function resolveSocialIcon(social) {
+		const key = (social.network || '').toLowerCase();
+		const networkIcons = {
+			'instagram': 'line-md:instagram',
+			'twitter': 'ri:twitter-x-fill',
+			'x': 'ri:twitter-x-fill',
+			'youtube': 'simple-icons:youtube',
+			'spotify': 'simple-icons:spotify',
+			'soundcloud': 'simple-icons:soundcloud',
+			'bandcamp': 'simple-icons:bandcamp',
+			'tiktok': 'simple-icons:tiktok',
+			'facebook': 'simple-icons:facebook',
+			'linkedin': 'simple-icons:linkedin',
+			'github': 'mdi:github',
+			'twitch': 'simple-icons:twitch',
+			'apple music': 'simple-icons:applemusic',
+			'tidal': 'simple-icons:tidal'
+		};
+		if (networkIcons[key]) return networkIcons[key];
+
+		// Fallback: try URL domain detection
+		if (social.network_url) {
+			try {
+				const hostname = new URL(social.network_url).hostname;
+				const domainIcons = {
+					'instagram.com': 'line-md:instagram',
+					'twitter.com': 'ri:twitter-x-fill',
+					'x.com': 'ri:twitter-x-fill',
+					'youtube.com': 'simple-icons:youtube',
+					'spotify.com': 'simple-icons:spotify',
+					'soundcloud.com': 'simple-icons:soundcloud',
+					'bandcamp.com': 'simple-icons:bandcamp',
+					'tiktok.com': 'simple-icons:tiktok',
+					'facebook.com': 'simple-icons:facebook',
+					'linkedin.com': 'simple-icons:linkedin',
+					'github.com': 'mdi:github',
+					'twitch.tv': 'simple-icons:twitch'
+				};
+				for (const [domain, icon] of Object.entries(domainIcons)) {
+					if (hostname.includes(domain)) return icon;
+				}
+			} catch { /* invalid URL */ }
+		}
+		return 'mdi:open-in-new';
+	}
+
+	/**
+	 * Generate social icons HTML for a credit entry.
+	 * @param {Credit} credit
+	 * @returns {string} HTML string with globe + social icons
+	 */
+	function generateCreditSocialIconsHtml(credit) {
+		const icons = [];
+		if (credit.website_url) {
+			icons.push(`<a href="${credit.website_url}" target="_blank" rel="noopener noreferrer" title="Website" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon icon="mdi:web" width="18" height="18"></iconify-icon></a>`);
+		}
+		const socialLinks = Array.isArray(credit.social_links) ? credit.social_links : [];
+		for (const social of socialLinks) {
+			if (!social.network_url) continue;
+			const icon = resolveSocialIcon(social);
+			const label = social.network || 'Link';
+			icons.push(`<a href="${social.network_url}" target="_blank" rel="noopener noreferrer" title="${label}" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon icon="${icon}" width="16" height="16"></iconify-icon></a>`);
+		}
+		if (icons.length === 0) return '';
+		return `<div style="display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0;">${icons.join('')}</div>`;
+	}
+
+	/**
 	 * Generate grouped credits HTML with collapsible sections
 	 * @param {Credit[]} credits - Array of credit objects
 	 * @param {string} idPrefix - Prefix for unique IDs (desktop/mobile)
@@ -264,16 +337,15 @@ import {
 					<div id="${uniqueId}" class="credit-group-content" style="max-height: 2000px; overflow: hidden; transition: max-height 0.4s ease; padding-top: 12px;">
 						<div style="display: grid; gap: 8px;">
 							${categoryCredits.map(credit => `
-								<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease; cursor: pointer;"
+								<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease;"
 									 onmouseover="this.style.background='rgba(55, 65, 81, 0.5)'; this.style.boxShadow='0 0 20px rgba(59, 130, 246, 0.3)'; this.style.borderLeftColor='#60a5fa'"
-									 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'"
-									 ${credit.website_url ? `onclick="window.open('${credit.website_url}', '_blank')"` : ''}>
+									 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'">
 									${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : `<div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><iconify-icon icon="mdi:account" width="24" height="24" style="color: #3b82f6;"></iconify-icon></div>`}
 									<div style="flex: 1; min-width: 0;">
 										<div style="color: #ffffff; font-weight: 500; font-size: 0.9rem; margin-bottom: 2px;">${credit.name}</div>
 										<div style="color: #9ca3af; font-size: 0.8rem;">${credit.displayRoles || credit.role}</div>
-										${credit.website_url ? `<div style="color: #3b82f6; font-size: 0.75rem; margin-top: 2px; display: flex; align-items: center; gap: 4px;"><iconify-icon icon="mdi:open-in-new" width="12" height="12"></iconify-icon>View Profile</div>` : ''}
 									</div>
+									${generateCreditSocialIconsHtml(credit)}
 								</div>
 							`).join('')}
 						</div>

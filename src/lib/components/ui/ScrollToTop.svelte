@@ -5,13 +5,14 @@
 	import { playerVisible, playerMinimized } from '$lib/stores/musicPlayer.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { scrollButtonVisible } from '$lib/stores/scrollButton.js';
+	import { sectionModalOpen } from '$lib/stores/stickyNav.js';
 
 	let visible = $state(false);
 	let scrollY = $state(0);
 
 	// Sync visibility with store
 	$effect(() => {
-		scrollButtonVisible.set(visible && !$contentViewerOpen);
+		scrollButtonVisible.set(visible && !$contentViewerOpen && !$sectionModalOpen);
 	});
 
 	onMount(() => {
@@ -50,7 +51,7 @@
 	);
 </script>
 
-{#if visible && !$contentViewerOpen}
+{#if visible && !$contentViewerOpen && !$sectionModalOpen}
 	<button
 		onclick={scrollToTop}
 		class="scroll-to-top-btn {bottomClass}"

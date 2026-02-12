@@ -143,6 +143,11 @@ export interface CreditRole {
 	category: string;
 }
 
+export interface CreditSocialLink {
+	network: string;
+	network_url: string;
+}
+
 export interface Credit {
 	role: string;
 	roles?: CreditRole[];
@@ -150,8 +155,27 @@ export interface Credit {
 	additional_info?: string;
 	bio?: string;
 	website_url?: string;
+	social_links?: CreditSocialLink[];
 	display_order?: number;
 	profile_image?: string;
+}
+
+export interface StudioCategory {
+	id: string | number;
+	slug: string;
+	displayName: string;
+	icon: string;
+	displayOrder: number;
+}
+
+export interface StudioGearItem {
+	id: string | number;
+	name: string;
+	description: string;
+	icon: string;
+	displayOrder: number;
+	category: string;
+	categoryData?: StudioCategory | null;
 }
 
 // SweetAlert2 type declarations

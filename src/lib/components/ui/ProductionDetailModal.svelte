@@ -21,6 +21,7 @@
 	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
 	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
+	import { getExternalLinkIcon } from '$lib/utils/externalLinks.js';
 	// Props
 	let {
 		isOpen = false,
@@ -341,16 +342,35 @@
 																{credit.roles ? credit.roles.map(r => r.title).join(', ') : credit.role}
 															</p>
 														</div>
-														{#if credit.website_url}
-															<a
-																href={credit.website_url}
-																target="_blank"
-																rel="noopener noreferrer"
-																class="text-gray-400 hover:text-white transition-colors flex-shrink-0"
-																title="Website"
-															>
-																<Icon icon="mdi:open-in-new" class="text-lg" />
-															</a>
+														{#if credit.website_url || (credit.social_links && credit.social_links.length > 0)}
+															<div class="flex items-center gap-1.5 flex-shrink-0 ml-auto">
+																{#if credit.website_url}
+																	<a
+																		href={credit.website_url}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																		class="text-gray-400 hover:text-white transition-colors"
+																		title="Website"
+																	>
+																		<Icon icon="mdi:web" class="text-lg" />
+																	</a>
+																{/if}
+																{#if credit.social_links}
+																	{#each credit.social_links as social}
+																		{#if social.network_url}
+																			<a
+																				href={social.network_url}
+																				target="_blank"
+																				rel="noopener noreferrer"
+																				class="text-gray-400 hover:text-white transition-colors"
+																				title={social.network || 'Link'}
+																			>
+																				<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} class="text-base" />
+																			</a>
+																		{/if}
+																	{/each}
+																{/if}
+															</div>
 														{/if}
 													</div>
 												{/each}

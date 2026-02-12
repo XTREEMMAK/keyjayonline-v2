@@ -1,8 +1,8 @@
 /**
  * Tech Content API
  *
- * Fetches tech projects and tech stack data from Directus.
- * Collections: kjov2_tech_projects, kjov2_tech_stack
+ * Fetches tech projects, tech stack, and showcase data from Directus.
+ * Collections: kjov2_tech_projects, kjov2_tech_stack, kjov2_tech_showcase
  */
 
 import { getDirectusInstance, readItems } from '../core/client.js';
@@ -85,6 +85,45 @@ export async function getTechStack() {
     }));
   } catch (error) {
     console.error('Error fetching tech stack:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetches all published tech showcase items
+ * @returns {Promise<Array>} Array of showcase items
+ */
+export async function getTechShowcase() {
+  try {
+    const directus = getDirectusInstance();
+
+    const items = await directus.request(
+      readItems('kjov2_tech_showcase', {
+        filter: {
+          status: { _eq: 'published' }
+        },
+        fields: [
+          '*',
+          {
+            image: ['id', 'filename_disk']
+          }
+        ],
+        sort: ['sort']
+      })
+    );
+
+    return items.map(item => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      type: item.type || 'photo',
+      image: item.image
+        ? buildAssetUrl(item.image.filename_disk || item.image.id)
+        : null,
+      video_url: item.video_url
+    }));
+  } catch (error) {
+    console.error('Error fetching tech showcase:', error);
     return [];
   }
 }

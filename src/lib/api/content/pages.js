@@ -101,6 +101,42 @@ export async function getTechPageHeader() {
 }
 
 /**
+ * Fetches the studio photo from Directus general settings (kjov2_general.studio_picture)
+ * Used in the Music section's Studio tab
+ * @returns {Promise<string|null>} URL of studio photo or null
+ */
+export async function getStudioPhoto() {
+  try {
+    const directus = getDirectusInstance();
+
+    const generalData = await directus.request(
+      readItems('kjov2_general', {
+        fields: [
+          { studio_picture: ['id', 'filename_disk'] }
+        ],
+        limit: 1
+      })
+    );
+
+    const firstRecord = Array.isArray(generalData) ? generalData[0] : generalData;
+
+    if (firstRecord && firstRecord.studio_picture) {
+      const file = firstRecord.studio_picture;
+      const baseUrl = CDN_BASE_URL || S3_BUCKET_URL;
+      if (typeof file === 'object' && file.filename_disk && baseUrl) {
+        return `${baseUrl}/${file.filename_disk}`;
+      }
+      return buildAssetUrl(file);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching studio photo:', error);
+    return null;
+  }
+}
+
+/**
  * Fetches the games page header image from Directus general settings
  * Used for the games page hero section background
  * @returns {Promise<string|null>} URL of header image or null

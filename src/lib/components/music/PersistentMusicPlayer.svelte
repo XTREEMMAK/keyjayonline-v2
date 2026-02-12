@@ -28,6 +28,7 @@
 	import { extractCoverArt } from '$lib/utils/coverArtExtractor.js';
 	import { formatTime } from '$lib/utils/time.js';
 	import PlaylistBrowser from '$lib/components/music/PlaylistBrowser.svelte';
+	import { sectionModalOpen } from '$lib/stores/stickyNav.js';
 	
 	let container = $state();
 	let visualContainer = $state();
@@ -507,7 +508,7 @@
 	});
 </script>
 
-{#if $playerVisible}
+{#if $playerVisible && !$sectionModalOpen}
 	<div
 		class="music-player fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-md border-t border-white/10 shadow-2xl"
 		class:minimized={$playerMinimized}

@@ -13,6 +13,7 @@
 	import { getLegacyWorksByYear } from '$lib/data/legacyWorks.js';
 	import { browser } from '$app/environment';
 	import { navigateTo, navbarVisible } from '$lib/stores/navigation.js';
+	import { showSectionSubNav, hideSectionSubNav, musicActiveView, musicActiveFilter, portalScrollLock, setPortalScrollLock } from '$lib/stores/stickyNav.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
@@ -39,6 +40,13 @@
 	let albumModal = $state(null);
 	let activeFilter = $state('all');
 	let view = $state('albums');
+
+	// Sticky sub-nav state
+	let subNavSentinelRef = $state(null);
+	let bottomSentinelRef = $state(null);
+	let subNavSticky = $state(false);
+	let topSentinelAbove = $state(false);
+	let bottomSentinelReached = $state(false);
 	let selectedRelease = $state(null);
 	let releaseModal = $state(null);
 	let selectedProject = $state(null);
@@ -139,29 +147,29 @@
 		}
 	];
 
-	// Studio gear data
+	// Studio gear data from Directus
 	const studioGear = $derived(musicData.studioGear || []);
+	const studioCategories = $derived(musicData.studioCategories || []);
 
-	// Studio gear category config
-	const studioCategoryLabels = {
-		daw: 'DAW',
-		plugins: 'Plugins / VSTs',
-		microphones: 'Microphones',
-		instruments: 'Instruments',
-		outboard: 'Outboard',
-		monitoring: 'Monitoring'
-	};
+	// Build category lookup maps from API data
+	const studioCategoryLabels = $derived(() => {
+		const labels = {};
+		for (const cat of studioCategories) {
+			labels[cat.slug] = cat.displayName;
+		}
+		return labels;
+	});
 
-	const studioCategoryIcons = {
-		daw: 'mdi:music-circle',
-		plugins: 'mdi:puzzle',
-		microphones: 'mdi:microphone',
-		instruments: 'mdi:piano',
-		outboard: 'mdi:audio-input-stereo-minijack',
-		monitoring: 'mdi:headphones'
-	};
+	const studioCategoryIcons = $derived(() => {
+		const icons = {};
+		for (const cat of studioCategories) {
+			icons[cat.slug] = cat.icon;
+		}
+		return icons;
+	});
 
-	const studioCategoryOrder = ['daw', 'plugins', 'microphones', 'instruments', 'outboard', 'monitoring'];
+	// Category order from API sort (display_order)
+	const studioCategoryOrder = $derived(studioCategories.map(cat => cat.slug));
 
 	const gearByCategory = $derived(() => {
 		const groups = {};
@@ -173,8 +181,23 @@
 		return groups;
 	});
 
-	// Legacy works data (grouped by year)
-	const legacyWorksByYear = $derived(getLegacyWorksByYear());
+	// Legacy works from Directus (grouped by year), fallback to hardcoded data
+	const legacyWorksByYear = $derived(() => {
+		const apiLegacy = musicData.legacyReleases || [];
+		if (apiLegacy.length > 0) {
+			const grouped = {};
+			apiLegacy.forEach(work => {
+				const year = work.year || 'Unknown';
+				if (!grouped[year]) grouped[year] = [];
+				grouped[year].push(work);
+			});
+			return Object.entries(grouped)
+				.sort(([a], [b]) => Number(b) - Number(a))
+				.map(([year, works]) => ({ year: Number(year), works }));
+		}
+		// Fallback to hardcoded data until Directus migration is complete
+		return getLegacyWorksByYear();
+	});
 
 	// Mock albums fallback
 	const mockAlbums = [
@@ -231,7 +254,74 @@
 		if (mixer) {
 			mixer.destroy();
 		}
+		hideSectionSubNav();
 	});
+
+	// Top sentinel observer
+	$effect(() => {
+		if (browser && subNavSentinelRef) {
+			const cleanup = createIntersectionObserver(
+				subNavSentinelRef,
+				(isVisible, entry) => {
+					if (portalScrollLock) return;
+					topSentinelAbove = !isVisible && entry.boundingClientRect.bottom <= 60;
+				},
+				{ threshold: 0, rootMargin: '-60px 0px 0px 0px' }
+			);
+			return cleanup;
+		}
+	});
+
+	// Bottom sentinel observer — hides portal when user scrolls past content into CTAs
+	$effect(() => {
+		if (browser && bottomSentinelRef) {
+			const cleanup = createIntersectionObserver(
+				bottomSentinelRef,
+				(isVisible, entry) => {
+					if (portalScrollLock) return;
+					bottomSentinelReached = entry.boundingClientRect.top <= 0;
+				},
+				{ threshold: 0, rootMargin: '0px' }
+			);
+			return cleanup;
+		}
+	});
+
+	// Reactive portal state: show when top sentinel above AND still in content area
+	$effect(() => {
+		if (topSentinelAbove && !bottomSentinelReached) {
+			subNavSticky = true;
+			showSectionSubNav('music');
+		} else {
+			subNavSticky = false;
+			hideSectionSubNav();
+		}
+	});
+
+	// Sync view/filter with sticky nav stores (bidirectional)
+	$effect(() => {
+		musicActiveView.set(view);
+	});
+	$effect(() => {
+		musicActiveFilter.set(activeFilter);
+	});
+	// Store subscriptions: only sync state, no scroll (portal handles its own scroll)
+	const unsubView = musicActiveView.subscribe(v => {
+		if (v !== view) {
+			if (mixer) { mixer.destroy(); mixer = null; }
+			view = v;
+		}
+	});
+	const unsubFilter = musicActiveFilter.subscribe(f => {
+		if (f !== activeFilter) {
+			activeFilter = f;
+			if (mixer) {
+				if (f === 'all') mixer.filter('all');
+				else mixer.filter(`.${f.toLowerCase().replace(/\s+/g, '-')}`);
+			}
+		}
+	});
+	onDestroy(() => { unsubView(); unsubFilter(); });
 
 	async function openAlbumModal(album) {
 		selectedAlbum = album;
@@ -261,6 +351,30 @@
 		} else {
 			if (mixer) mixer.filter(`.${filter.toLowerCase().replace(/\s+/g, '-')}`);
 		}
+		scrollToContent();
+	}
+
+	function scrollToContent() {
+		if (!browser || !subNavSentinelRef) return;
+		setPortalScrollLock(true);
+		requestAnimationFrame(() => {
+			const portalBar = document.querySelector('.section-sticky-nav');
+			const offset = portalBar ? portalBar.offsetHeight : 0;
+			const absTop = subNavSentinelRef.getBoundingClientRect().top + window.scrollY;
+			window.scrollTo({ top: absTop - offset + 2, behavior: 'smooth' });
+			setTimeout(() => {
+				setPortalScrollLock(false);
+				// Re-check sentinel positions (observer may have missed events during lock)
+				if (subNavSentinelRef) {
+					const rect = subNavSentinelRef.getBoundingClientRect();
+					topSentinelAbove = rect.bottom <= 60;
+				}
+				if (bottomSentinelRef) {
+					const rect = bottomSentinelRef.getBoundingClientRect();
+					bottomSentinelReached = rect.top <= 0;
+				}
+			}, 600);
+		});
 	}
 
 	function switchView(newView) {
@@ -270,6 +384,7 @@
 			mixer = null;
 		}
 		view = newView;
+		scrollToContent();
 	}
 
 	// Reactive mixer init/destroy based on view and container
@@ -541,10 +656,9 @@
 		</section>
 	{/if}
 
-	<!-- View Switcher -->
+	<!-- View Switcher (in-flow, stays rendered — already scrolled off-screen when portal activates) -->
 	<section
-		class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-6 sticky z-30 transition-[top] duration-300"
-		style="top: {$navbarVisible ? '88px' : '0px'}"
+		class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-6 z-30"
 	>
 		<div class="container mx-auto px-4">
 			<!-- Main view switcher - centered -->
@@ -562,6 +676,7 @@
 						<Icon icon="mdi:album" class="text-lg" />
 						Albums & Singles
 					</button>
+					<!-- Beats for Licensing - Hidden for now, re-enable when beats marketplace is ready
 					<button
 						onclick={() => switchView('beats')}
 						class="px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2 {
@@ -573,6 +688,7 @@
 						<Icon icon="mdi:music-note" class="text-lg" />
 						Beats for Licensing
 					</button>
+					-->
 					<button
 						onclick={() => switchView('legacy')}
 						class="px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2 {
@@ -627,6 +743,9 @@
 			</div>
 		</div>
 	</section>
+
+	<!-- Sentinel for sticky sub-nav detection (below sub-nav so portal only triggers after it fully exits viewport) -->
+	<div bind:this={subNavSentinelRef} class="sub-nav-sentinel h-px w-full"></div>
 
 	<!-- Content Section -->
 	<section class="container mx-auto px-4 py-12">
@@ -749,7 +868,7 @@
 				</div>
 
 				<!-- Year-Grouped Content -->
-				{#each legacyWorksByYear as { year, works }, yearIndex}
+				{#each legacyWorksByYear() as { year, works }, yearIndex}
 					<div id="legacy-year-{year}" class="mb-12" in:fly={{ y: 30, duration: 400, delay: yearIndex * 100 }}>
 						<h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
 							<span class="bg-amber-600/20 text-amber-400 px-4 py-1 rounded-full">{year}</span>
@@ -764,7 +883,7 @@
 					</div>
 				{/each}
 
-				{#if legacyWorksByYear.length === 0}
+				{#if legacyWorksByYear().length === 0}
 					<div class="text-center py-20">
 						<div class="text-gray-400 mb-4">
 							<Icon icon="mdi:music-note-off" class="text-6xl mx-auto" />
@@ -778,8 +897,8 @@
 					<div class="max-w-6xl mx-auto">
 						<h2 class="text-2xl font-bold text-white mb-8 text-center">What I Use</h2>
 						<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-							<!-- Studio Photo -->
-							<div class="neu-card overflow-hidden">
+							<!-- Studio Photo (slide in from left) -->
+							<div class="neu-card overflow-hidden" in:fly={{ x: -100, duration: 600 }}>
 								{#if musicData.studioPhoto}
 									<img src={musicData.studioPhoto} alt="Studio setup" class="w-full h-full object-cover" loading="lazy" />
 								{:else}
@@ -800,18 +919,18 @@
 									</div>
 								{:else}
 									<div class="space-y-6">
-										{#each studioCategoryOrder.filter(cat => gearByCategory()[cat]?.length > 0) as category}
-											<div>
+										{#each studioCategoryOrder.filter(cat => gearByCategory()[cat]?.length > 0) as category, catIndex}
+											<div in:fly={{ y: 40, duration: 400, delay: catIndex * 150 }}>
 												<div class="flex items-center gap-2 mb-3">
-													<Icon icon={studioCategoryIcons[category]} class="text-blue-400 text-lg" />
+													<Icon icon={studioCategoryIcons()[category]} class="text-blue-400 text-lg" />
 													<h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">
-														{studioCategoryLabels[category]}
+														{studioCategoryLabels()[category]}
 													</h3>
 													<div class="flex-1 h-px bg-gradient-to-r from-blue-600/30 to-transparent"></div>
 												</div>
 												<div class="space-y-2">
-													{#each gearByCategory()[category] as item (item.id)}
-														<div class="neu-card p-4 flex items-center gap-4" in:fly={{ y: 20, duration: 300 }}>
+													{#each gearByCategory()[category] as item, itemIndex (item.id)}
+														<div class="neu-card p-4 flex items-center gap-4" in:fly={{ y: 20, duration: 300, delay: catIndex * 150 + itemIndex * 80 }}>
 															<div class="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
 																<Icon icon={item.icon} class="text-blue-400 text-xl" />
 															</div>
@@ -834,6 +953,9 @@
 		</div>
 		{/key}
 	</section>
+
+	<!-- Bottom sentinel: hides sticky nav when scrolling into CTA sections -->
+	<div bind:this={bottomSentinelRef} class="sub-nav-bottom-sentinel h-px w-full"></div>
 
 	<!-- Listen On Section -->
 	{#if view === 'albums'}

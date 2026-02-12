@@ -18,7 +18,7 @@ const CREDIT_FIELDS = [
   'additional_info',
   'display_order',
   {
-    person_id: ['name', 'bio', 'website_url', 'profile_image.id', 'profile_image.filename_disk']
+    person_id: ['name', 'bio', 'website_url', 'social_links', 'profile_image.id', 'profile_image.filename_disk']
   }
 ];
 
@@ -68,6 +68,7 @@ function transformCredit(credit) {
     additional_info: credit.additional_info,
     bio: credit.person_id?.bio,
     website_url: credit.person_id?.website_url,
+    social_links: credit.person_id?.social_links || [],
     display_order: credit.display_order,
     profile_image: credit.person_id?.profile_image
       ? buildAssetUrl(

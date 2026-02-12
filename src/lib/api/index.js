@@ -14,7 +14,10 @@ export { getDirectusInstance } from './core/client.js';
 export {
   getMusicReleases,
   getMusicNewReleases,
-  getLatestProjects
+  getLatestProjects,
+  getMusicStudioCategories,
+  getMusicStudioGear,
+  getLegacyReleases
   // getMusicSamples removed to avoid circular import issues - import directly from content/music.js if needed
 } from './content/music.js';
 
@@ -71,13 +74,15 @@ export {
 
 export {
   getTechProjects,
-  getTechStack
+  getTechStack,
+  getTechShowcase
 } from './content/tech.js';
 
 export {
   getMusicPageHeader,
   getTechPageHeader,
-  getGamesPageHeader
+  getGamesPageHeader,
+  getStudioPhoto
 } from './content/pages.js';
 
 // Social APIs

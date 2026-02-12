@@ -33,10 +33,21 @@
 	import AboutSection from '$lib/components/sections/AboutSection.svelte';
 	import ContactSection from '$lib/components/sections/ContactSection.svelte';
 	import AboutStickyNav from '$lib/components/sections/AboutStickyNav.svelte';
+	import SectionStickyNav from '$lib/components/ui/SectionStickyNav.svelte';
+	import Icon from '@iconify/svelte';
 
-	// Sticky nav store for About section portal
-	import { hideStickyNav } from '$lib/stores/stickyNav.js';
+	// Sticky nav stores
+	import {
+		hideStickyNav,
+		hideSectionSubNav,
+		musicActiveView,
+		musicActiveFilter,
+		techActiveTab,
+		productionsActiveFilter,
+		setPortalScrollLock
+	} from '$lib/stores/stickyNav.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
+	import { sectionData } from '$lib/stores/sectionData.js';
 
 	let { data } = $props();
 
@@ -88,6 +99,34 @@
 		}
 	});
 
+	// Hide section sub-nav when switching sections
+	$effect(() => {
+		// Access activeSection to create dependency
+		const section = $activeSection;
+		if (!['music', 'tech', 'productions'].includes(section)) {
+			hideSectionSubNav();
+		}
+	});
+
+	// Derived data for portal sub-nav buttons
+	const musicData = $derived($sectionData.music?.data || {});
+	const musicAlbums = $derived(musicData.albums || []);
+	const musicReleaseTypes = $derived(() => {
+		const types = new Set();
+		musicAlbums.forEach(a => { if (a.release_type) types.add(a.release_type); });
+		return Array.from(types).sort();
+	});
+	const productionsData = $derived($sectionData.productions?.data || {});
+	const productionCategories = $derived([
+		{ id: 'all', label: 'All', icon: 'mdi:view-grid', slug: 'all' },
+		...(productionsData.categories || []).map(cat => ({
+			id: cat.slug,
+			label: cat.name,
+			icon: cat.icon || 'mdi:folder',
+			slug: cat.slug
+		}))
+	]);
+
 	// Handle tab switch from portal
 	function handleAboutTabSwitch(tab) {
 		if (aboutSectionRef?.switchTab) {
@@ -126,6 +165,33 @@
 
 	// Show scroll button when scrolled down (desktop only), hidden when modals are open
 	const showScrollButton = $derived(showDesktopScrollButton && $activeSection !== 'home' && !$contentViewerOpen);
+
+	/**
+	 * Scroll to the content area below the portal nav bar.
+	 * Defers to next frame so DOM has updated after tab/filter changes.
+	 * Uses scroll lock to prevent the observer from deactivating the portal.
+	 */
+	function scrollToSectionContent() {
+		if (!browser) return;
+
+		requestAnimationFrame(() => {
+			const sentinel = document.querySelector('.section-transition-container .sub-nav-sentinel');
+			if (!sentinel) return;
+
+			setPortalScrollLock(true);
+
+			const portalBar = document.querySelector('.section-sticky-nav');
+			const portalBarHeight = portalBar ? portalBar.offsetHeight : 55;
+
+			const sentinelAbsTop = sentinel.getBoundingClientRect().top + window.scrollY;
+			const targetY = sentinelAbsTop - portalBarHeight + 2;
+			window.scrollTo({ top: targetY, behavior: 'smooth' });
+
+			setTimeout(() => {
+				setPortalScrollLock(false);
+			}, 600);
+		});
+	}
 
 	function handleScrollToTop() {
 		window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -186,6 +252,135 @@
 <!-- About Section Sticky Nav Portal - Outside transition containers for proper fixed positioning -->
 {#if $activeSection === 'about'}
 	<AboutStickyNav onTabSwitch={handleAboutTabSwitch} />
+{/if}
+
+<!-- Music Section Sticky Sub-Nav Portal -->
+{#if $activeSection === 'music'}
+	<SectionStickyNav section="music">
+		<div class="flex gap-2 flex-wrap justify-center">
+			<button
+				onclick={() => { musicActiveView.set('albums'); scrollToSectionContent(); }}
+				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+					$musicActiveView === 'albums'
+						? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+						: 'text-gray-300 hover:text-white hover:bg-white/10'
+				}"
+			>
+				<Icon icon="mdi:album" class="text-base" />
+				Albums
+			</button>
+			<button
+				onclick={() => { musicActiveView.set('legacy'); scrollToSectionContent(); }}
+				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+					$musicActiveView === 'legacy'
+						? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+						: 'text-gray-300 hover:text-white hover:bg-white/10'
+				}"
+			>
+				<Icon icon="mdi:archive" class="text-base" />
+				Legacy
+			</button>
+			<button
+				onclick={() => { musicActiveView.set('studio'); scrollToSectionContent(); }}
+				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+					$musicActiveView === 'studio'
+						? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+						: 'text-gray-300 hover:text-white hover:bg-white/10'
+				}"
+			>
+				<Icon icon="mdi:music-box-multiple" class="text-base" />
+				Studio
+			</button>
+		</div>
+		{#if $musicActiveView === 'albums'}
+			<div class="flex gap-1.5 flex-wrap justify-center mt-2">
+				<button
+					onclick={() => { musicActiveFilter.set('all'); scrollToSectionContent(); }}
+					class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 {
+						$musicActiveFilter === 'all'
+							? 'bg-blue-600/20 text-blue-400 border border-blue-600'
+							: 'text-gray-400 hover:text-white hover:bg-white/10'
+					}"
+				>
+					All
+				</button>
+				{#each musicReleaseTypes() as releaseType}
+					<button
+						onclick={() => { musicActiveFilter.set(releaseType); scrollToSectionContent(); }}
+						class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 capitalize {
+							$musicActiveFilter === releaseType
+								? 'bg-blue-600/20 text-blue-400 border border-blue-600'
+								: 'text-gray-400 hover:text-white hover:bg-white/10'
+						}"
+					>
+						{releaseType.charAt(0).toUpperCase() + releaseType.slice(1).replace(/_/g, ' ')}
+					</button>
+				{/each}
+			</div>
+		{/if}
+	</SectionStickyNav>
+{/if}
+
+<!-- Tech Section Sticky Sub-Nav Portal -->
+{#if $activeSection === 'tech'}
+	<SectionStickyNav section="tech">
+		<div class="flex gap-2 flex-wrap justify-center">
+			<button
+				onclick={() => { techActiveTab.set('stack'); scrollToSectionContent(); }}
+				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+					$techActiveTab === 'stack'
+						? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
+						: 'text-gray-300 hover:text-white hover:bg-white/10'
+				}"
+			>
+				<Icon icon="mdi:layers-triple" class="text-base" />
+				Stack
+			</button>
+			<button
+				onclick={() => { techActiveTab.set('projects'); scrollToSectionContent(); }}
+				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+					$techActiveTab === 'projects'
+						? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
+						: 'text-gray-300 hover:text-white hover:bg-white/10'
+				}"
+			>
+				<Icon icon="mdi:rocket-launch" class="text-base" />
+				Projects
+			</button>
+			<button
+				onclick={() => { techActiveTab.set('showcase'); scrollToSectionContent(); }}
+				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+					$techActiveTab === 'showcase'
+						? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
+						: 'text-gray-300 hover:text-white hover:bg-white/10'
+				}"
+			>
+				<Icon icon="mdi:view-gallery" class="text-base" />
+				Showcase
+			</button>
+		</div>
+	</SectionStickyNav>
+{/if}
+
+<!-- Productions Section Sticky Sub-Nav Portal -->
+{#if $activeSection === 'productions'}
+	<SectionStickyNav section="productions">
+		<div class="flex gap-2 flex-wrap justify-center">
+			{#each productionCategories as category}
+				<button
+					onclick={() => { productionsActiveFilter.set(category.id); scrollToSectionContent(); }}
+					class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+						$productionsActiveFilter === category.id
+							? 'bg-gradient-to-r from-orange-600 to-red-600 text-white'
+							: 'text-gray-300 hover:text-white hover:bg-white/10'
+					}"
+				>
+					<Icon icon={category.icon} class="text-base" />
+					{category.label}
+				</button>
+			{/each}
+		</div>
+	</SectionStickyNav>
 {/if}
 
 <!-- Fixed Play Button (Desktop Only) - Outside transition containers for proper fixed positioning -->

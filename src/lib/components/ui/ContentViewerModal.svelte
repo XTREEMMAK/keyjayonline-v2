@@ -12,6 +12,7 @@
 	 */
 
 	import Icon from '@iconify/svelte';
+	import { fade, fly } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
@@ -288,6 +289,7 @@
 	<!-- Backdrop -->
 	<div
 		class="fixed inset-0 z-[99999] bg-black/95 backdrop-blur-sm"
+		transition:fade={{ duration: 250 }}
 		role="dialog"
 		aria-modal="true"
 		aria-label={title || 'Content viewer'}
@@ -295,6 +297,7 @@
 		<!-- Header -->
 		<div
 			class="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent"
+			in:fly={{ y: -20, duration: 300, delay: 100 }}
 		>
 			<!-- Title & Page Counter -->
 			<div class="flex items-center gap-4">
@@ -337,6 +340,7 @@
 		<div
 			bind:this={containerRef}
 			class="absolute inset-0 flex items-center justify-center overflow-hidden pt-14 pb-16"
+			in:fade={{ duration: 300, delay: 150 }}
 			ontouchstart={handleTouchStart}
 			ontouchend={handleTouchEnd}
 			role="presentation"
@@ -454,6 +458,7 @@
 		{#if totalPages > 1}
 			<div
 				class="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-center gap-1 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent"
+				in:fly={{ y: 20, duration: 300, delay: 200 }}
 			>
 				<!-- Page dots -->
 				<div class="flex gap-1.5 max-w-full overflow-x-auto py-1">

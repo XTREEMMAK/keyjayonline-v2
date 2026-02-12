@@ -42,7 +42,7 @@ export async function getMusicReleases() {
               'additional_info',
               'display_order',
               {
-                person_id: ['name', 'bio', 'website_url', 'profile_image.id', 'profile_image.filename_disk']
+                person_id: ['name', 'bio', 'website_url', 'social_links', 'profile_image.id', 'profile_image.filename_disk']
               }
             ]
           },
@@ -194,6 +194,7 @@ export async function getMusicReleases() {
           additional_info: credit.additional_info,
           bio: credit.person_id?.bio,
           website_url: credit.person_id?.website_url,
+          social_links: credit.person_id?.social_links || [],
           display_order: credit.display_order,
           profile_image: credit.person_id?.profile_image
             ? buildAssetUrl(
@@ -435,6 +436,122 @@ export async function getMusicNewReleases() {
 
   } catch {
     // Collection may not exist or lack permissions - return empty array silently
+    return [];
+  }
+}
+
+/**
+ * Fetches studio gear categories from Directus
+ * @returns {Promise<Array>} Array of category objects with slug, displayName, icon, displayOrder
+ */
+export async function getMusicStudioCategories() {
+  try {
+    const directus = getDirectusInstance();
+
+    const categories = await directus.request(
+      readItems('kjov2_studio_categories', {
+        filter: { status: { _eq: 'published' } },
+        fields: ['id', 'slug', 'display_name', 'icon', 'display_order'],
+        sort: ['display_order']
+      })
+    );
+
+    return categories.map(cat => ({
+      id: cat.id,
+      slug: cat.slug,
+      displayName: cat.display_name,
+      icon: cat.icon,
+      displayOrder: cat.display_order
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetches studio gear items from Directus with category relation
+ * @returns {Promise<Array>} Array of gear item objects
+ */
+export async function getMusicStudioGear() {
+  try {
+    const directus = getDirectusInstance();
+
+    const items = await directus.request(
+      readItems('kjov2_music_studio', {
+        filter: { status: { _eq: 'published' } },
+        fields: [
+          'id',
+          'equipment_name',
+          'description',
+          'icon',
+          'display_order',
+          { category: ['id', 'slug', 'display_name', 'icon'] }
+        ],
+        sort: ['display_order']
+      })
+    );
+
+    return items.map(item => ({
+      id: item.id,
+      name: item.equipment_name,
+      description: item.description,
+      icon: item.icon,
+      displayOrder: item.display_order,
+      category: item.category?.slug || 'other',
+      categoryData: item.category ? {
+        id: item.category.id,
+        slug: item.category.slug,
+        displayName: item.category.display_name,
+        icon: item.category.icon
+      } : null
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetches legacy music releases (is_legacy = true) from Directus
+ * Returns all releases marked as legacy, regardless of published_status,
+ * so archived-but-legacy works also appear in the Legacy Works tab.
+ * @returns {Promise<Array>} Array of legacy release objects
+ */
+export async function getLegacyReleases() {
+  try {
+    const directus = getDirectusInstance();
+
+    const releases = await directus.request(
+      readItems('kjov2_music_releases', {
+        filter: {
+          is_legacy: { _eq: true }
+        },
+        fields: [
+          '*',
+          { cover_art: ['id', 'filename_disk'] }
+        ],
+        sort: ['-release_date', '-created_at']
+      })
+    );
+
+    return releases.map(release => ({
+      id: release.id,
+      title: release.title,
+      artist: release.main_artist,
+      year: release.release_date ? new Date(release.release_date).getFullYear() : null,
+      description: release.description,
+      genre: release.genre || 'Unknown',
+      cover_art: release.cover_art
+        ? (typeof release.cover_art === 'object'
+          ? buildAssetUrl(release.cover_art.filename_disk || release.cover_art.id)
+          : buildAssetUrl(release.cover_art))
+        : null,
+      release_date: release.release_date,
+      published_status: release.published_status,
+      audioUrl: null,
+      newgroundsUrl: null,
+      duration: null
+    }));
+  } catch {
     return [];
   }
 }

@@ -3,12 +3,14 @@
 	import { playerVisible, playerMinimized, loadRandomTrack, showPlayer, hidePlayer, expandPlayer, minimizePlayer, hasTrackLoaded, isPlaying, currentTrack } from '$lib/stores/musicPlayer.js';
 	import { activeSection, navigateTo, sectionMeta, enabledSections } from '$lib/stores/navigation.js';
 	import { toggleMobileMenu, mobileMenuOpen, closeMobileMenu } from '$lib/stores/mobileNav.js';
+	import { sectionModalOpen } from '$lib/stores/stickyNav.js';
 
 	// Props
 	let { socialLinks = [] } = $props();
 
-	// Hide bottom bar on home page (use CSS visibility instead of conditional render to prevent shifts)
+	// Hide bottom bar on home page or when modal is open (CSS visibility to prevent shifts)
 	const isHomePage = $derived($activeSection === 'home');
+	const barHidden = $derived(isHomePage || $sectionModalOpen);
 
 	// Music button visibility - show everywhere except home
 	const showMusicButton = $derived(!isHomePage);
@@ -85,7 +87,7 @@
 <!-- Bottom Navigation Bar - Always rendered, hidden on home via CSS to prevent layout shifts -->
 <div
 	class="bottom-bar"
-	class:bar-hidden={isHomePage}
+	class:bar-hidden={barHidden}
 >
 		<!-- Position 1: Home Button -->
 		<button
@@ -145,7 +147,7 @@
 	</div>
 
 <!-- Page Navigation Dropdown (appears above bottom bar) -->
-{#if $mobileMenuOpen && !isHomePage}
+{#if $mobileMenuOpen && !barHidden}
 	<div
 		class="mobile-menu-dropdown"
 		in:fly={{ y: 20, duration: 300 }}
@@ -167,7 +169,7 @@
 {/if}
 
 <!-- Social Menu Dropdown (appears above bottom bar) -->
-{#if socialMenuOpen && !isHomePage}
+{#if socialMenuOpen && !barHidden}
 	<div
 		class="social-menu-dropdown"
 		in:fly={{ y: 20, duration: 300 }}
@@ -200,7 +202,7 @@
 {/if}
 
 <!-- Backdrop overlay when any menu is open -->
-{#if ($mobileMenuOpen || socialMenuOpen) && !isHomePage}
+{#if ($mobileMenuOpen || socialMenuOpen) && !barHidden}
 	<div
 		class="mobile-backdrop"
 		onclick={() => {

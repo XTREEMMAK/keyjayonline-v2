@@ -6,6 +6,8 @@
 	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
 	import ProductionDetailModal from '$lib/components/ui/ProductionDetailModal.svelte';
 	import { navbarVisible } from '$lib/stores/navigation.js';
+	import { showSectionSubNav, hideSectionSubNav, productionsActiveFilter, portalScrollLock, setPortalScrollLock, sectionModalOpen } from '$lib/stores/stickyNav.js';
+	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
@@ -18,6 +20,13 @@
 	let container = $state();
 	let mixer = $state(null);
 	let activeFilter = $state('all');
+
+	// Sticky sub-nav state
+	let subNavSentinelRef = $state(null);
+	let bottomSentinelRef = $state(null);
+	let subNavSticky = $state(false);
+	let topSentinelAbove = $state(false);
+	let bottomSentinelReached = $state(false);
 
 	// Content viewer state (for comic pages)
 	let viewerOpen = $state(false);
@@ -59,8 +68,32 @@
 		null
 	);
 
+	function scrollToContent() {
+		if (!browser || !subNavSentinelRef) return;
+		setPortalScrollLock(true);
+		requestAnimationFrame(() => {
+			const portalBar = document.querySelector('.section-sticky-nav');
+			const offset = portalBar ? portalBar.offsetHeight : 0;
+			const absTop = subNavSentinelRef.getBoundingClientRect().top + window.scrollY;
+			window.scrollTo({ top: absTop - offset + 2, behavior: 'smooth' });
+			setTimeout(() => {
+				setPortalScrollLock(false);
+				// Re-check sentinel positions (observer may have missed events during lock)
+				if (subNavSentinelRef) {
+					const rect = subNavSentinelRef.getBoundingClientRect();
+					topSentinelAbove = rect.bottom <= 60;
+				}
+				if (bottomSentinelRef) {
+					const rect = bottomSentinelRef.getBoundingClientRect();
+					bottomSentinelReached = rect.top <= 0;
+				}
+			}, 600);
+		});
+	}
+
 	// Filter productions with MixItUp
 	function filterProductions(category) {
+		if (category === activeFilter) return;
 		activeFilter = category;
 		if (mixer) {
 			if (category === 'all') {
@@ -69,6 +102,7 @@
 				mixer.filter(`.${category}`);
 			}
 		}
+		scrollToContent();
 	}
 
 	// Initialize MixItUp and load data
@@ -103,6 +137,69 @@
 	onDestroy(() => {
 		if (mixer) {
 			mixer.destroy();
+		}
+		hideSectionSubNav();
+		unsubFilter();
+	});
+
+	// Hide sticky nav portal when modal is open (modals are trapped in z-10 stacking context)
+	$effect(() => {
+		sectionModalOpen.set(detailModalOpen || viewerOpen);
+	});
+
+	// Top sentinel observer
+	$effect(() => {
+		if (browser && subNavSentinelRef) {
+			const cleanup = createIntersectionObserver(
+				subNavSentinelRef,
+				(isVisible, entry) => {
+					if (portalScrollLock) return;
+					topSentinelAbove = !isVisible && entry.boundingClientRect.bottom <= 60;
+				},
+				{ threshold: 0, rootMargin: '-60px 0px 0px 0px' }
+			);
+			return cleanup;
+		}
+	});
+
+	// Bottom sentinel observer — hides portal when user scrolls past content into CTAs
+	$effect(() => {
+		if (browser && bottomSentinelRef) {
+			const cleanup = createIntersectionObserver(
+				bottomSentinelRef,
+				(isVisible, entry) => {
+					if (portalScrollLock) return;
+					bottomSentinelReached = entry.boundingClientRect.top <= 0;
+				},
+				{ threshold: 0, rootMargin: '0px' }
+			);
+			return cleanup;
+		}
+	});
+
+	// Reactive portal state: show when top sentinel above AND still in content area
+	$effect(() => {
+		if (topSentinelAbove && !bottomSentinelReached) {
+			subNavSticky = true;
+			showSectionSubNav('productions');
+		} else {
+			subNavSticky = false;
+			hideSectionSubNav();
+		}
+	});
+
+	// Sync activeFilter with sticky nav store (bidirectional)
+	$effect(() => {
+		productionsActiveFilter.set(activeFilter);
+	});
+	// Store subscription: only sync state, no scroll (portal handles its own scroll)
+	const unsubFilter = productionsActiveFilter.subscribe(f => {
+		if (f !== activeFilter) {
+			activeFilter = f;
+			if (mixer) {
+				if (f === 'all') mixer.filter('all');
+				else mixer.filter(`.${f}`);
+			}
 		}
 	});
 
@@ -369,10 +466,9 @@
 			</section>
 		{/if}
 
-		<!-- Filter Navigation -->
+		<!-- Filter Navigation (in-flow, stays rendered — already scrolled off-screen when portal activates) -->
 		<section
-			class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-8 sticky z-30 transition-[top] duration-300"
-			style="top: {$navbarVisible ? '88px' : '0px'}"
+			class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-8 z-30"
 		>
 			<div class="container mx-auto px-4">
 				<div class="flex flex-wrap justify-center gap-3">
@@ -391,6 +487,9 @@
 				</div>
 			</div>
 		</section>
+
+		<!-- Sentinel for sticky sub-nav detection (below sub-nav so portal only triggers after it fully exits viewport) -->
+		<div bind:this={subNavSentinelRef} class="sub-nav-sentinel h-px w-full"></div>
 
 		<!-- Productions Grid -->
 		<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-amber-950/10 to-[var(--neu-bg)]/95 py-12 relative">
@@ -506,6 +605,9 @@
 				{/if}
 			</div>
 		</section>
+
+		<!-- Bottom sentinel: hides sticky nav when scrolling into CTA sections -->
+		<div bind:this={bottomSentinelRef} class="sub-nav-bottom-sentinel h-px w-full"></div>
 
 		<!-- Coming Soon / In Development -->
 		{@const upcomingProductions = productions.filter(p => p.productionStatus === 'in_development' || p.productionStatus === 'in_production')}
