@@ -1,12 +1,12 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { browser } from '$app/environment';
 	import Icon from '@iconify/svelte';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
 	import ProductionDetailModal from '$lib/components/ui/ProductionDetailModal.svelte';
 	import { navbarVisible } from '$lib/stores/navigation.js';
-	import { showSectionSubNav, hideSectionSubNav, productionsActiveFilter, portalScrollLock, setPortalScrollLock, sectionModalOpen } from '$lib/stores/stickyNav.js';
+	import { showSectionSubNav, hideSectionSubNav, productionsActiveFilter, portalScrollLock, setPortalScrollLock, sectionModalOpen, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
@@ -78,15 +78,7 @@
 			window.scrollTo({ top: absTop - offset + 2, behavior: 'smooth' });
 			setTimeout(() => {
 				setPortalScrollLock(false);
-				// Re-check sentinel positions (observer may have missed events during lock)
-				if (subNavSentinelRef) {
-					const rect = subNavSentinelRef.getBoundingClientRect();
-					topSentinelAbove = rect.bottom <= 60;
-				}
-				if (bottomSentinelRef) {
-					const rect = bottomSentinelRef.getBoundingClientRect();
-					bottomSentinelReached = rect.top <= 0;
-				}
+				recheckSentinels();
 			}, 600);
 		});
 	}
@@ -147,16 +139,16 @@
 		sectionModalOpen.set(detailModalOpen || viewerOpen);
 	});
 
-	// Top sentinel observer
+	// Top sentinel observer (140px offset so sticky nav persists longer when scrolling up)
 	$effect(() => {
 		if (browser && subNavSentinelRef) {
 			const cleanup = createIntersectionObserver(
 				subNavSentinelRef,
 				(isVisible, entry) => {
 					if (portalScrollLock) return;
-					topSentinelAbove = !isVisible && entry.boundingClientRect.bottom <= 60;
+					topSentinelAbove = !isVisible && entry.boundingClientRect.bottom <= 140;
 				},
-				{ threshold: 0, rootMargin: '-60px 0px 0px 0px' }
+				{ threshold: 0, rootMargin: '-140px 0px 0px 0px' }
 			);
 			return cleanup;
 		}
@@ -188,6 +180,23 @@
 		}
 	});
 
+	// Manual sentinel recheck — triggered via store after scroll lock releases or content changes
+	$effect(() => {
+		$sentinelRecheck;
+		if (!browser) return;
+		requestAnimationFrame(() => {
+			if (portalScrollLock) return;
+			if (subNavSentinelRef) {
+				const rect = subNavSentinelRef.getBoundingClientRect();
+				topSentinelAbove = !!(rect.bottom <= 140);
+			}
+			if (bottomSentinelRef) {
+				const rect = bottomSentinelRef.getBoundingClientRect();
+				bottomSentinelReached = !!(rect.top <= 0);
+			}
+		});
+	});
+
 	// Sync activeFilter with sticky nav store (bidirectional)
 	$effect(() => {
 		productionsActiveFilter.set(activeFilter);
@@ -200,6 +209,7 @@
 				if (f === 'all') mixer.filter('all');
 				else mixer.filter(`.${f}`);
 			}
+			tick().then(() => recheckSentinels());
 		}
 	});
 

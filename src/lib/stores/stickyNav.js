@@ -37,6 +37,14 @@ export function setPortalScrollLock(value) {
 	portalScrollLock = value;
 }
 
+// Bumped to trigger a one-time manual sentinel position check in section components.
+// Used after scroll lock releases or content changes (filter/view/tab switches).
+export const sentinelRecheck = writable(0);
+
+export function recheckSentinels() {
+	sentinelRecheck.update(n => n + 1);
+}
+
 // When true, a section modal is open and the sticky nav should hide (z-index stacking context issue)
 export const sectionModalOpen = writable(false);
 

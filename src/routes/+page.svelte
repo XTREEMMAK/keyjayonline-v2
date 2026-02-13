@@ -40,11 +40,14 @@
 	import {
 		hideStickyNav,
 		hideSectionSubNav,
+		activeStickySection,
+		sectionModalOpen,
 		musicActiveView,
 		musicActiveFilter,
 		techActiveTab,
 		productionsActiveFilter,
-		setPortalScrollLock
+		setPortalScrollLock,
+		recheckSentinels
 	} from '$lib/stores/stickyNav.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { sectionData } from '$lib/stores/sectionData.js';
@@ -182,13 +185,16 @@
 
 			const portalBar = document.querySelector('.section-sticky-nav');
 			const portalBarHeight = portalBar ? portalBar.offsetHeight : 55;
+			const filterBar = document.querySelector('.music-filter-bar');
+			const filterBarHeight = filterBar ? filterBar.offsetHeight : 0;
 
 			const sentinelAbsTop = sentinel.getBoundingClientRect().top + window.scrollY;
-			const targetY = sentinelAbsTop - portalBarHeight + 2;
+			const targetY = sentinelAbsTop - portalBarHeight - filterBarHeight + 2;
 			window.scrollTo({ top: targetY, behavior: 'smooth' });
 
 			setTimeout(() => {
 				setPortalScrollLock(false);
+				recheckSentinels();
 			}, 600);
 		});
 	}
@@ -292,33 +298,41 @@
 				Studio
 			</button>
 		</div>
-		{#if $musicActiveView === 'albums'}
-			<div class="flex gap-1.5 flex-wrap justify-center mt-2">
-				<button
-					onclick={() => { musicActiveFilter.set('all'); scrollToSectionContent(); }}
-					class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 {
-						$musicActiveFilter === 'all'
-							? 'bg-blue-600/20 text-blue-400 border border-blue-600'
-							: 'text-gray-400 hover:text-white hover:bg-white/10'
-					}"
-				>
-					All
-				</button>
-				{#each musicReleaseTypes() as releaseType}
+	</SectionStickyNav>
+	{#if $musicActiveView === 'albums' && $activeStickySection === 'music' && !$sectionModalOpen}
+		<div
+			class="music-filter-bar fixed left-0 right-0 z-[39] bg-black/40 border-b border-white/5 backdrop-blur-[12px] backdrop-saturate-[1.1]"
+			style="top: 55px"
+			in:fly={{ y: -20, duration: 200 }}
+		>
+			<div class="container mx-auto px-4">
+				<div class="flex gap-1.5 flex-wrap justify-center py-1.5">
 					<button
-						onclick={() => { musicActiveFilter.set(releaseType); scrollToSectionContent(); }}
-						class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 capitalize {
-							$musicActiveFilter === releaseType
+						onclick={() => { musicActiveFilter.set('all'); scrollToSectionContent(); }}
+						class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 {
+							$musicActiveFilter === 'all'
 								? 'bg-blue-600/20 text-blue-400 border border-blue-600'
 								: 'text-gray-400 hover:text-white hover:bg-white/10'
 						}"
 					>
-						{releaseType.charAt(0).toUpperCase() + releaseType.slice(1).replace(/_/g, ' ')}
+						All
 					</button>
-				{/each}
+					{#each musicReleaseTypes() as releaseType}
+						<button
+							onclick={() => { musicActiveFilter.set(releaseType); scrollToSectionContent(); }}
+							class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 capitalize {
+								$musicActiveFilter === releaseType
+									? 'bg-blue-600/20 text-blue-400 border border-blue-600'
+									: 'text-gray-400 hover:text-white hover:bg-white/10'
+							}"
+						>
+							{releaseType.charAt(0).toUpperCase() + releaseType.slice(1).replace(/_/g, ' ')}
+						</button>
+					{/each}
+				</div>
 			</div>
-		{/if}
-	</SectionStickyNav>
+		</div>
+	{/if}
 {/if}
 
 <!-- Tech Section Sticky Sub-Nav Portal -->

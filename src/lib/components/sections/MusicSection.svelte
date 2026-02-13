@@ -13,7 +13,7 @@
 	import { getLegacyWorksByYear } from '$lib/data/legacyWorks.js';
 	import { browser } from '$app/environment';
 	import { navigateTo, navbarVisible } from '$lib/stores/navigation.js';
-	import { showSectionSubNav, hideSectionSubNav, musicActiveView, musicActiveFilter, portalScrollLock, setPortalScrollLock } from '$lib/stores/stickyNav.js';
+	import { showSectionSubNav, hideSectionSubNav, musicActiveView, musicActiveFilter, portalScrollLock, setPortalScrollLock, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
@@ -257,16 +257,16 @@
 		hideSectionSubNav();
 	});
 
-	// Top sentinel observer
+	// Top sentinel observer (140px offset so sticky nav persists longer when scrolling up)
 	$effect(() => {
 		if (browser && subNavSentinelRef) {
 			const cleanup = createIntersectionObserver(
 				subNavSentinelRef,
 				(isVisible, entry) => {
 					if (portalScrollLock) return;
-					topSentinelAbove = !isVisible && entry.boundingClientRect.bottom <= 60;
+					topSentinelAbove = !isVisible && entry.boundingClientRect.bottom <= 140;
 				},
-				{ threshold: 0, rootMargin: '-60px 0px 0px 0px' }
+				{ threshold: 0, rootMargin: '-140px 0px 0px 0px' }
 			);
 			return cleanup;
 		}
@@ -298,6 +298,24 @@
 		}
 	});
 
+	// Manual sentinel recheck — triggered via store after scroll lock releases or content changes.
+	// A single getBoundingClientRect call, only when explicitly signaled.
+	$effect(() => {
+		$sentinelRecheck;
+		if (!browser) return;
+		requestAnimationFrame(() => {
+			if (portalScrollLock) return;
+			if (subNavSentinelRef) {
+				const rect = subNavSentinelRef.getBoundingClientRect();
+				topSentinelAbove = !!(rect.bottom <= 140);
+			}
+			if (bottomSentinelRef) {
+				const rect = bottomSentinelRef.getBoundingClientRect();
+				bottomSentinelReached = !!(rect.top <= 0);
+			}
+		});
+	});
+
 	// Sync view/filter with sticky nav stores (bidirectional)
 	$effect(() => {
 		musicActiveView.set(view);
@@ -305,11 +323,13 @@
 	$effect(() => {
 		musicActiveFilter.set(activeFilter);
 	});
+
 	// Store subscriptions: only sync state, no scroll (portal handles its own scroll)
 	const unsubView = musicActiveView.subscribe(v => {
 		if (v !== view) {
 			if (mixer) { mixer.destroy(); mixer = null; }
 			view = v;
+			tick().then(() => recheckSentinels());
 		}
 	});
 	const unsubFilter = musicActiveFilter.subscribe(f => {
@@ -319,6 +339,7 @@
 				if (f === 'all') mixer.filter('all');
 				else mixer.filter(`.${f.toLowerCase().replace(/\s+/g, '-')}`);
 			}
+			tick().then(() => recheckSentinels());
 		}
 	});
 	onDestroy(() => { unsubView(); unsubFilter(); });
@@ -359,20 +380,13 @@
 		setPortalScrollLock(true);
 		requestAnimationFrame(() => {
 			const portalBar = document.querySelector('.section-sticky-nav');
-			const offset = portalBar ? portalBar.offsetHeight : 0;
+			const filterBar = document.querySelector('.music-filter-bar');
+			const offset = (portalBar ? portalBar.offsetHeight : 0) + (filterBar ? filterBar.offsetHeight : 0);
 			const absTop = subNavSentinelRef.getBoundingClientRect().top + window.scrollY;
 			window.scrollTo({ top: absTop - offset + 2, behavior: 'smooth' });
 			setTimeout(() => {
 				setPortalScrollLock(false);
-				// Re-check sentinel positions (observer may have missed events during lock)
-				if (subNavSentinelRef) {
-					const rect = subNavSentinelRef.getBoundingClientRect();
-					topSentinelAbove = rect.bottom <= 60;
-				}
-				if (bottomSentinelRef) {
-					const rect = bottomSentinelRef.getBoundingClientRect();
-					bottomSentinelReached = rect.top <= 0;
-				}
+				recheckSentinels();
 			}, 600);
 		});
 	}

@@ -103,13 +103,13 @@
 		right: 0;
 		top: 0;
 		z-index: 40;
-		background: var(--neu-bg, #2a2d35);
-		border-bottom: 1px solid var(--neu-border, rgba(255, 255, 255, 0.05));
+		background: rgba(42, 45, 53, 0.55);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 		box-shadow:
-			0 4px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
-			0 -2px 8px var(--neu-shadow-light, rgba(60, 64, 72, 0.2));
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
+			0 4px 16px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		backdrop-filter: blur(16px) saturate(1.2);
+		-webkit-backdrop-filter: blur(16px) saturate(1.2);
 	}
 
 	/* Hamburger button - neumorphic */
@@ -138,14 +138,14 @@
 		transform: translateX(-50%);
 		top: 60px;
 		z-index: 45;
-		background: var(--neu-bg, #2a2d35);
+		background: rgba(42, 45, 53, 0.6);
 		border-radius: 20px;
-		border: 1px solid var(--neu-border, rgba(255, 255, 255, 0.05));
+		border: 1px solid rgba(255, 255, 255, 0.1);
 		box-shadow:
-			8px 8px 20px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
-			-8px -8px 20px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
+			0 8px 32px rgba(0, 0, 0, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		backdrop-filter: blur(16px) saturate(1.2);
+		-webkit-backdrop-filter: blur(16px) saturate(1.2);
 		max-width: 90vw;
 	}
 
