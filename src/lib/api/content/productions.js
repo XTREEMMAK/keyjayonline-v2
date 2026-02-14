@@ -100,7 +100,7 @@ const EMBED_FIELDS = [
  * @param {Object} embed - Raw embed record from Directus
  * @returns {Object} Normalized embed object
  */
-function transformEmbed(embed) {
+export function transformEmbed(embed) {
   let embedId = null;
   let embedUrl = null;
 

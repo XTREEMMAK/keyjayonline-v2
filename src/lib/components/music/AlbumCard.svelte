@@ -1,6 +1,7 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import Icon from '@iconify/svelte';
+	import { markImageLoaded } from '$lib/utils/imageCache.js';
 	
 	let {
 		album,
@@ -31,6 +32,7 @@
 				loading="lazy"
 				width="400"
 				height="400"
+				onload={() => markImageLoaded(album.cover_art)}
 			/>
 			
 			<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">

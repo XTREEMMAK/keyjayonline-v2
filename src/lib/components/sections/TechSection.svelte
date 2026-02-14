@@ -3,14 +3,18 @@
 	import { browser } from '$app/environment';
 	import Icon from '@iconify/svelte';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
-	import { navbarVisible } from '$lib/stores/navigation.js';
-	import { showSectionSubNav, hideSectionSubNav, techActiveTab, portalScrollLock, setPortalScrollLock, sectionModalOpen, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
+	import { activeSection, navbarVisible } from '$lib/stores/navigation.js';
+	import { showSectionSubNav, hideSectionSubNav, techActiveTab, portalScrollLock, sectionModalOpen, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 	import { fade, fly, slide } from 'svelte/transition';
 	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
+	import TechStackCard from '$lib/components/tech/TechStackCard.svelte';
+	import VideoEmbed from '$lib/components/media/VideoEmbed.svelte';
+	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
+	import SkeletonImage from '$lib/components/ui/SkeletonImage.svelte';
 
 	const titleLetters = 'Tech'.split('');
 
@@ -30,6 +34,55 @@
 	// Detail modal state
 	let detailModalOpen = $state(false);
 	let selectedProject = $state(null);
+	let modalTab = $state('overview');
+
+	// Tab content height for smooth transitions
+	let tabContentHeight = $state(0);
+	let tabContentRef = $state(null);
+	let animatingHeight = $state(false);
+
+	// Custom out transition: fades out AND positions absolutely so it leaves normal flow
+	function fadeOutAbsolute(node, { duration = 100 }) {
+		return {
+			duration,
+			css: (t) => `opacity: ${t}; position: absolute; top: 0; left: 0; right: 0; pointer-events: none;`
+		};
+	}
+
+	// Switch modal tab with height capture for smooth animation
+	function switchModalTab(newTab) {
+		if (newTab === modalTab) return;
+		// Capture current height before DOM changes
+		if (tabContentRef) {
+			tabContentHeight = tabContentRef.offsetHeight;
+			animatingHeight = true;
+		}
+		modalTab = newTab;
+		// After new content renders, measure and animate to new height
+		tick().then(() => {
+			requestAnimationFrame(() => {
+				if (!tabContentRef) return;
+				// Find the in-flow child (not the absolute-positioned outgoing one)
+				const inFlowChild = [...tabContentRef.children].find(
+					c => getComputedStyle(c).position !== 'absolute'
+				);
+				if (inFlowChild) {
+					tabContentHeight = inFlowChild.scrollHeight;
+				}
+				// After transition completes, stop constraining height
+				setTimeout(() => {
+					animatingHeight = false;
+					tabContentHeight = 0;
+				}, 300);
+			});
+		});
+	}
+
+	// Gallery viewer state
+	let viewerOpen = $state(false);
+	let viewerPages = $state([]);
+	let viewerTitle = $state('');
+	let viewerLoading = $state(false);
 
 	// Derived state from store
 	const sectionState = $derived($sectionData.tech);
@@ -90,6 +143,28 @@
 		'languages', 'ai_automation', 'hardware', 'services'
 	];
 
+	// Group selected project's relational tech stack by category
+	const projectStackByCategory = $derived(() => {
+		if (!selectedProject?.technologies?.length) return {};
+		const groups = {};
+		for (const item of selectedProject.technologies) {
+			const cat = item.category || 'other';
+			if (!groups[cat]) groups[cat] = [];
+			groups[cat].push(item);
+		}
+		return groups;
+	});
+
+	// Whether selected project has media content (embeds or gallery)
+	const hasMedia = $derived(
+		(selectedProject?.embeds?.length > 0) || !!selectedProject?.gallery
+	);
+
+	// Whether selected project has tech stack data (relational or legacy)
+	const hasTechStack = $derived(
+		(selectedProject?.technologies?.length > 0) || (selectedProject?.tech_stack?.length > 0)
+	);
+
 	onMount(async () => {
 		if (browser) {
 			try {
@@ -122,17 +197,46 @@
 
 	function handleCardClick(project) {
 		selectedProject = project;
+		modalTab = 'overview';
 		detailModalOpen = true;
 	}
 
 	function closeDetailModal() {
 		detailModalOpen = false;
 		selectedProject = null;
+		modalTab = 'overview';
 	}
 
 	function handleModalClose() {
 		popModalState();
 		closeDetailModal();
+	}
+
+	// Gallery viewer
+	async function openContentViewer(galleryId, title = '') {
+		if (!galleryId) return;
+		viewerTitle = title;
+		viewerLoading = true;
+		viewerOpen = true;
+
+		try {
+			const response = await fetch(`/api/galleries/${galleryId}/albums`);
+			if (response.ok) {
+				const data = await response.json();
+				viewerPages = data.albums || [];
+			}
+		} catch (err) {
+			console.error('Failed to load gallery albums:', err);
+			viewerPages = [];
+		} finally {
+			viewerLoading = false;
+		}
+	}
+
+	function closeContentViewer() {
+		viewerOpen = false;
+		viewerPages = [];
+		viewerTitle = '';
 	}
 
 	function handleKeydown(event) {
@@ -163,10 +267,12 @@
 		}
 	});
 
-	// Hide sticky nav portal when modal is open (modals are trapped in z-10 stacking context)
+	// Hide sticky nav portal when modal is open (only when this section is active)
 	$effect(() => {
-		sectionModalOpen.set(detailModalOpen);
+		if ($activeSection !== 'tech') return;
+		sectionModalOpen.set(detailModalOpen || viewerOpen);
 	});
+
 
 	// Top sentinel observer (140px offset so sticky nav persists longer when scrolling up)
 	$effect(() => {
@@ -199,7 +305,9 @@
 	});
 
 	// Reactive portal state: show when top sentinel above AND still in content area
+	// Only modify shared state when this section is active (CSS panels keep hidden sections alive)
 	$effect(() => {
+		if ($activeSection !== 'tech') return;
 		if (topSentinelAbove && !bottomSentinelReached) {
 			subNavSticky = true;
 			showSectionSubNav('tech');
@@ -226,25 +334,9 @@
 		});
 	});
 
-	function scrollToContent() {
-		if (!browser || !subNavSentinelRef) return;
-		setPortalScrollLock(true);
-		requestAnimationFrame(() => {
-			const portalBar = document.querySelector('.section-sticky-nav');
-			const offset = portalBar ? portalBar.offsetHeight : 0;
-			const absTop = subNavSentinelRef.getBoundingClientRect().top + window.scrollY;
-			window.scrollTo({ top: absTop - offset + 2, behavior: 'smooth' });
-			setTimeout(() => {
-				setPortalScrollLock(false);
-				recheckSentinels();
-			}, 600);
-		});
-	}
-
 	function switchTab(tab) {
 		if (tab === activeTab) return;
 		activeTab = tab;
-		scrollToContent();
 	}
 
 	// Sync activeTab with sticky nav store (bidirectional)
@@ -295,10 +387,10 @@
 				<!-- Hero Image -->
 				{#if selectedProject.cover_image}
 					<div class="relative aspect-video md:aspect-[21/9] overflow-hidden">
-						<img
+						<SkeletonImage
 							src={selectedProject.cover_image}
 							alt={selectedProject.name}
-							class="w-full h-full object-cover"
+							class="w-full h-full"
 						/>
 						<div class="absolute inset-0 bg-gradient-to-t from-[#0a1628] via-transparent to-transparent"></div>
 						<div class="absolute top-4 left-4">
@@ -326,29 +418,124 @@
 						<p class="text-gray-400 text-base italic mb-4">{selectedProject.tagline}</p>
 					{/if}
 
-					<!-- Tech Stack Pills -->
-					{#if selectedProject.tech_stack?.length > 0}
-						<div class="flex flex-wrap gap-2 mb-6">
-							{#each selectedProject.tech_stack as tech}
-								<span class="px-3 py-1 text-xs rounded-full bg-cyan-600/20 text-cyan-300 border border-cyan-600/30">
-									{tech}
-								</span>
-							{/each}
+					<!-- Modal Tabs -->
+					{#if hasTechStack || hasMedia}
+						<div class="flex gap-2 mb-6 border-b border-white/10 pb-3">
+							<button
+								onclick={() => switchModalTab('overview')}
+								class="px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2
+									{modalTab === 'overview'
+										? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
+										: 'text-gray-400 hover:text-white hover:bg-white/5'}"
+							>
+								<Icon icon="mdi:information-outline" class="text-base" />
+								Overview
+							</button>
+							{#if hasTechStack}
+								<button
+									onclick={() => switchModalTab('techstack')}
+									class="px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2
+										{modalTab === 'techstack'
+											? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
+											: 'text-gray-400 hover:text-white hover:bg-white/5'}"
+								>
+									<Icon icon="mdi:code-tags" class="text-base" />
+									Tech Stack
+								</button>
+							{/if}
+							{#if hasMedia}
+								<button
+									onclick={() => switchModalTab('media')}
+									class="px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2
+										{modalTab === 'media'
+											? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
+											: 'text-gray-400 hover:text-white hover:bg-white/5'}"
+								>
+									<Icon icon="mdi:play-circle-outline" class="text-base" />
+									Media
+								</button>
+							{/if}
 						</div>
 					{/if}
 
-					<!-- Description -->
-					{#if selectedProject.description}
-						<div class="prose prose-invert prose-sm max-w-none mb-8 text-gray-300 leading-relaxed">
-							{@html sanitizeHtml(selectedProject.description, {
-								ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h3', 'h4', 'code', 'pre'],
-								ALLOWED_ATTR: ['href', 'target', 'rel']
-							})}
-						</div>
-					{/if}
+					<!-- Tab Content with crossfade -->
+					<div bind:this={tabContentRef} class="tab-content-grid relative" style:height={animatingHeight && tabContentHeight > 0 ? `${tabContentHeight}px` : 'auto'}>
+					{#key modalTab}
+						<div in:fade={{ duration: 200, delay: 100 }} out:fadeOutAbsolute={{ duration: 100 }}>
+							<!-- Overview Tab -->
+							{#if modalTab === 'overview'}
+								{#if selectedProject.description}
+									<div class="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed">
+										{@html sanitizeHtml(selectedProject.description, {
+											ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h3', 'h4', 'code', 'pre'],
+											ALLOWED_ATTR: ['href', 'target', 'rel']
+										})}
+									</div>
+								{/if}
 
-					<!-- Action Buttons -->
-					<div class="flex flex-wrap gap-3">
+							<!-- Tech Stack Tab -->
+							{:else if modalTab === 'techstack'}
+								{#if selectedProject.technologies?.length > 0}
+									<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+										{#each categoryOrder.filter(cat => projectStackByCategory()[cat]?.length > 0) as category, catIdx}
+											<div in:fly={{ y: 15, duration: 300, delay: catIdx * 100 }}>
+												<div class="flex items-center gap-2 mb-2">
+													<Icon icon={categoryIcons[category] || 'mdi:dots-horizontal'} class="text-cyan-400 text-base" />
+													<h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">{categoryLabels[category] || category}</h4>
+												</div>
+												<div class="space-y-2">
+													{#each projectStackByCategory()[category] as item, itemIdx (item.id)}
+														<div in:fly={{ y: 10, duration: 250, delay: catIdx * 100 + (itemIdx + 1) * 60 }}>
+															<TechStackCard {item} compact categoryIcon={categoryIcons[category] || 'mdi:code-tags'} />
+														</div>
+													{/each}
+												</div>
+											</div>
+										{/each}
+									</div>
+								{:else if selectedProject.tech_stack?.length > 0}
+									<div class="flex flex-wrap gap-2">
+										{#each selectedProject.tech_stack as tech, i}
+											<span
+												in:fly={{ y: 8, duration: 200, delay: i * 40 }}
+												class="px-3 py-1 text-xs rounded-full bg-cyan-600/20 text-cyan-300 border border-cyan-600/30"
+											>
+												{tech}
+											</span>
+										{/each}
+									</div>
+								{/if}
+
+							<!-- Media Tab -->
+							{:else if modalTab === 'media'}
+								{#if selectedProject.embeds?.length > 0}
+									<h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+										<Icon icon="mdi:youtube" class="text-red-400" />
+										Videos
+									</h3>
+									<div class="space-y-6 mb-8">
+										{#each selectedProject.embeds as embed, i (embed.id)}
+											<div in:fly={{ y: 20, duration: 300, delay: i * 120 }} class="neu-card overflow-hidden">
+												<VideoEmbed videoId={embed.embedId} type={embed.type} />
+												{#if embed.title}
+													<div class="p-4">
+														<h4 class="text-white font-semibold">{embed.title}</h4>
+														{#if embed.description}
+															<p class="text-gray-400 text-sm mt-1">{embed.description}</p>
+														{/if}
+													</div>
+												{/if}
+											</div>
+										{/each}
+									</div>
+								{/if}
+							{/if}
+						</div>
+					{/key}
+					</div>
+
+					<!-- Persistent Action Buttons (visible on all tabs) -->
+					<div class="flex flex-wrap gap-3 mt-8 pt-6 border-t border-white/10">
 						{#if selectedProject.project_url}
 							<a
 								href={selectedProject.project_url}
@@ -371,12 +558,30 @@
 								Source Code
 							</a>
 						{/if}
+						{#if selectedProject.gallery}
+							<button
+								onclick={() => openContentViewer(selectedProject.gallery.id, selectedProject.name)}
+								class="px-6 py-3 neu-button text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
+							>
+								<Icon icon="mdi:view-gallery" class="text-xl" />
+								Gallery{#if selectedProject.gallery.title}: {selectedProject.gallery.title}{/if}
+							</button>
+						{/if}
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 {/if}
+
+<!-- Gallery Viewer Modal -->
+<ContentViewerModal
+	isOpen={viewerOpen}
+	pages={viewerPages}
+	title={viewerTitle}
+	loading={viewerLoading}
+	onClose={closeContentViewer}
+/>
 
 <!-- ============================================================================ -->
 <!-- TECH SECTION CONTAINER -->
@@ -457,11 +662,9 @@
 		<!-- Sentinel for sticky sub-nav detection (below sub-nav so portal only triggers after it fully exits viewport) -->
 		<div bind:this={subNavSentinelRef} class="sub-nav-sentinel h-px w-full"></div>
 
-		<!-- Tab Content with Animated Transitions -->
-		{#key activeTab}
-			<div in:fade={{ duration: 250, delay: 50 }} out:fade={{ duration: 150 }}>
-				<!-- Stack Tab -->
-				{#if activeTab === 'stack'}
+		<!-- Tab Content — CSS-based switching to preserve DOM (prevents image re-fetching) -->
+		<!-- Stack Tab -->
+		<div class="tech-tab-panel" class:active={activeTab === 'stack'}>
 					<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-cyan-950/10 to-[var(--neu-bg)]/95 py-12 relative">
 						<div class="container mx-auto px-4">
 							{#if techStack.length === 0}
@@ -530,42 +733,7 @@
 
 											<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 												{#each items as item (item.id)}
-													<div class="neu-card p-5 flex items-start gap-4 hover:scale-[1.02] transition-transform duration-300">
-														<!-- Icon -->
-														<div class="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-600/20 to-blue-600/20 flex items-center justify-center">
-															{#if item.icon}
-																<Icon icon={item.icon} class="text-cyan-400 text-2xl" />
-															{:else}
-																<Icon icon={categoryIcons[category] || 'mdi:code-tags'} class="text-cyan-400/60 text-2xl" />
-															{/if}
-														</div>
-
-														<div class="flex-1 min-w-0">
-															<div class="flex items-center gap-2 mb-1">
-																{#if item.url}
-																	<a href={item.url} target="_blank" rel="noopener noreferrer" class="text-white font-semibold hover:text-cyan-400 transition-colors truncate">
-																		{item.name}
-																	</a>
-																	<Icon icon="mdi:open-in-new" class="text-gray-500 text-xs flex-shrink-0" />
-																{:else}
-																	<span class="text-white font-semibold truncate">{item.name}</span>
-																{/if}
-															</div>
-
-															{#if item.description}
-																<p class="text-gray-400 text-sm line-clamp-2 mb-2">{item.description}</p>
-															{/if}
-
-															<!-- Proficiency Dots -->
-															{#if item.proficiency > 0}
-																<div class="flex gap-1">
-																	{#each Array(5) as _, idx}
-																		<div class="w-2 h-2 rounded-full {idx < item.proficiency ? 'bg-cyan-400' : 'bg-gray-700'}"></div>
-																	{/each}
-																</div>
-															{/if}
-														</div>
-													</div>
+													<TechStackCard {item} categoryIcon={categoryIcons[category] || 'mdi:code-tags'} />
 												{/each}
 											</div>
 										</div>
@@ -575,8 +743,9 @@
 						</div>
 					</section>
 
-				<!-- Projects Tab -->
-				{:else if activeTab === 'projects'}
+		</div>
+		<!-- Projects Tab -->
+		<div class="tech-tab-panel" class:active={activeTab === 'projects'}>
 					<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-cyan-950/10 to-[var(--neu-bg)]/95 py-12 relative">
 						<div class="container mx-auto px-4">
 							{#if projects.length === 0}
@@ -594,11 +763,10 @@
 											<div class="grid grid-cols-1 lg:grid-cols-2">
 												<div class="aspect-video lg:aspect-auto relative">
 													{#if featuredProject.cover_image}
-														<img
+														<SkeletonImage
 															src={featuredProject.cover_image}
 															alt={featuredProject.name}
-															class="w-full h-full object-cover"
-															loading="lazy"
+															class="w-full h-full"
 														/>
 													{:else}
 														<div class="w-full h-full min-h-[240px] bg-gradient-to-br from-cyan-900/40 to-blue-900/40 flex items-center justify-center">
@@ -619,7 +787,16 @@
 														<p class="text-gray-300 text-lg mb-6 leading-relaxed">{featuredProject.tagline}</p>
 													{/if}
 
-													{#if featuredProject.tech_stack?.length > 0}
+													{#if featuredProject.technologies?.length > 0}
+														<div class="flex flex-wrap gap-2 mb-6">
+															{#each featuredProject.technologies as tech}
+																<span class="px-3 py-1 text-xs rounded-full bg-cyan-600/20 text-cyan-300 border border-cyan-600/30 flex items-center gap-1.5">
+																	{#if tech.icon}<Icon icon={tech.icon} class="text-sm" />{/if}
+																	{tech.name}
+																</span>
+															{/each}
+														</div>
+													{:else if featuredProject.tech_stack?.length > 0}
 														<div class="flex flex-wrap gap-2 mb-6">
 															{#each featuredProject.tech_stack as tech}
 																<span class="px-3 py-1 text-xs rounded-full bg-cyan-600/20 text-cyan-300 border border-cyan-600/30">{tech}</span>
@@ -664,12 +841,13 @@
 											>
 												<div class="aspect-video relative">
 													{#if project.cover_image}
-														<img
-															src={project.cover_image}
-															alt={project.name}
-															class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-															loading="lazy"
-														/>
+														<div class="w-full h-full group-hover:scale-110 transition-transform duration-500">
+															<SkeletonImage
+																src={project.cover_image}
+																alt={project.name}
+																class="w-full h-full"
+															/>
+														</div>
 													{:else}
 														<div class="w-full h-full bg-gradient-to-br from-cyan-900/30 to-blue-900/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
 															<Icon icon="mdi:code-tags" class="text-cyan-400/20 text-6xl" />
@@ -696,7 +874,19 @@
 														<p class="text-gray-400 text-sm mb-4 line-clamp-2">{project.tagline}</p>
 													{/if}
 
-													{#if project.tech_stack?.length > 0}
+													{#if project.technologies?.length > 0}
+														<div class="flex flex-wrap gap-1.5">
+															{#each project.technologies.slice(0, 4) as tech}
+																<span class="px-2 py-0.5 text-xs rounded-full bg-cyan-600/15 text-cyan-400/80 border border-cyan-600/20 flex items-center gap-1">
+																	{#if tech.icon}<Icon icon={tech.icon} class="text-xs" />{/if}
+																	{tech.name}
+																</span>
+															{/each}
+															{#if project.technologies.length > 4}
+																<span class="px-2 py-0.5 text-xs rounded-full bg-gray-600/15 text-gray-400">+{project.technologies.length - 4}</span>
+															{/if}
+														</div>
+													{:else if project.tech_stack?.length > 0}
 														<div class="flex flex-wrap gap-1.5">
 															{#each project.tech_stack.slice(0, 4) as tech}
 																<span class="px-2 py-0.5 text-xs rounded-full bg-cyan-600/15 text-cyan-400/80 border border-cyan-600/20">{tech}</span>
@@ -715,8 +905,9 @@
 						</div>
 					</section>
 
-				<!-- Showcase Tab -->
-				{:else if activeTab === 'showcase'}
+		</div>
+		<!-- Showcase Tab -->
+		<div class="tech-tab-panel" class:active={activeTab === 'showcase'}>
 					<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-cyan-950/10 to-[var(--neu-bg)]/95 py-12 relative">
 						<div class="container mx-auto px-4">
 							{#if showcaseItems.length === 0}
@@ -732,7 +923,7 @@
 										<div class="neu-card overflow-hidden">
 											{#if item.image}
 												<div class="aspect-video relative">
-													<img src={item.image} alt={item.title} class="w-full h-full object-cover" loading="lazy" />
+													<SkeletonImage src={item.image} alt={item.title} class="w-full h-full" />
 												</div>
 											{:else if item.video_url}
 												<div class="aspect-video">
@@ -761,9 +952,7 @@
 							{/if}
 						</div>
 					</section>
-				{/if}
-			</div>
-		{/key}
+		</div>
 
 		<!-- Bottom sentinel: hides sticky nav when scrolling into CTA sections -->
 		<div bind:this={bottomSentinelRef} class="sub-nav-bottom-sentinel h-px w-full"></div>
@@ -821,5 +1010,25 @@
 
 	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
 		background: linear-gradient(135deg, rgba(6, 182, 212, 0.6), rgba(59, 130, 246, 0.6));
+	}
+
+	.tab-content-grid {
+		transition: height 250ms ease;
+		overflow: hidden;
+	}
+
+	/* Section-level tabs — CSS-based switching keeps DOM alive (no image re-fetching) */
+	.tech-tab-panel {
+		display: none;
+	}
+
+	.tech-tab-panel.active {
+		display: block;
+		animation: tech-tab-fadein 250ms ease-out;
+	}
+
+	@keyframes tech-tab-fadein {
+		from { opacity: 0; }
+		to { opacity: 1; }
 	}
 </style>

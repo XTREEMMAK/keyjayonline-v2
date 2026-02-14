@@ -68,6 +68,8 @@
 		}
 	]);
 
+	// Image caching handled by service worker (src/service-worker.js)
+
 	onMount(() => {
 		createScrollObserver(sectionElement, (isVisible) => {
 			visible = isVisible;
@@ -319,7 +321,7 @@
 										<div class="w-full h-full overflow-hidden shadow-2xl rounded-2xl relative">
 											<!-- YouTube Thumbnail -->
 											<img 
-												src={getYouTubeThumbnail(currentProject.leftContent.videoId, 'maxresdefault')} 
+												src={getYouTubeThumbnail(currentProject.leftContent.videoId, 'maxresdefault')}
 												alt={currentProject.title}
 												class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
 											<!-- Play button overlay -->
@@ -333,7 +335,7 @@
 										</div>
 									{:else if currentProject.leftContent.type === 'image'}
 										<img 
-											src={currentProject.leftContent.src} 
+											src={currentProject.leftContent.src}
 											alt={currentProject.title}
 											class="w-full h-full shadow-2xl object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl">
 									{/if}

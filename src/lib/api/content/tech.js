@@ -7,6 +7,7 @@
 
 import { getDirectusInstance, readItems } from '../core/client.js';
 import { buildAssetUrl } from '../core/assets.js';
+import { transformEmbed } from './productions.js';
 
 /**
  * Fetches all published tech projects
@@ -23,9 +24,10 @@ export async function getTechProjects() {
         },
         fields: [
           '*',
-          {
-            cover_image: ['id', 'filename_disk']
-          }
+          { cover_image: ['id', 'filename_disk'] },
+          { technologies: [{ kjov2_tech_stack_id: ['id', 'name', 'icon', 'proficiency', 'category', 'description', 'url'] }] },
+          { embeds: ['id', 'embed_url', 'embed_type', 'title', 'description', 'display_order', 'featured', { thumbnail_url: ['id', 'filename_disk'] }] },
+          { gallery: ['id', 'title'] }
         ],
         sort: ['-featured', 'sort']
       })
@@ -42,7 +44,20 @@ export async function getTechProjects() {
       cover_image: project.cover_image
         ? buildAssetUrl(project.cover_image.filename_disk || project.cover_image.id)
         : null,
+      // Relational tech stack (M2M), flattened from junction records
+      technologies: (project.technologies || [])
+        .map(j => j.kjov2_tech_stack_id)
+        .filter(Boolean),
+      // Legacy string array fallback
       tech_stack: Array.isArray(project.tech_stack) ? project.tech_stack : [],
+      // Video embeds (O2M), sorted: featured first, then by display_order
+      embeds: (project.embeds || [])
+        .sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (a.display_order || 0) - (b.display_order || 0))
+        .map(embed => transformEmbed(embed)),
+      // Gallery link (M2O)
+      gallery: project.gallery
+        ? { id: project.gallery.id, title: project.gallery.title }
+        : null,
       project_status: project.project_status || 'active',
       featured: project.featured || false,
       sort: project.sort || 0,

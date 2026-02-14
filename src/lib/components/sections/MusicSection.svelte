@@ -12,8 +12,8 @@
 	import Icon from '@iconify/svelte';
 	import { getLegacyWorksByYear } from '$lib/data/legacyWorks.js';
 	import { browser } from '$app/environment';
-	import { navigateTo, navbarVisible } from '$lib/stores/navigation.js';
-	import { showSectionSubNav, hideSectionSubNav, musicActiveView, musicActiveFilter, portalScrollLock, setPortalScrollLock, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
+	import { activeSection, navigateTo, navbarVisible } from '$lib/stores/navigation.js';
+	import { showSectionSubNav, hideSectionSubNav, musicActiveView, musicActiveFilter, portalScrollLock, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
@@ -113,6 +113,8 @@
 	});
 
 	const currentProject = $derived(latestProjects()[currentProjectIndex]);
+
+	// Image caching handled by service worker (src/service-worker.js)
 
 	// Get unique release types from albums for dynamic filters
 	let releaseTypes = $derived(() => {
@@ -288,7 +290,9 @@
 	});
 
 	// Reactive portal state: show when top sentinel above AND still in content area
+	// Only modify shared state when this section is active (CSS panels keep hidden sections alive)
 	$effect(() => {
+		if ($activeSection !== 'music') return;
 		if (topSentinelAbove && !bottomSentinelReached) {
 			subNavSticky = true;
 			showSectionSubNav('music');
@@ -372,23 +376,6 @@
 		} else {
 			if (mixer) mixer.filter(`.${filter.toLowerCase().replace(/\s+/g, '-')}`);
 		}
-		scrollToContent();
-	}
-
-	function scrollToContent() {
-		if (!browser || !subNavSentinelRef) return;
-		setPortalScrollLock(true);
-		requestAnimationFrame(() => {
-			const portalBar = document.querySelector('.section-sticky-nav');
-			const filterBar = document.querySelector('.music-filter-bar');
-			const offset = (portalBar ? portalBar.offsetHeight : 0) + (filterBar ? filterBar.offsetHeight : 0);
-			const absTop = subNavSentinelRef.getBoundingClientRect().top + window.scrollY;
-			window.scrollTo({ top: absTop - offset + 2, behavior: 'smooth' });
-			setTimeout(() => {
-				setPortalScrollLock(false);
-				recheckSentinels();
-			}, 600);
-		});
 	}
 
 	function switchView(newView) {
@@ -398,7 +385,6 @@
 			mixer = null;
 		}
 		view = newView;
-		scrollToContent();
 	}
 
 	// Reactive mixer init/destroy based on view and container
@@ -763,9 +749,7 @@
 
 	<!-- Content Section -->
 	<section class="container mx-auto px-4 py-12">
-		{#key view}
-		<div in:fade={{ duration: 250, delay: 50 }} out:fade={{ duration: 150 }}>
-			{#if view === 'albums'}
+		<div class="music-view-panel" class:active={view === 'albums'}>
 				{#if sectionLoading}
 					<div class="flex justify-center items-center py-20">
 						<div class="text-center">
@@ -815,7 +799,8 @@
 						{/each}
 					</div>
 				{/if}
-			{:else if view === 'beats'}
+		</div>
+		<div class="music-view-panel" class:active={view === 'beats'}>
 				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 					{#each beats as beat, i}
 						<div
@@ -860,7 +845,8 @@
 						</div>
 					{/each}
 				</div>
-			{:else if view === 'legacy'}
+		</div>
+		<div class="music-view-panel" class:active={view === 'legacy'}>
 				<!-- Legacy Works Notice -->
 				<div
 					class="legacy-notice neu-card p-6 mb-12 max-w-3xl mx-auto border-l-4 border-red-500 bg-red-950/30"
@@ -906,7 +892,8 @@
 						<p class="text-gray-400">Content coming soon!</p>
 					</div>
 				{/if}
-			{:else if view === 'studio'}
+		</div>
+		<div class="music-view-panel" class:active={view === 'studio'}>
 				<section class="py-12 relative">
 					<div class="max-w-6xl mx-auto">
 						<h2 class="text-2xl font-bold text-white mb-8 text-center">What I Use</h2>
@@ -963,9 +950,7 @@
 						</div>
 					</div>
 				</section>
-			{/if}
 		</div>
-		{/key}
 	</section>
 
 	<!-- Bottom sentinel: hides sticky nav when scrolling into CTA sections -->
@@ -1040,6 +1025,19 @@
 <style>
 	.music-section {
 		/* Container styles */
+	}
+
+	/* CSS tab panels — keep DOM alive across view switches to prevent image re-fetching */
+	.music-view-panel {
+		display: none;
+	}
+	.music-view-panel.active {
+		display: block;
+		animation: music-view-fadein 250ms ease-out;
+	}
+	@keyframes music-view-fadein {
+		from { opacity: 0; }
+		to { opacity: 1; }
 	}
 
 	/* Carousel Wrapper */

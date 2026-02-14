@@ -22,6 +22,7 @@
 	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { getExternalLinkIcon } from '$lib/utils/externalLinks.js';
+	import SkeletonImage from '$lib/components/ui/SkeletonImage.svelte';
 	// Props
 	let {
 		isOpen = false,
@@ -221,11 +222,10 @@
 				{:else}
 					<!-- Hero Image -->
 					<div class="relative aspect-video md:aspect-[21/9] overflow-hidden">
-						<img
-							src={production.image ||
-								'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=1200'}
+						<SkeletonImage
+							src={production.image || 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=1200'}
 							alt={production.title}
-							class="w-full h-full object-cover"
+							class="w-full h-full"
 						/>
 						<div
 							class="absolute inset-0 bg-gradient-to-t from-[#1a1a2e] via-transparent to-transparent"

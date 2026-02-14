@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { activeSection, navigateTo, sectionMeta, enabledSections, navbarVisible } from '$lib/stores/navigation.js';
-	import { hideMainNavbar } from '$lib/stores/stickyNav.js';
+	import { hideMainNavbar, sectionModalOpen } from '$lib/stores/stickyNav.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { mobileMenuOpen, closeMobileMenu, toggleMobileMenu } from '$lib/stores/mobileNav.js';
 	import { browser } from '$app/environment';
@@ -49,8 +49,8 @@
 				// Never show on non-home pages
 				return false;
 			}
-			// On desktop, normal behavior
-			return (isVisible && !$hideMainNavbar && !$contentViewerOpen) || $mobileMenuOpen;
+			// On desktop, normal behavior (also hide when a section modal is open)
+			return (isVisible && !$hideMainNavbar && !$contentViewerOpen && !$sectionModalOpen) || $mobileMenuOpen;
 		})()
 	);
 

@@ -1,7 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
 	import Hero from '$lib/components/layout/Hero.svelte';
 	import NeumorphicNavbar from '$lib/components/ui/NeumorphicNavbar.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
@@ -10,20 +9,11 @@
 	import {
 		activeSection,
 		isContentVisible,
-		isNavigatingToHome,
 		initFromHash,
 		cleanupNavigation,
 		sectionMeta,
 		disabledPages
 	} from '$lib/stores/navigation.js';
-
-	// Custom transition that uses fade when going to home, fly otherwise
-	function sectionOut(node, params) {
-		if ($isNavigatingToHome) {
-			return fade(node, { duration: 200 });
-		}
-		return fly(node, { x: -50, duration: 200, easing: cubicOut });
-	}
 
 	// Section Components
 	import MusicSection from '$lib/components/sections/MusicSection.svelte';
@@ -56,6 +46,16 @@
 
 	// Reference to AboutSection for tab switching
 	let aboutSectionRef = $state(null);
+
+	// Track which sections have been mounted — once mounted, stay in DOM (CSS panels)
+	let mounted = $state({ music: false, voice: false, productions: false, tech: false, about: false, contact: false });
+
+	$effect(() => {
+		const s = $activeSection;
+		if (s && s !== 'home') {
+			mounted[s] = true;
+		}
+	});
 
 	// Track scroll position for desktop scroll button
 	let scrollY = $state(0);
@@ -102,13 +102,14 @@
 		}
 	});
 
-	// Hide section sub-nav when switching sections
+	// Reset section portal state on every section change.
+	// CSS panels keep hidden sections alive, so their observers can set stale state.
+	// This ensures a clean slate; the new active section's effects will re-establish
+	// the correct sub-nav state based on scroll position.
 	$effect(() => {
-		// Access activeSection to create dependency
-		const section = $activeSection;
-		if (!['music', 'tech', 'productions'].includes(section)) {
-			hideSectionSubNav();
-		}
+		$activeSection; // dependency
+		hideSectionSubNav();
+		sectionModalOpen.set(false);
 	});
 
 	// Derived data for portal sub-nav buttons
@@ -167,7 +168,7 @@
 	}
 
 	// Show scroll button when scrolled down (desktop only), hidden when modals are open
-	const showScrollButton = $derived(showDesktopScrollButton && $activeSection !== 'home' && !$contentViewerOpen);
+	const showScrollButton = $derived(showDesktopScrollButton && $activeSection !== 'home' && !$contentViewerOpen && !$sectionModalOpen);
 
 	/**
 	 * Scroll to the content area below the portal nav bar.
@@ -178,7 +179,7 @@
 		if (!browser) return;
 
 		requestAnimationFrame(() => {
-			const sentinel = document.querySelector('.section-transition-container .sub-nav-sentinel');
+			const sentinel = document.querySelector('.section-panel.active .sub-nav-sentinel');
 			if (!sentinel) return;
 
 			setPortalScrollLock(true);
@@ -230,27 +231,36 @@
 			in:fade={{ duration: 400 }}
 			out:fade={{ duration: 200 }}
 		>
-			{#key $activeSection}
-				<div
-					class="section-transition-container"
-					in:fly={{ x: 50, duration: 300, easing: cubicOut }}
-					out:sectionOut
-				>
-					{#if $activeSection === 'music'}
-						<MusicSection />
-					{:else if $activeSection === 'voice'}
-						<VoiceSection />
-					{:else if $activeSection === 'productions'}
-						<ProductionsSection />
-					{:else if $activeSection === 'tech'}
-						<TechSection />
-					{:else if $activeSection === 'about'}
-						<AboutSection bind:this={aboutSectionRef} />
-					{:else if $activeSection === 'contact'}
-						<ContactSection />
-					{/if}
+			{#if mounted.music}
+				<div class="section-transition-container section-panel" class:active={$activeSection === 'music'}>
+					<MusicSection />
 				</div>
-			{/key}
+			{/if}
+			{#if mounted.voice}
+				<div class="section-transition-container section-panel" class:active={$activeSection === 'voice'}>
+					<VoiceSection />
+				</div>
+			{/if}
+			{#if mounted.productions}
+				<div class="section-transition-container section-panel" class:active={$activeSection === 'productions'}>
+					<ProductionsSection />
+				</div>
+			{/if}
+			{#if mounted.tech}
+				<div class="section-transition-container section-panel" class:active={$activeSection === 'tech'}>
+					<TechSection />
+				</div>
+			{/if}
+			{#if mounted.about}
+				<div class="section-transition-container section-panel" class:active={$activeSection === 'about'}>
+					<AboutSection bind:this={aboutSectionRef} />
+				</div>
+			{/if}
+			{#if mounted.contact}
+				<div class="section-transition-container section-panel" class:active={$activeSection === 'contact'}>
+					<ContactSection />
+				</div>
+			{/if}
 		</div>
 	{/if}
 </div>
@@ -417,7 +427,6 @@
 		onclick={handleScrollToTop}
 		aria-label="Scroll to top"
 		in:fade={{ duration: 300 }}
-		out:fade={{ duration: 200 }}
 	>
 		<svg class="scroll-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path>
@@ -432,20 +441,20 @@
 		pointer-events: none;
 	}
 
-	/* Section transition wrapper - grid stacking for smooth crossfade */
-	.neu-content-container > :global(*) {
-		grid-area: 1 / 1;
+	/* CSS tab panels — sections stay in DOM once mounted, hidden with display:none */
+	.section-panel {
+		display: none;
+	}
+	.section-panel.active {
+		display: block;
+		animation: section-enter 300ms ease-out;
+	}
+	@keyframes section-enter {
+		from { opacity: 0; transform: translateX(40px); }
+		to { opacity: 1; transform: translateX(0); }
 	}
 
-	/* Section transition container */
-	.section-transition-container {
-		/* Content can overflow vertically but horizontal overflow hidden to prevent
-		   fly animations from causing viewport shift (which affects fixed elements) */
-		overflow-x: hidden;
-		overflow-y: visible;
-	}
-
-	/* Content container - prevent horizontal overflow from fly transitions */
+	/* Content container - prevent horizontal overflow from entry animations */
 	.neu-content-container {
 		overflow-x: hidden;
 	}

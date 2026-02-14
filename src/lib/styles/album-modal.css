@@ -120,24 +120,72 @@ body.swal2-shown {
 	aspect-ratio: 1;
 }
 
-/* Skeleton loader */
-.album-artwork::before {
-	content: '';
+/* Skeleton loader overlay with KJ logo + shimmer */
+.album-skeleton-overlay {
 	position: absolute;
 	inset: 0;
 	border-radius: 12px;
+	background: linear-gradient(135deg, #0a1628 0%, #0d1f3c 50%, #0f172a 100%);
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	opacity: calc(1 - var(--img-loaded, 0));
+	transition: opacity 0.5s ease;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+/* Shimmer sweep over skeleton */
+.album-skeleton-overlay::before {
+	content: '';
+	position: absolute;
+	inset: 0;
 	background: linear-gradient(
 		90deg,
-		rgba(55, 65, 81, 0.8) 0%,
-		rgba(75, 85, 99, 0.8) 50%,
-		rgba(55, 65, 81, 0.8) 100%
+		transparent 0%,
+		rgba(75, 85, 99, 0.15) 50%,
+		transparent 100%
 	);
 	background-size: 200% 100%;
 	animation: skeleton-loading 1.5s ease-in-out infinite;
-	z-index: 1;
-	opacity: calc(1 - var(--img-loaded, 0));
-	transition: opacity 0.3s ease;
-	pointer-events: none;
+}
+
+/* KJ logo pulse */
+.album-skeleton-overlay svg {
+	opacity: 0.15;
+	animation: skeleton-logo-pulse 2s ease-in-out infinite;
+	position: relative;
+}
+
+@keyframes skeleton-logo-pulse {
+	0%, 100% { opacity: 0.15; }
+	50% { opacity: 0.25; }
+}
+
+/* Loading dots */
+.album-skeleton-dots {
+	display: flex;
+	gap: 6px;
+	position: relative;
+}
+
+.album-skeleton-dots span {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background-color: rgba(6, 182, 212, 0.4);
+	animation: skeleton-dot-bounce 1s ease-in-out infinite;
+}
+
+.album-skeleton-dots span:nth-child(2) { animation-delay: 0.15s; }
+.album-skeleton-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes skeleton-dot-bounce {
+	0%, 100% { transform: translateY(0); opacity: 0.4; }
+	50% { transform: translateY(-4px); opacity: 0.8; }
 }
 
 .album-artwork img {

@@ -5,8 +5,8 @@
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
 	import ProductionDetailModal from '$lib/components/ui/ProductionDetailModal.svelte';
-	import { navbarVisible } from '$lib/stores/navigation.js';
-	import { showSectionSubNav, hideSectionSubNav, productionsActiveFilter, portalScrollLock, setPortalScrollLock, sectionModalOpen, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
+	import { activeSection, navbarVisible } from '$lib/stores/navigation.js';
+	import { showSectionSubNav, hideSectionSubNav, productionsActiveFilter, portalScrollLock, sectionModalOpen, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
@@ -68,21 +68,6 @@
 		null
 	);
 
-	function scrollToContent() {
-		if (!browser || !subNavSentinelRef) return;
-		setPortalScrollLock(true);
-		requestAnimationFrame(() => {
-			const portalBar = document.querySelector('.section-sticky-nav');
-			const offset = portalBar ? portalBar.offsetHeight : 0;
-			const absTop = subNavSentinelRef.getBoundingClientRect().top + window.scrollY;
-			window.scrollTo({ top: absTop - offset + 2, behavior: 'smooth' });
-			setTimeout(() => {
-				setPortalScrollLock(false);
-				recheckSentinels();
-			}, 600);
-		});
-	}
-
 	// Filter productions with MixItUp
 	function filterProductions(category) {
 		if (category === activeFilter) return;
@@ -94,7 +79,6 @@
 				mixer.filter(`.${category}`);
 			}
 		}
-		scrollToContent();
 	}
 
 	// Initialize MixItUp and load data
@@ -134,8 +118,9 @@
 		unsubFilter();
 	});
 
-	// Hide sticky nav portal when modal is open (modals are trapped in z-10 stacking context)
+	// Hide sticky nav portal when modal is open (only when this section is active)
 	$effect(() => {
+		if ($activeSection !== 'productions') return;
 		sectionModalOpen.set(detailModalOpen || viewerOpen);
 	});
 
@@ -170,7 +155,9 @@
 	});
 
 	// Reactive portal state: show when top sentinel above AND still in content area
+	// Only modify shared state when this section is active (CSS panels keep hidden sections alive)
 	$effect(() => {
+		if ($activeSection !== 'productions') return;
 		if (topSentinelAbove && !bottomSentinelReached) {
 			subNavSticky = true;
 			showSectionSubNav('productions');

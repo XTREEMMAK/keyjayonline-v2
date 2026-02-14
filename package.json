@@ -17,6 +17,7 @@
 		"migrate:category-config": "node scripts/migrate-category-config.js",
 		"migrate:galleries": "node scripts/migrate-galleries.js",
 		"migrate:audio-playlists": "node scripts/migrate-audio-playlists.js",
+		"migrate:tech-projects": "node scripts/migrate-tech-projects.js",
 		"docker:init": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db up kjo2_directus kjo2_postgres -d",
 		"docker:up": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db up -d",
 		"docker:down": "docker compose --profile local-db down",

@@ -57,7 +57,6 @@
 		class="scroll-to-top-btn {bottomClass}"
 		aria-label="Scroll to top"
 		in:fly={{ y: 20, duration: 300 }}
-		out:fly={{ y: 20, duration: 200 }}
 	>
 		<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>

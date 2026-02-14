@@ -284,14 +284,7 @@
 	<main class="production-content">
 		<!-- Production Card -->
 		<div class="production-card">
-			<!-- Cover Image -->
-			{#if coverImageUrl}
-				<div class="cover-image-container">
-					<img src={coverImageUrl} alt={production.title} class="cover-image" />
-				</div>
-			{/if}
-
-				<!-- Production Info -->
+					<!-- Production Info -->
 			<div class="production-info">
 				{#each (production.categories || []) as cat}
 					<div class="type-badge">
@@ -301,6 +294,13 @@
 				{/each}
 
 				<h1>{production.title}</h1>
+
+				<!-- Cover Image -->
+				{#if coverImageUrl}
+					<div class="cover-image-container">
+						<img src={coverImageUrl} alt={production.title} class="cover-image" />
+					</div>
+				{/if}
 
 				<div class="meta-row">
 					{#if production.year}
@@ -580,8 +580,8 @@
 
 	/* Cover Image */
 	.cover-image-container {
-		margin: -2rem -2rem 2rem -2rem;
-		border-radius: 30px 30px 0 0;
+		margin-bottom: 1.5rem;
+		border-radius: 16px;
 		overflow: hidden;
 	}
 
@@ -817,10 +817,6 @@
 
 		.production-card {
 			padding: 1.5rem;
-		}
-
-		.cover-image-container {
-			margin: -1.5rem -1.5rem 1.5rem -1.5rem;
 		}
 
 		.production-info h1 {

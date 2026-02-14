@@ -2,6 +2,7 @@
 	import Swal from 'sweetalert2';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 	import { pushModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
+	import { markImageLoaded } from '$lib/utils/imageCache.js';
 	import '$lib/styles/latest-project-modal.css';
 
 	let {
@@ -42,6 +43,14 @@
 
 				// Lock body scroll on mobile
 				document.body.classList.add('swal2-shown');
+
+				// Register project image in global cache once loaded
+				const img = document.querySelector('.project-image');
+				if (img) {
+					const imgSrc = img.getAttribute('src');
+					img.onload = () => markImageLoaded(imgSrc);
+					if (img.complete) markImageLoaded(imgSrc);
+				}
 			},
 			willClose: () => {
 				// Cleanup popstate listener

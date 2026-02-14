@@ -1,5 +1,6 @@
 <script>
 	import { fly, fade } from 'svelte/transition';
+	import { browser } from '$app/environment';
 	import Icon from '@iconify/svelte';
 	import {
 		activeStickySection,
@@ -13,6 +14,19 @@
 	let { section, children } = $props();
 
 	const isActive = $derived($activeStickySection === section && !$sectionModalOpen);
+
+	// Lock body scroll when overlay menu is open
+	$effect(() => {
+		if (!browser) return;
+		if ($mainNavOverlayVisible) {
+			document.body.style.overflow = 'hidden';
+		} else {
+			document.body.style.overflow = '';
+		}
+		return () => {
+			document.body.style.overflow = '';
+		};
+	});
 </script>
 
 {#if isActive}
@@ -57,19 +71,21 @@
 		>
 			<div class="px-6 py-5">
 				<div class="flex items-center gap-5">
-					<!-- Large Logo (left) -->
-					<button
-						onclick={() => { hideMainNavOverlay(); navigateTo('home'); }}
-						class="flex-shrink-0 neu-overlay-logo"
-						aria-label="Go to home"
-						in:fly={{ y: -10, duration: 200, delay: 50 }}
-					>
-						<img
-							src="/img/KJ_Logo_Medium_W.svg"
-							alt="KEY JAY ONLINE"
-							class="w-14 h-14 object-contain"
-						/>
-					</button>
+					<!-- Large Logo (left) with animated ring -->
+					<div class="logo-ring-wrapper" in:fly={{ y: -10, duration: 200, delay: 50 }}>
+						<div class="logo-ring"></div>
+						<button
+							onclick={() => { hideMainNavOverlay(); navigateTo('home'); }}
+							class="flex-shrink-0 neu-overlay-logo"
+							aria-label="Go to home"
+						>
+							<img
+								src="/img/KJ_Logo_Medium_W.svg"
+								alt="KEY JAY ONLINE"
+								class="w-14 h-14 object-contain"
+							/>
+						</button>
+					</div>
 
 					<!-- Divider -->
 					<div class="w-px self-stretch bg-gray-600/40 flex-shrink-0"></div>
@@ -149,8 +165,39 @@
 		max-width: 90vw;
 	}
 
+	/* Logo ring wrapper */
+	.logo-ring-wrapper {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	/* Animated growing ring behind logo */
+	.logo-ring {
+		position: absolute;
+		width: 72px;
+		height: 72px;
+		border-radius: 50%;
+		border: 2px solid rgba(6, 182, 212, 0.4);
+		animation: ring-grow 2.5s ease-out infinite;
+	}
+
+	@keyframes ring-grow {
+		0% {
+			transform: scale(1);
+			opacity: 0.5;
+		}
+		100% {
+			transform: scale(1.5);
+			opacity: 0;
+		}
+	}
+
 	/* Logo button in overlay — large, prominent */
 	.neu-overlay-logo {
+		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;
