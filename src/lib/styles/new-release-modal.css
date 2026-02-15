@@ -1,9 +1,3 @@
-/* Prevent body scroll when modal is open */
-body.swal2-shown {
-	overflow: hidden !important;
-	touch-action: none !important;
-}
-
 /* New Release Modal Global Styles */
 .new-release-modal-popup {
 	border-radius: 16px !important;
@@ -16,28 +10,6 @@ body.swal2-shown {
 	padding: 0 !important;
 	max-height: 85vh !important;
 	overflow-y: auto !important;
-
-	/* Custom scrollbar styling */
-	scrollbar-width: thin;
-	scrollbar-color: rgba(59, 130, 246, 0.6) rgba(31, 41, 55, 0.5);
-}
-
-.new-release-modal-content::-webkit-scrollbar {
-	width: 8px;
-}
-
-.new-release-modal-content::-webkit-scrollbar-track {
-	background: rgba(31, 41, 55, 0.3);
-	border-radius: 4px;
-}
-
-.new-release-modal-content::-webkit-scrollbar-thumb {
-	background: linear-gradient(135deg, rgba(59, 130, 246, 0.6), rgba(147, 51, 234, 0.6));
-	border-radius: 4px;
-}
-
-.new-release-modal-content::-webkit-scrollbar-thumb:hover {
-	background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.8));
 }
 
 /* Modal Container */

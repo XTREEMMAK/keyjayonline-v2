@@ -39,8 +39,8 @@ export async function getResourceCategories() {
       description: category.description,
       icon_type: category.icon_type, // 'iconify' or 'image'
       icon_value: category.icon_value, // iconify icon or null
-      icon_image: category.icon_image ? 
-        buildAssetUrl(category.icon_image.filename_disk || category.icon_image.id) : null,
+      icon_image: category.icon_image ?
+        buildAssetUrl(category.icon_image) : null,
       display_order: category.display_order,
       resource_count: 0 // Will be populated by separate query if needed
     }));
@@ -144,14 +144,14 @@ export async function getResources(categorySlug = null, options = {}) {
         icon_value: resource.category_id.icon_value
       } : null,
       
-      featured_image: resource.featured_image ? 
-        buildAssetUrl(resource.featured_image.filename_disk || resource.featured_image.id) : null,
-      
+      featured_image: resource.featured_image ?
+        buildAssetUrl(resource.featured_image) : null,
+
       screenshots: (resource.screenshots || []).map(screenshot => ({
         id: screenshot.directus_files_id.id,
-        url: buildAssetUrl(screenshot.directus_files_id.filename_disk),
+        url: buildAssetUrl(screenshot.directus_files_id),
         title: screenshot.directus_files_id.title || 'Screenshot',
-        thumbnail: buildAssetUrl(screenshot.directus_files_id.filename_disk, { width: 400, height: 300, fit: 'cover' })
+        thumbnail: buildAssetUrl(screenshot.directus_files_id, { width: 400, height: 300, fit: 'cover' })
       })),
       
       tags: (resource.tags || []).map(tag => tag.resource_tags_id.tag_name)
@@ -211,8 +211,8 @@ export async function getFeaturedResources(limit = 6) {
         icon_value: resource.category_id.icon_value
       } : null,
       
-      featured_image: resource.featured_image ? 
-        buildAssetUrl(resource.featured_image.filename_disk || resource.featured_image.id) : null
+      featured_image: resource.featured_image ?
+        buildAssetUrl(resource.featured_image) : null
     }));
 
   } catch (error) {
@@ -334,14 +334,14 @@ export async function getResourceById(resourceId) {
       // Related data
       category: resource.category_id,
       
-      featured_image: resource.featured_image ? 
-        buildAssetUrl(resource.featured_image.filename_disk || resource.featured_image.id) : null,
-      
+      featured_image: resource.featured_image ?
+        buildAssetUrl(resource.featured_image) : null,
+
       screenshots: (resource.screenshots || []).map(screenshot => ({
         id: screenshot.directus_files_id.id,
-        url: buildAssetUrl(screenshot.directus_files_id.filename_disk),
+        url: buildAssetUrl(screenshot.directus_files_id),
         title: screenshot.directus_files_id.title || 'Screenshot',
-        thumbnail: buildAssetUrl(screenshot.directus_files_id.filename_disk, { width: 600, height: 400, fit: 'cover' })
+        thumbnail: buildAssetUrl(screenshot.directus_files_id, { width: 600, height: 400, fit: 'cover' })
       })),
       
       tags: (resource.tags || []).map(tag => ({
@@ -406,8 +406,8 @@ export async function searchResources(searchTerm) {
         slug: resource.category_id.slug
       } : null,
       
-      featured_image: resource.featured_image ? 
-        buildAssetUrl(resource.featured_image.filename_disk || resource.featured_image.id) : null
+      featured_image: resource.featured_image ?
+        buildAssetUrl(resource.featured_image) : null
     }));
 
   } catch (error) {

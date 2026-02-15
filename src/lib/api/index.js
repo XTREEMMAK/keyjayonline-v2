@@ -22,10 +22,6 @@ export {
 } from './content/music.js';
 
 export {
-  getFeaturedWorks 
-} from './content/featured.js';
-
-export {
   getGamesLibrary,
   getCurrentDiscordActivity,
   getRecentGamingSessions,
@@ -81,7 +77,6 @@ export {
 export {
   getMusicPageHeader,
   getTechPageHeader,
-  getGamesPageHeader,
   getStudioPhoto
 } from './content/pages.js';
 

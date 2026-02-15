@@ -29,7 +29,7 @@
 			showConfirmButton: false,
 			customClass: {
 				popup: 'album-modal-popup video-modal-popup',
-				htmlContainer: 'album-modal-content'
+				htmlContainer: 'album-modal-content modal-scrollbar'
 			},
 			background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
 			color: '#ffffff',

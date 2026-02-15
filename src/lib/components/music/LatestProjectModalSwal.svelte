@@ -29,7 +29,7 @@
 			scrollbarPadding: false,
 			customClass: {
 				popup: 'latest-project-modal-popup',
-				htmlContainer: 'latest-project-modal-content'
+				htmlContainer: 'latest-project-modal-content modal-scrollbar'
 			},
 			background: project.backgroundImageUrl
 				? `linear-gradient(145deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 50%, rgba(15, 23, 42, 0.95) 100%), url('${project.backgroundImageUrl}')`

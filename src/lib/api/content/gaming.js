@@ -43,10 +43,7 @@ export async function getGamesLibrary() {
       title: game.title,
       platform: game.platform,
       rating: parseFloat(game.personal_rating) || 0,
-      cover_image: game.cover_image ? 
-        (typeof game.cover_image === 'object' ? 
-          buildAssetUrl(game.cover_image.filename_disk || game.cover_image.id) : 
-          buildAssetUrl(game.cover_image)) : null,
+      cover_image: buildAssetUrl(game.cover_image),
       category: game.genre,
       description: game.description,
       review_text: game.review_text,
@@ -67,7 +64,7 @@ export async function getGamesLibrary() {
       // Screenshots
       screenshots: (game.screenshots || []).map(screenshot => ({
         id: screenshot.directus_files_id.id,
-        url: buildAssetUrl(screenshot.directus_files_id.filename_disk),
+        url: buildAssetUrl(screenshot.directus_files_id),
         title: screenshot.directus_files_id.title
       }))
     }));
@@ -160,8 +157,7 @@ export async function getRecentGamingSessions(limit = 10) {
         id: session.game_library_id.id,
         title: session.game_library_id.title,
         platform: session.game_library_id.platform,
-        cover_image: session.game_library_id.cover_image ? 
-          buildAssetUrl(session.game_library_id.cover_image.filename_disk || session.game_library_id.cover_image.id) : null,
+        cover_image: buildAssetUrl(session.game_library_id.cover_image),
         genre: session.game_library_id.genre
       } : null
     }));
@@ -205,8 +201,7 @@ export async function getGameById(gameId) {
       title: game.title,
       platform: game.platform,
       rating: parseFloat(game.personal_rating) || 0,
-      cover_image: game.cover_image ? 
-        buildAssetUrl(game.cover_image.filename_disk || game.cover_image.id) : null,
+      cover_image: buildAssetUrl(game.cover_image),
       category: game.genre,
       description: game.description,
       review_text: game.review_text,
@@ -227,9 +222,9 @@ export async function getGameById(gameId) {
       // Screenshots
       screenshots: (game.screenshots || []).map(screenshot => ({
         id: screenshot.directus_files_id.id,
-        url: buildAssetUrl(screenshot.directus_files_id.filename_disk),
+        url: buildAssetUrl(screenshot.directus_files_id),
         title: screenshot.directus_files_id.title || 'Screenshot',
-        thumbnail: buildAssetUrl(screenshot.directus_files_id.filename_disk, { width: 400, height: 225, fit: 'cover' })
+        thumbnail: buildAssetUrl(screenshot.directus_files_id, { width: 400, height: 225, fit: 'cover' })
       })),
       
       // Reviews/content
@@ -276,8 +271,7 @@ export async function searchGamesLibrary(searchTerm) {
       rating: parseFloat(game.personal_rating) || 0,
       category: game.genre,
       last_played: game.last_played,
-      cover_image: game.cover_image ? 
-        buildAssetUrl(game.cover_image.filename_disk || game.cover_image.id) : null
+      cover_image: buildAssetUrl(game.cover_image)
     }));
 
   } catch (error) {

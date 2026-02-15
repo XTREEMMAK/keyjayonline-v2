@@ -84,9 +84,7 @@ export async function getSiteSettings() {
           : (work.left_local_content ? 
               buildAssetUrl(work.left_local_content) :
               (work.thumbnail_image ? 
-                (typeof work.thumbnail_image === 'object' ? 
-                  buildAssetUrl(work.thumbnail_image.filename_disk || work.thumbnail_image.id) : 
-                  buildAssetUrl(work.thumbnail_image)) : 
+                buildAssetUrl(work.thumbnail_image) : 
                 'https://placehold.co/800x600/1a1a1a/ffffff?text=Featured+Work')),
         videoId: (work.hosted_type === 'youtube' || work.video_type === 'youtube') && 
                  (work.left_remote_content || work.video_url) ? 

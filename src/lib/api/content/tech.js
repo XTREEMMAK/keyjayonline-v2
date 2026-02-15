@@ -42,7 +42,7 @@ export async function getTechProjects() {
       project_url: project.project_url,
       repo_url: project.repo_url,
       cover_image: project.cover_image
-        ? buildAssetUrl(project.cover_image.filename_disk || project.cover_image.id)
+        ? buildAssetUrl(project.cover_image)
         : null,
       // Relational tech stack (M2M), flattened from junction records
       technologies: (project.technologies || [])
@@ -133,7 +133,7 @@ export async function getTechShowcase() {
       description: item.description,
       type: item.type || 'photo',
       image: item.image
-        ? buildAssetUrl(item.image.filename_disk || item.image.id)
+        ? buildAssetUrl(item.image)
         : null,
       video_url: item.video_url
     }));

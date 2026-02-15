@@ -8,6 +8,7 @@
 
 import { getDirectusInstance, readItems } from '../core/client.js';
 import { buildAssetUrl } from '../core/assets.js';
+import { transformCredit } from '../core/creditTransform.js';
 import { extractYouTubeId } from '../../utils/youtube.js';
 
 /**
@@ -84,11 +85,8 @@ export async function getMusicReleases() {
       title: release.title,
       artist: release.main_artist, // Default artist
       release_type: release.release_type,
-      // Handle cover_art - it can be a UUID string or an object with file details
-      cover_art: release.cover_art ? 
-        (typeof release.cover_art === 'object' ? 
-          buildAssetUrl(release.cover_art.filename_disk || release.cover_art.id) : 
-          buildAssetUrl(release.cover_art)) : null,
+      // Handle cover_art - buildAssetUrl handles null, objects, and strings
+      cover_art: buildAssetUrl(release.cover_art),
       release_date: release.release_date,
       description: release.description,
       rich_content: release.rich_content,
@@ -116,11 +114,7 @@ export async function getMusicReleases() {
       youtube_videos: (release.videos || [])
         .filter(video => video.video_type === 'youtube')
         .map(video => ({
-          id: video.video_url.includes('youtube.com/watch?v=') 
-            ? video.video_url.split('v=')[1]?.split('&')[0]
-            : video.video_url.includes('youtu.be/')
-            ? video.video_url.split('youtu.be/')[1]?.split('?')[0]
-            : video.video_url,
+          id: extractYouTubeId(video.video_url) || video.video_url,
           title: video.title,
           description: video.description,
           thumbnail_url: video.thumbnail_url ? buildAssetUrl(video.thumbnail_url) : null,
@@ -145,66 +139,7 @@ export async function getMusicReleases() {
           is_primary: link.is_primary
         };
       }),
-      credits: (release.credits || []).map(credit => {
-        // Parse role field - can be string, JSON string, JSON object, or array
-        let roles = [];
-        if (credit.role) {
-          if (typeof credit.role === 'string') {
-            // Try to parse as JSON first
-            try {
-              const parsed = JSON.parse(credit.role);
-              // If parsed is an array, use it; if object with roles array, use that
-              if (Array.isArray(parsed)) {
-                roles = parsed;
-              } else if (parsed.roles && Array.isArray(parsed.roles)) {
-                roles = parsed.roles;
-              } else if (typeof parsed === 'object') {
-                // Single role object with category/title
-                roles = [parsed];
-              }
-            } catch {
-              // Not valid JSON, treat as single role string
-              // Use the role itself as both title and category
-              roles = [{ title: credit.role, category: credit.role }];
-            }
-          } else if (Array.isArray(credit.role)) {
-            roles = credit.role;
-          } else if (typeof credit.role === 'object') {
-            roles = [credit.role];
-          }
-        }
-
-        // Normalize roles to have category and title
-        const normalizedRoles = roles.map(role => {
-          if (typeof role === 'string') {
-            // If it's just a string, use it as both title and category
-            return { title: role, category: role };
-          }
-          const title = role.title || role.name || role.role || 'Unknown Role';
-          // If no category is specified, use the title as the category
-          const category = role.category || role.group || title;
-          return { title, category };
-        });
-
-        return {
-          roles: normalizedRoles,
-          // Keep legacy role field for backward compatibility (first role title)
-          role: normalizedRoles[0]?.title || 'Unknown Role',
-          name: credit.person_id?.name || 'Unknown',
-          additional_info: credit.additional_info,
-          bio: credit.person_id?.bio,
-          website_url: credit.person_id?.website_url,
-          social_links: credit.person_id?.social_links || [],
-          display_order: credit.display_order,
-          profile_image: credit.person_id?.profile_image
-            ? buildAssetUrl(
-                typeof credit.person_id.profile_image === 'object'
-                  ? credit.person_id.profile_image.filename_disk
-                  : credit.person_id.profile_image
-              )
-            : null
-        };
-      }),
+      credits: (release.credits || []).map(transformCredit),
       
       // Legacy fields for compatibility
       spotify_url: undefined,
@@ -268,37 +203,16 @@ export async function getLatestProjects(limit = 3) {
     );
 
     return releases.map(release => {
-      // Build cover art URL - handle both object and string formats
-      let coverArtUrl = null;
-      if (release.cover_art) {
-        if (typeof release.cover_art === 'object') {
-          coverArtUrl = buildAssetUrl(release.cover_art.filename_disk || release.cover_art.id);
-        } else {
-          coverArtUrl = buildAssetUrl(release.cover_art);
-        }
-      }
+      // Build cover art URL - buildAssetUrl handles null, objects, and strings
+      const coverArtUrl = buildAssetUrl(release.cover_art);
 
       // Build background image URL (fallback to cover art)
       // This field may not exist yet in Directus
-      let backgroundImageUrl = coverArtUrl;
-      if (release.background_image) {
-        if (typeof release.background_image === 'object') {
-          backgroundImageUrl = buildAssetUrl(release.background_image.filename_disk || release.background_image.id);
-        } else {
-          backgroundImageUrl = buildAssetUrl(release.background_image);
-        }
-      }
+      const backgroundImageUrl = buildAssetUrl(release.background_image) || coverArtUrl;
 
       // Build thumbnail URL (fallback to cover art)
       // This field may not exist yet in Directus
-      let thumbnailUrl = coverArtUrl;
-      if (release.thumbnail_url) {
-        if (typeof release.thumbnail_url === 'object') {
-          thumbnailUrl = buildAssetUrl(release.thumbnail_url.filename_disk || release.thumbnail_url.id);
-        } else {
-          thumbnailUrl = buildAssetUrl(release.thumbnail_url);
-        }
-      }
+      const thumbnailUrl = buildAssetUrl(release.thumbnail_url) || coverArtUrl;
 
       // Find featured video (first with featured=true, or first by display_order)
       const sortedVideos = [...(release.videos || [])].sort((a, b) => {
@@ -420,12 +334,8 @@ export async function getMusicNewReleases() {
       projectLinkLabel: release.project_link_label,
       externalLinks: release.external_links || [],
       // Build asset URLs for images
-      backgroundImageUrl: release.background_image
-        ? buildAssetUrl(release.background_image.filename_disk || release.background_image.id)
-        : null,
-      thumbnailUrl: release.thumbnail_image
-        ? buildAssetUrl(release.thumbnail_image.filename_disk || release.thumbnail_image.id)
-        : null,
+      backgroundImageUrl: buildAssetUrl(release.background_image),
+      thumbnailUrl: buildAssetUrl(release.thumbnail_image),
       // Extract YouTube video ID if applicable
       videoId: release.video_url ? extractYouTubeId(release.video_url) : null,
       // Flatten M2M relationship to array of streaming platforms
@@ -540,11 +450,7 @@ export async function getLegacyReleases() {
       year: release.release_date ? new Date(release.release_date).getFullYear() : null,
       description: release.description,
       genre: release.genre || 'Unknown',
-      cover_art: release.cover_art
-        ? (typeof release.cover_art === 'object'
-          ? buildAssetUrl(release.cover_art.filename_disk || release.cover_art.id)
-          : buildAssetUrl(release.cover_art))
-        : null,
+      cover_art: buildAssetUrl(release.cover_art),
       release_date: release.release_date,
       published_status: release.published_status,
       audioUrl: null,

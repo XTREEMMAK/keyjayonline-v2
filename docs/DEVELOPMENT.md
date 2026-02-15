@@ -151,6 +151,15 @@ source .env.docker.local && docker compose --profile local-db up -d
 **What's included in schema export:**
 - Collections, fields, relations (data model)
 
+**Key collections:**
+- `kjov2_music_releases`, `kjov2_music_new_releases` - Music content
+- `kjov2_productions`, `kjov2_productions_actions`, `kjov2_productions_credits`, `kjov2_productions_embeds` - Productions
+- `kjov2_tech_projects`, `kjov2_tech_showcases` - Tech projects
+- `kjov2_music_studio`, `kjov2_studio_categories` - Studio gear
+- `kjov2_category_config` - Production category metadata
+- `kjov2_gallery_albums`, `kjov2_audio_playlist`, `kjov2_audio_playlist_tracks` - Media
+- `kjov2_general`, `kjov2_socials` - Site settings
+
 **What's NOT included (must be manually recreated or seeded):**
 - Flows (automations)
 - Roles/Permissions
@@ -159,8 +168,8 @@ source .env.docker.local && docker compose --profile local-db up -d
 
 **Export schema** (from a working Directus instance):
 ```bash
-docker exec -it directus-keyjayonline_v2-docker-directus-1 npx directus schema snapshot --yes /directus/schema.yaml
-docker cp directus-keyjayonline_v2-docker-directus-1:/directus/schema.yaml ./docker/directus/schema.yaml
+docker exec -it kjo2_directus npx directus schema snapshot --yes /directus/schema.yaml
+docker cp kjo2_directus:/directus/schema.yaml ./docker/directus/schema.yaml
 ```
 
 **Import schema** (to a fresh Directus container):
@@ -262,6 +271,25 @@ pg_dump --data-only --table=directus_flows > ./docker/directus/system-seed.sql
 ```
 
 **Note:** Import order matters - apply schema first, then seed data.
+
+## Uploading Media to CDN
+
+Videos and audio files are gitignored and stored on DigitalOcean Spaces (S3-compatible CDN). To upload local media files:
+
+1. Ensure S3 credentials are set in `.env.local`:
+   ```bash
+   S3_ACCESS_KEY=your_spaces_access_key
+   S3_SECRET_KEY=your_spaces_secret_key
+   ```
+
+2. Place files in `static/videos/` or `static/audio/`
+
+3. Run the sync script:
+   ```bash
+   npm run cdn:sync
+   ```
+
+The script (`scripts/sync-cdn-assets.js`) uses `@aws-sdk/client-s3`, compares file sizes, and only uploads changed files.
 
 ## Audio CORS Bypass
 

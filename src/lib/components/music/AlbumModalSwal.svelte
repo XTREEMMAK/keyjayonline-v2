@@ -90,7 +90,7 @@ import {
 			scrollbarPadding: false,
 			customClass: {
 				popup: 'album-modal-popup',
-				htmlContainer: 'album-modal-content'
+				htmlContainer: 'album-modal-content modal-scrollbar'
 			},
 			background: album.cover_art
 				? `linear-gradient(145deg, rgba(26, 26, 46, 0.97) 0%, rgba(22, 33, 62, 0.97) 50%, rgba(15, 23, 42, 0.97) 100%), url('${album.cover_art}')`

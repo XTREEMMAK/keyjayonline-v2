@@ -7,6 +7,7 @@
 
 import { getDirectusInstance, readItems, readItem } from '../core/client.js';
 import { buildAssetUrl } from '../core/assets.js';
+import { transformCredit } from '../core/creditTransform.js';
 import { extractYouTubeId } from '../../utils/youtube.js';
 import { getExternalLinkIcon } from '../../utils/externalLinks.js';
 
@@ -21,64 +22,6 @@ const CREDIT_FIELDS = [
     person_id: ['name', 'bio', 'website_url', 'social_links', 'profile_image.id', 'profile_image.filename_disk']
   }
 ];
-
-/**
- * Transform a raw credit record from Directus into a normalized object.
- * Handles flexible role formats (string, JSON string, JSON object, array).
- * Same parsing logic as music.js credit transforms.
- * @param {Object} credit - Raw credit record from Directus
- * @returns {Object} Normalized credit object
- */
-function transformCredit(credit) {
-  let roles = [];
-  if (credit.role) {
-    if (typeof credit.role === 'string') {
-      try {
-        const parsed = JSON.parse(credit.role);
-        if (Array.isArray(parsed)) {
-          roles = parsed;
-        } else if (parsed.roles && Array.isArray(parsed.roles)) {
-          roles = parsed.roles;
-        } else if (typeof parsed === 'object') {
-          roles = [parsed];
-        }
-      } catch {
-        roles = [{ title: credit.role, category: credit.role }];
-      }
-    } else if (Array.isArray(credit.role)) {
-      roles = credit.role;
-    } else if (typeof credit.role === 'object') {
-      roles = [credit.role];
-    }
-  }
-
-  const normalizedRoles = roles.map(role => {
-    if (typeof role === 'string') {
-      return { title: role, category: role };
-    }
-    const title = role.title || role.name || role.role || 'Unknown Role';
-    const category = role.category || role.group || title;
-    return { title, category };
-  });
-
-  return {
-    roles: normalizedRoles,
-    role: normalizedRoles[0]?.title || 'Unknown Role',
-    name: credit.person_id?.name || 'Unknown',
-    additional_info: credit.additional_info,
-    bio: credit.person_id?.bio,
-    website_url: credit.person_id?.website_url,
-    social_links: credit.person_id?.social_links || [],
-    display_order: credit.display_order,
-    profile_image: credit.person_id?.profile_image
-      ? buildAssetUrl(
-          typeof credit.person_id.profile_image === 'object'
-            ? credit.person_id.profile_image.filename_disk
-            : credit.person_id.profile_image
-        )
-      : null
-  };
-}
 
 /**
  * Embed fields to fetch from Directus (shared between queries)
@@ -131,11 +74,7 @@ export function transformEmbed(embed) {
     title: embed.title || null,
     description: embed.description || null,
     thumbnailUrl: embed.thumbnail_url
-      ? buildAssetUrl(
-          typeof embed.thumbnail_url === 'object'
-            ? embed.thumbnail_url.filename_disk
-            : embed.thumbnail_url
-        )
+      ? buildAssetUrl(embed.thumbnail_url)
       : null,
     displayOrder: embed.display_order || 0,
     featured: embed.featured || false
@@ -286,9 +225,7 @@ function buildProductionActions(production, rawActions) {
 function transformProduction(production, metaBySlug) {
   let coverImageUrl = null;
   if (production.cover_image) {
-    coverImageUrl = buildAssetUrl(
-      production.cover_image.filename_disk || production.cover_image.id
-    );
+    coverImageUrl = buildAssetUrl(production.cover_image);
   }
 
   const tags = parseTags(production.tags);
@@ -516,7 +453,7 @@ export async function getGalleryAlbums(galleryId) {
       title: album.title,
       caption: album.caption,
       imageUrl: album.page_image
-        ? buildAssetUrl(album.page_image.filename_disk || album.page_image.id)
+        ? buildAssetUrl(album.page_image)
         : null,
       width: album.page_image?.width,
       height: album.page_image?.height
@@ -571,7 +508,7 @@ export async function getAudioPlaylistTracks(playlistId) {
     );
 
     const playlistCoverArt = playlist?.cover_art
-      ? buildAssetUrl(playlist.cover_art.filename_disk || playlist.cover_art.id)
+      ? buildAssetUrl(playlist.cover_art)
       : null;
 
     const transformedTracks = tracks.map(track => ({
@@ -579,10 +516,10 @@ export async function getAudioPlaylistTracks(playlistId) {
       title: track.title,
       artist: track.artist || 'Key Jay',
       audioUrl: track.audio_file
-        ? buildAssetUrl(track.audio_file.filename_disk || track.audio_file.id)
+        ? buildAssetUrl(track.audio_file)
         : null,
       thumbnail: track.cover_art
-        ? buildAssetUrl(track.cover_art.filename_disk || track.cover_art.id)
+        ? buildAssetUrl(track.cover_art)
         : playlistCoverArt,
       genre: playlist?.playlist_type || 'general',
       duration: track.duration || null,

@@ -83,25 +83,6 @@
   }
 }
 
-/* Letter-by-letter scale animation for hero titles */
-@keyframes letterPulse {
-  0%, 100% {
-    transform: scale(1) translateY(0);
-    filter: brightness(1);
-  }
-  50% {
-    transform: scale(1.25) translateY(-5px);
-    filter: brightness(1.3);
-  }
-}
-
-.letter-animate {
-  display: inline-block !important;
-  animation: letterPulse 2.5s ease-in-out infinite !important;
-  transform-origin: center bottom;
-  will-change: transform;
-}
-
 /* =============================================================================
    Mobile Modal Fullscreen — SweetAlert2 overrides
    All Swal modals fill the viewport on mobile to prevent cutoffs and h-scroll

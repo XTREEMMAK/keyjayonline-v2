@@ -181,6 +181,50 @@ The sync script (`scripts/sync-cdn-assets.js`):
 
 ---
 
+## Updating Directus Schema in Production
+
+When you make schema changes (new collections, fields, relations) in your development Directus instance, you need to apply those changes to production.
+
+### Export Schema from Production
+
+```bash
+# Snapshot the current production schema
+docker exec -it kjo2_directus npx directus schema snapshot --yes /directus/schema.yaml
+
+# Copy it out of the container
+docker cp kjo2_directus:/directus/schema.yaml ./docker/directus/schema.yaml
+```
+
+### Apply Schema Changes
+
+After making changes in dev Directus and exporting the updated schema:
+
+```bash
+# Copy new schema into the production container
+docker cp ./docker/directus/schema.yaml kjo2_directus:/directus/schema.yaml
+
+# Preview changes (dry run)
+docker exec -it kjo2_directus npx directus schema apply /directus/schema.yaml --dry-run
+
+# Apply changes
+docker exec -it kjo2_directus npx directus schema apply /directus/schema.yaml --yes
+```
+
+### Workflow
+
+1. Make schema changes in your development Directus
+2. Export schema: `docker exec -it kjo2_directus npx directus schema snapshot --yes /directus/schema.yaml`
+3. Copy to repo: `docker cp kjo2_directus:/directus/schema.yaml ./docker/directus/schema.yaml`
+4. Commit `docker/directus/schema.yaml` with your code changes
+5. Deploy (push to `main`)
+6. Apply schema on production server (see above)
+
+**Note:** The `docker/scripts/first-run.sh` script automatically applies `schema.yaml` on first boot if the file is mounted into the container.
+
+**Caution:** Schema changes that remove or rename fields are destructive. Always use `--dry-run` first to preview what will change. Back up the database before applying destructive schema changes.
+
+---
+
 ## Manual Deployment
 
 ```bash

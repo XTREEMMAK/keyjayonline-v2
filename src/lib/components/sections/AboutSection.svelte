@@ -4,7 +4,7 @@
 	import { fade } from 'svelte/transition';
 	import Icon from '@iconify/svelte';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
-	import { navigateTo, navbarVisible } from '$lib/stores/navigation.js';
+	import { activeSection, navigateTo, navbarVisible } from '$lib/stores/navigation.js';
 	import { showStickyNav, hideStickyNav, aboutActiveTab } from '$lib/stores/stickyNav.js';
 	import { get } from 'svelte/store';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
@@ -74,19 +74,25 @@
 		function handleScrollWork() {
 			if (!inlineNavRef) { ticking = false; return; }
 
-			const rect = inlineNavRef.getBoundingClientRect();
-			const navbarOffset = get(navbarVisible) ? 88 : 0;
+			// Only manage sticky nav when About is the active section.
+			// CSS panels keep this component alive when hidden (display: none),
+			// which causes getBoundingClientRect() to return zeros and falsely
+			// triggers showStickyNav() on other sections.
+			if (get(activeSection) === 'about') {
+				const rect = inlineNavRef.getBoundingClientRect();
+				const navbarOffset = get(navbarVisible) ? 88 : 0;
 
-			// When inline nav top goes above the navbar, show sticky portal
-			if (rect.top <= navbarOffset) {
-				if (!stickyNavActive) {
-					stickyNavActive = true;
-					showStickyNav(navbarOffset);
-				}
-			} else {
-				if (stickyNavActive) {
-					stickyNavActive = false;
-					hideStickyNav();
+				// When inline nav top goes above the navbar, show sticky portal
+				if (rect.top <= navbarOffset) {
+					if (!stickyNavActive) {
+						stickyNavActive = true;
+						showStickyNav(navbarOffset);
+					}
+				} else {
+					if (stickyNavActive) {
+						stickyNavActive = false;
+						hideStickyNav();
+					}
 				}
 			}
 

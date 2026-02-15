@@ -41,11 +41,11 @@ export async function getPhotoGalleries() {
       photo_count: 0, // Will be populated by separate query if needed
       cover_photo: gallery.cover_photo ? {
         id: gallery.cover_photo.id,
-        url: buildAssetUrl(gallery.cover_photo.filename_disk || gallery.cover_photo.id),
-        thumbnail: buildAssetUrl(gallery.cover_photo.filename_disk || gallery.cover_photo.id, { 
-          width: 400, 
-          height: 300, 
-          fit: 'cover' 
+        url: buildAssetUrl(gallery.cover_photo),
+        thumbnail: buildAssetUrl(gallery.cover_photo, {
+          width: 400,
+          height: 300,
+          fit: 'cover'
         }),
         title: gallery.cover_photo.title
       } : null
@@ -167,27 +167,27 @@ export async function getPhotos(options = {}) {
         height: photo.photo_file.height,
         filesize: photo.photo_file.filesize,
         // Full resolution
-        url: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id),
+        url: buildAssetUrl(photo.photo_file),
         // Medium size for grid display
-        medium: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-          width: 600, 
-          height: 600, 
+        medium: buildAssetUrl(photo.photo_file, {
+          width: 600,
+          height: 600,
           fit: 'inside',
-          quality: 85 
+          quality: 85
         }),
         // Thumbnail for initial loading
-        thumbnail: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-          width: 300, 
-          height: 300, 
+        thumbnail: buildAssetUrl(photo.photo_file, {
+          width: 300,
+          height: 300,
           fit: 'cover',
-          quality: 70 
+          quality: 70
         }),
         // Blur placeholder for progressive loading
-        placeholder: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-          width: 20, 
-          height: 20, 
+        placeholder: buildAssetUrl(photo.photo_file, {
+          width: 20,
+          height: 20,
           fit: 'cover',
-          quality: 30 
+          quality: 30
         })
       } : null,
       
@@ -275,18 +275,18 @@ export async function getFeaturedPhotos(limit = 8) {
         title: photo.photo_file.title,
         width: photo.photo_file.width,
         height: photo.photo_file.height,
-        url: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id),
-        medium: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-          width: 500, 
-          height: 500, 
+        url: buildAssetUrl(photo.photo_file),
+        medium: buildAssetUrl(photo.photo_file, {
+          width: 500,
+          height: 500,
           fit: 'inside',
-          quality: 85 
+          quality: 85
         }),
-        thumbnail: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-          width: 250, 
-          height: 250, 
+        thumbnail: buildAssetUrl(photo.photo_file, {
+          width: 250,
+          height: 250,
           fit: 'cover',
-          quality: 75 
+          quality: 75
         })
       } : null
     }));
@@ -351,32 +351,32 @@ export async function getPhotoById(photoId) {
         height: photo.photo_file.height,
         filesize: photo.photo_file.filesize,
         type: photo.photo_file.type,
-        url: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id),
+        url: buildAssetUrl(photo.photo_file),
         // Multiple sizes for different use cases
         sizes: {
-          large: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-            width: 1200, 
-            height: 1200, 
+          large: buildAssetUrl(photo.photo_file, {
+            width: 1200,
+            height: 1200,
             fit: 'inside',
-            quality: 90 
+            quality: 90
           }),
-          medium: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-            width: 800, 
-            height: 800, 
+          medium: buildAssetUrl(photo.photo_file, {
+            width: 800,
+            height: 800,
             fit: 'inside',
-            quality: 85 
+            quality: 85
           }),
-          small: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-            width: 400, 
-            height: 400, 
+          small: buildAssetUrl(photo.photo_file, {
+            width: 400,
+            height: 400,
             fit: 'inside',
-            quality: 80 
+            quality: 80
           }),
-          thumbnail: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-            width: 200, 
-            height: 200, 
+          thumbnail: buildAssetUrl(photo.photo_file, {
+            width: 200,
+            height: 200,
             fit: 'cover',
-            quality: 75 
+            quality: 75
           })
         }
       } : null,
@@ -478,11 +478,11 @@ export async function searchPhotos(searchTerm) {
         id: photo.photo_file.id,
         width: photo.photo_file.width,
         height: photo.photo_file.height,
-        thumbnail: buildAssetUrl(photo.photo_file.filename_disk || photo.photo_file.id, { 
-          width: 300, 
-          height: 300, 
+        thumbnail: buildAssetUrl(photo.photo_file, {
+          width: 300,
+          height: 300,
           fit: 'cover',
-          quality: 75 
+          quality: 75
         })
       } : null
     }));

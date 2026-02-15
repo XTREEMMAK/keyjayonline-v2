@@ -29,7 +29,7 @@
 			scrollbarPadding: false,
 			customClass: {
 				popup: 'new-release-modal-popup',
-				htmlContainer: 'new-release-modal-content'
+				htmlContainer: 'new-release-modal-content modal-scrollbar'
 			},
 			background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%)',
 			color: '#ffffff',

@@ -66,12 +66,7 @@ export async function getVoiceProjects() {
       const primaryClip = clips[0] || null;
 
       // Build audio URL from the clip's audio_file
-      let audioUrl = null;
-      if (primaryClip?.audio_file) {
-        audioUrl = buildAssetUrl(
-          primaryClip.audio_file.filename_disk || primaryClip.audio_file.id
-        );
-      }
+      const audioUrl = buildAssetUrl(primaryClip?.audio_file);
 
       // Parse feeling - could be JSON array or string
       let feelings = [];
@@ -115,9 +110,7 @@ export async function getVoiceProjects() {
         clips: clips.map(clip => ({
           id: clip.id,
           title: clip.title,
-          audioUrl: clip.audio_file
-            ? buildAssetUrl(clip.audio_file.filename_disk || clip.audio_file.id)
-            : null
+          audioUrl: buildAssetUrl(clip.audio_file)
         })),
 
         // External links
