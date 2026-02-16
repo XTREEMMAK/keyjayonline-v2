@@ -1,10 +1,11 @@
 <p align="center">
-  <img src="/static/img/KJ_Logo_Medium_W.svg" alt="Key Jay Logo" width="200">
-</p>
-
-# KEY JAY ONLINE v2
+  <img src="/static/img/KJ_Logo_Medium_W.svg" alt="Key Jay Logo" width="500">
+  
+  # KEY JAY ONLINE v2
 
 <p align="center">The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!</p>
+</p>
+
 
 ## Tech Stack
 
