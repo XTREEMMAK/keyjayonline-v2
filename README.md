@@ -1,8 +1,10 @@
-# Key Jay Online v2
+<p align="center">
+  <img src="/static/img/KJ_Logo_Medium_W.svg" alt="Key Jay Logo" width="200">
+</p>
 
-![Key Jay Logo](/static/img/KJ_Logo_Medium_W.svg)
+# KEY JAY ONLINE v2
 
-Official website for musician, composer, and producer Key Jay, built with SvelteKit.
+<p align="center">The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!</p>
 
 ## Tech Stack
 
