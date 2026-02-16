@@ -166,23 +166,23 @@ source .env.docker.local && docker compose --profile local-db up -d
 - Settings
 - Actual data/content
 
-**Export schema** (from a working Directus instance):
+**Export schema** (from dev Directus):
 ```bash
-docker exec -it kjo2_directus npx directus schema snapshot --yes /directus/schema.yaml
-docker cp kjo2_directus:/directus/schema.yaml ./docker/directus/schema.yaml
+npm run schema:snapshot
+# → Exports via Directus API to docker/directus/schema.json
+# Requires DEV_ADMIN_PASSWORD in .env.local
 ```
 
-**Import schema** (to a fresh Directus container):
+**Automatic apply on container startup:**
+
+Schema is automatically applied when the Directus container starts via `docker/scripts/first-run.sh`. The script runs `npx directus schema apply` before `npx directus start` — it's idempotent (no-op when schema already matches).
+
+**Manual apply** (CLI alternative — use `run --rm` to avoid KnexTimeoutError):
 ```bash
-# Copy schema file into container
-docker cp ./docker/directus/schema.yaml kjo2_directus:/directus/schema.yaml
-
-# Apply schema (creates all collections, fields, relations)
-docker exec -it kjo2_directus npx directus schema apply /directus/schema.yaml --yes
-
-# Optional: Preview changes without applying
-docker exec -it kjo2_directus npx directus schema apply /directus/schema.yaml --dry-run
+docker compose run --rm kjo2_directus npx directus schema apply /directus/config/schema.json --yes
 ```
+
+**Note:** Do NOT use `docker exec` for schema commands — it shares the running server's connection pool and causes KnexTimeoutError. Always use `docker compose run --rm` instead.
 
 ### Seed Data & Flows
 
