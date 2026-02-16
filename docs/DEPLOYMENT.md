@@ -181,47 +181,59 @@ The sync script (`scripts/sync-cdn-assets.js`):
 
 ---
 
-## Updating Directus Schema in Production
+## Directus Schema Migrations
 
-When you make schema changes (new collections, fields, relations) in your development Directus instance, you need to apply those changes to production.
+Schema changes (new collections, fields, relations) made on the dev Directus instance are automatically applied to production on deploy.
 
-### Export Schema from Production
+### How It Works
 
-```bash
-# Snapshot the current production schema
-docker exec -it kjo2_directus npx directus schema snapshot --yes /directus/schema.yaml
+The `docker-compose.yml` mounts `docker/directus/schema.json` into the Directus container and overrides the startup command to run `docker/scripts/first-run.sh` before `npx directus start`. This script runs `npx directus schema apply` on every container startup — it's idempotent, so when the schema already matches, it's a no-op.
 
-# Copy it out of the container
-docker cp kjo2_directus:/directus/schema.yaml ./docker/directus/schema.yaml
-```
-
-### Apply Schema Changes
-
-After making changes in dev Directus and exporting the updated schema:
+### Developer Workflow
 
 ```bash
-# Copy new schema into the production container
-docker cp ./docker/directus/schema.yaml kjo2_directus:/directus/schema.yaml
+# 1. Make schema changes in dev Directus (http://192.168.10.24:8057)
 
-# Preview changes (dry run)
-docker exec -it kjo2_directus npx directus schema apply /directus/schema.yaml --dry-run
+# 2. Export the schema snapshot
+DEV_ADMIN_PASSWORD='your-password' npm run schema:snapshot
+# → Saves to docker/directus/schema.json
 
-# Apply changes
-docker exec -it kjo2_directus npx directus schema apply /directus/schema.yaml --yes
+# 3. Commit and push
+git add docker/directus/schema.json
+git commit -m "Update Directus schema"
+git push
+
+# 4. Deploy (push to main triggers CI/CD)
+# Container restarts → first-run.sh applies schema → server starts
 ```
 
-### Workflow
+### What `schema:snapshot` Does
 
-1. Make schema changes in your development Directus
-2. Export schema: `docker exec -it kjo2_directus npx directus schema snapshot --yes /directus/schema.yaml`
-3. Copy to repo: `docker cp kjo2_directus:/directus/schema.yaml ./docker/directus/schema.yaml`
-4. Commit `docker/directus/schema.yaml` with your code changes
-5. Deploy (push to `main`)
-6. Apply schema on production server (see above)
+The `scripts/schema-snapshot.js` script:
+1. Logs into dev Directus via `POST /auth/login` (admin JWT required for schema endpoints)
+2. Calls `GET /schema/snapshot` to get the full schema
+3. Extracts the `data` property (not the API response wrapper)
+4. Saves to `docker/directus/schema.json`
 
-**Note:** The `docker/scripts/first-run.sh` script automatically applies `schema.yaml` on first boot if the file is mounted into the container.
+### Initial Environment Sync
 
-**Caution:** Schema changes that remove or rename fields are destructive. Always use `--dry-run` first to preview what will change. Back up the database before applying destructive schema changes.
+For a fresh production setup or when dev and production have diverged significantly, use a full database dump instead of schema migration:
+
+```bash
+# On dev (native Postgres)
+pg_dump -U xtreemmak -d directus_kjo_v2 --clean --if-exists --no-owner --no-privileges > dump.sql
+
+# On production
+docker compose exec kjo2_postgres psql -U kjo_user -d kjo_v2_db < dump.sql
+```
+
+### Troubleshooting
+
+- **KnexTimeoutError** when running schema commands: Don't use `docker exec` — it shares the running server's connection pool. Use `docker compose run --rm kjo2_directus npx directus schema apply ...` instead (separate container, own pool).
+- **"Collection already exists"**: An orphaned PostgreSQL table exists without Directus metadata. Drop the table first: `DROP TABLE IF EXISTS <table> CASCADE;`
+- **Schema file missing**: If `docker/directus/schema.json` doesn't exist, `first-run.sh` gracefully skips schema apply and the server starts normally.
+
+**Caution:** Schema changes that remove or rename fields are destructive. Back up the database before deploying destructive schema changes.
 
 ---
 

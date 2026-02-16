@@ -27,3 +27,6 @@ References/
 # CDN-uploaded static assets (large files - uploaded to S3)
 static/audio/
 static/videos/
+
+# Temp schema snapshots (use docker/directus/schema.json for canonical version)
+dev-snapshot-data.json

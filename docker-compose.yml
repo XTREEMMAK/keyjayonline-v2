@@ -115,6 +115,12 @@ services:
     volumes:
       - kjo2_directus_uploads:/directus/uploads
       - kjo2_directus_extensions:/directus/extensions
+      - ./docker/directus:/directus/config:ro
+      - ./docker/scripts/first-run.sh:/directus/scripts/first-run.sh:ro
+    # Run schema migration script before starting Directus.
+    # Entrypoint still runs `npx directus bootstrap` first.
+    # Schema apply is idempotent — no-op when schema matches.
+    command: ["sh", "-c", "sh /directus/scripts/first-run.sh && npx directus start"]
     networks:
       - kjo2_network
     ports:

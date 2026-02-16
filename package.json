@@ -17,7 +17,8 @@
 		"docker:up": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db up -d",
 		"docker:down": "docker compose --profile local-db down",
 		"docker:logs": "docker compose --profile local-db logs -f",
-		"docker:build": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db build --no-cache"
+		"docker:build": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db build --no-cache",
+		"schema:snapshot": "node scripts/schema-snapshot.js"
 	},
 	"devDependencies": {
 		"@aws-sdk/client-s3": "^3.983.0",
