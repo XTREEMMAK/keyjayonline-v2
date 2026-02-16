@@ -2,7 +2,7 @@
   <img src="/static/img/KJ_Logo_Medium_W.svg" alt="Key Jay Logo" width="500">
 </p>
 
-<h1 style="border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted)); padding-bottom: .3em; font-size: 2em; text-align: center;">KEY JAY ONLINE v2</h1>
+<p style="border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted)); padding-bottom: .3em; font-size: 2em; text-align: center;">KEY JAY ONLINE v2</p>
 
 <p align="center">The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!</p>
 
