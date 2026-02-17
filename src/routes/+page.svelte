@@ -147,7 +147,7 @@
 
 	// Dynamic meta descriptions per section
 	const sectionDescriptions = {
-		home: 'KEY JAY ONLINE - The official website of musician, composer, and producer KEY JAY. Music, voice acting, productions, and creative works.',
+		home: 'KEY JAY ONLINE - The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!',
 		music: 'Explore KEY JAY\'s music catalog including original compositions, albums, and beats. Listen to samples and discover new releases.',
 		games: 'Gaming content and reviews by KEY JAY. Game development projects, reviews, and gaming related content.',
 		voice: 'Professional voice acting services by KEY JAY. Animation, video games, audio dramas, and commercial voice work portfolio.',

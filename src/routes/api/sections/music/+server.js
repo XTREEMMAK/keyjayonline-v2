@@ -12,7 +12,7 @@ import {
 	getLatestProjects,
 	getMusicStudioGear,
 	getMusicStudioCategories,
-	getLegacyReleases,
+	getLegacySamples,
 	getStudioPhoto
 } from '$lib/api/index.js';
 
@@ -35,7 +35,7 @@ export async function GET() {
 				safePromise(getLatestProjects(3), 'getLatestProjects'),
 				safePromise(getMusicStudioGear(), 'getMusicStudioGear'),
 				safePromise(getMusicStudioCategories(), 'getMusicStudioCategories'),
-				safePromise(getLegacyReleases(), 'getLegacyReleases'),
+				safePromise(getLegacySamples(), 'getLegacySamples'),
 				safePromise(getStudioPhoto(), 'getStudioPhoto')
 			]
 		);

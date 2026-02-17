@@ -97,7 +97,7 @@ export async function getMusicReleases() {
       minimum_price: parseFloat(release.minimum_price) || 0,
       suggested_price: parseFloat(release.suggested_price) || 0,
       track_count: 0, // Will need separate query for tracks
-      genre: 'Unknown', // Will need tracks data
+      genre: release.genre || [],
       
       // These would need additional queries or relationships set up in DirectUS
       tracks: [],
@@ -421,41 +421,43 @@ export async function getMusicStudioGear() {
 }
 
 /**
- * Fetches legacy music releases (is_legacy = true) from Directus
- * Returns all releases marked as legacy, regardless of published_status,
- * so archived-but-legacy works also appear in the Legacy Works tab.
- * @returns {Promise<Array>} Array of legacy release objects
+ * Fetches legacy music samples (is_legacy = true) from Directus
+ * Legacy content lives at the sample level — individual standalone tracks
+ * (e.g., old Newgrounds uploads) rather than full album releases.
+ * @returns {Promise<Array>} Array of legacy sample objects
  */
-export async function getLegacyReleases() {
+export async function getLegacySamples() {
   try {
     const directus = getDirectusInstance();
 
-    const releases = await directus.request(
-      readItems('kjov2_music_releases', {
+    const samples = await directus.request(
+      readItems('kjov2_music_samples', {
         filter: {
           is_legacy: { _eq: true }
         },
         fields: [
-          '*',
-          { cover_art: ['id', 'filename_disk'] }
+          'id',
+          'track_name',
+          'artist',
+          'genre',
+          'release_year',
+          { music_sample: ['id', 'filename_disk'] },
+          { thumbnail: ['id', 'filename_disk'] }
         ],
-        sort: ['-release_date', '-created_at']
+        sort: ['-release_year']
       })
     );
 
-    return releases.map(release => ({
-      id: release.id,
-      title: release.title,
-      artist: release.main_artist,
-      year: release.release_date ? new Date(release.release_date).getFullYear() : null,
-      description: release.description,
-      genre: release.genre || 'Unknown',
-      cover_art: buildAssetUrl(release.cover_art),
-      release_date: release.release_date,
-      published_status: release.published_status,
-      audioUrl: null,
-      newgroundsUrl: null,
-      duration: null
+    return samples.map(sample => ({
+      id: sample.id,
+      title: sample.track_name,
+      artist: sample.artist || 'Key Jay',
+      year: sample.release_year || null,
+      genre: sample.genre || [],
+      audioUrl: sample.music_sample ? buildAssetUrl(sample.music_sample) : null,
+      thumbnail: sample.thumbnail ? buildAssetUrl(sample.thumbnail) : null,
+      description: null,
+      externalLinks: []
     }));
   } catch {
     return [];

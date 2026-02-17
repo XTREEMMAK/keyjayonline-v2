@@ -18,7 +18,8 @@
 		"docker:down": "docker compose --profile local-db down",
 		"docker:logs": "docker compose --profile local-db logs -f",
 		"docker:build": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db build --no-cache",
-		"schema:snapshot": "set -a && . ./.env.local && set +a && node scripts/schema-snapshot.js"
+		"schema:snapshot": "set -a && . ./.env.local && set +a && node scripts/schema-snapshot.js",
+		"icons:generate": "node scripts/generate-icons.js"
 	},
 	"devDependencies": {
 		"@aws-sdk/client-s3": "^3.983.0",
@@ -29,6 +30,7 @@
 		"@tailwindcss/typography": "^0.5.15",
 		"@tailwindcss/vite": "^4.0.0",
 		"dotenv": "^17.2.1",
+		"sharp": "^0.34.5",
 		"svelte": "^5.0.0",
 		"sveltekit-superforms": "^2.27.1",
 		"tailwindcss": "^4.0.0",

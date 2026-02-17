@@ -17,7 +17,7 @@ export {
   getLatestProjects,
   getMusicStudioCategories,
   getMusicStudioGear,
-  getLegacyReleases
+  getLegacySamples
   // getMusicSamples removed to avoid circular import issues - import directly from content/music.js if needed
 } from './content/music.js';
 

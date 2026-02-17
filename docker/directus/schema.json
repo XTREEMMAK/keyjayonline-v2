@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "directus": "11.15.2",
+  "directus": "11.15.3",
   "vendor": "postgres",
   "collections": [
     {
@@ -7484,7 +7484,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 11,
+        "sort": 12,
         "special": null,
         "translations": null,
         "validation": null,
@@ -7528,7 +7528,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 12,
+        "sort": 13,
         "special": null,
         "translations": null,
         "validation": null,
@@ -7572,7 +7572,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 13,
+        "sort": 14,
         "special": null,
         "translations": null,
         "validation": null,
@@ -7616,7 +7616,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 14,
+        "sort": 15,
         "special": null,
         "translations": null,
         "validation": null,
@@ -7660,7 +7660,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 15,
+        "sort": 16,
         "special": null,
         "translations": null,
         "validation": null,
@@ -7704,7 +7704,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 16,
+        "sort": 17,
         "special": null,
         "translations": null,
         "validation": null,
@@ -7748,7 +7748,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 17,
+        "sort": 18,
         "special": null,
         "translations": null,
         "validation": null,
@@ -7792,7 +7792,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 8,
+        "sort": 9,
         "special": [
           "file"
         ],
@@ -7838,7 +7838,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 18,
+        "sort": 19,
         "special": [
           "alias",
           "no-data"
@@ -7874,7 +7874,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 20,
+        "sort": 21,
         "special": [
           "o2m"
         ],
@@ -7906,7 +7906,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 21,
+        "sort": 23,
         "special": [
           "o2m"
         ],
@@ -7982,7 +7982,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 22,
+        "sort": 24,
         "special": [
           "o2m"
         ],
@@ -8071,7 +8071,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 19,
+        "sort": 20,
         "special": [
           "o2m"
         ],
@@ -8101,7 +8101,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 9,
+        "sort": 10,
         "special": [
           "file"
         ],
@@ -8149,7 +8149,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 10,
+        "sort": 11,
         "special": [
           "file"
         ],
@@ -8225,34 +8225,54 @@
     },
     {
       "collection": "kjov2_music_releases",
-      "field": "is_legacy",
-      "type": "boolean",
+      "field": "genre",
+      "type": "json",
       "meta": {
         "collection": "kjov2_music_releases",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "is_legacy",
+        "field": "genre",
         "group": null,
         "hidden": false,
-        "interface": "boolean",
-        "note": "Mark as legacy/archive work. Appears in Legacy Works tab when enabled.",
-        "options": null,
+        "interface": "select-multiple-dropdown",
+        "note": null,
+        "options": {
+          "allowNone": true,
+          "allowOther": true,
+          "choices": [
+            {
+              "text": "Pop",
+              "value": "pop"
+            },
+            {
+              "text": "Hip-Hop",
+              "value": "hip-hop"
+            },
+            {
+              "text": "R&B",
+              "value": "r&b"
+            }
+          ],
+          "icon": "queue_music"
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 20,
-        "special": null,
+        "sort": 8,
+        "special": [
+          "cast-json"
+        ],
         "translations": null,
         "validation": null,
         "validation_message": null,
-        "width": "half"
+        "width": "full"
       },
       "schema": {
-        "name": "is_legacy",
+        "name": "genre",
         "table": "kjov2_music_releases",
-        "data_type": "boolean",
-        "default_value": false,
+        "data_type": "json",
+        "default_value": null,
         "max_length": null,
         "numeric_precision": null,
         "numeric_scale": null,
@@ -8999,6 +9019,7 @@
         "interface": "select-dropdown",
         "note": null,
         "options": {
+          "allowNone": true,
           "allowOther": true,
           "choices": [
             {
@@ -9034,7 +9055,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 11,
+        "sort": 13,
         "special": null,
         "translations": null,
         "validation": null,
@@ -9078,7 +9099,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 12,
+        "sort": 14,
         "special": null,
         "translations": null,
         "validation": null,
@@ -9122,7 +9143,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 14,
+        "sort": 15,
         "special": [
           "cast-boolean"
         ],
@@ -9196,6 +9217,170 @@
         "has_auto_increment": false,
         "foreign_key_table": "directus_files",
         "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "kjov2_music_samples",
+      "field": "is_legacy",
+      "type": "boolean",
+      "meta": {
+        "collection": "kjov2_music_samples",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "is_legacy",
+        "group": null,
+        "hidden": false,
+        "interface": "boolean",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 12,
+        "special": [
+          "cast-boolean"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "is_legacy",
+        "table": "kjov2_music_samples",
+        "data_type": "boolean",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_music_samples",
+      "field": "release_year",
+      "type": "integer",
+      "meta": {
+        "collection": "kjov2_music_samples",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "release_year",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 11,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "release_year",
+        "table": "kjov2_music_samples",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_music_samples",
+      "field": "genre",
+      "type": "json",
+      "meta": {
+        "collection": "kjov2_music_samples",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "genre",
+        "group": null,
+        "hidden": false,
+        "interface": "select-multiple-dropdown",
+        "note": null,
+        "options": {
+          "allowOther": true,
+          "choices": [
+            {
+              "text": "Pop",
+              "value": "pop"
+            },
+            {
+              "text": "Hip-Hop",
+              "value": "hiphop"
+            },
+            {
+              "text": "EDM",
+              "value": "edm"
+            },
+            {
+              "text": "R&B",
+              "value": "r&b"
+            },
+            {
+              "text": "Rock",
+              "value": "rock"
+            },
+            {
+              "text": "Jazz",
+              "value": "jazz"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 16,
+        "special": [
+          "cast-json"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "genre",
+        "table": "kjov2_music_samples",
+        "data_type": "json",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {

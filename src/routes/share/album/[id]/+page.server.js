@@ -93,7 +93,7 @@ export async function load({ params, fetch }) {
 				album.description ||
 				album.liner_notes ||
 				`Listen to ${album.title} by KEY JAY on all streaming platforms`,
-			image: album.cover_art || `${PUBLIC_SITE_URL}/img/social_1200.jpg`,
+			image: album.cover_art || `${PUBLIC_SITE_URL}/img/og-social.png`,
 			releaseDate: album.release_date,
 			artist: album.artist || 'KEY JAY'
 		};

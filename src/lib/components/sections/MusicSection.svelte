@@ -10,7 +10,6 @@
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
 	import LegacyWorkCard from '$lib/components/music/LegacyWorkCard.svelte';
 	import Icon from '@iconify/svelte';
-	import { getLegacyWorksByYear } from '$lib/data/legacyWorks.js';
 	import { browser } from '$app/environment';
 	import { activeSection, navigateTo, navbarVisible } from '$lib/stores/navigation.js';
 	import { showSectionSubNav, hideSectionSubNav, musicActiveView, musicActiveFilter, portalScrollLock, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
@@ -183,22 +182,19 @@
 		return groups;
 	});
 
-	// Legacy works from Directus (grouped by year), fallback to hardcoded data
+	// Legacy works from Directus (grouped by year)
 	const legacyWorksByYear = $derived(() => {
 		const apiLegacy = musicData.legacyReleases || [];
-		if (apiLegacy.length > 0) {
-			const grouped = {};
-			apiLegacy.forEach(work => {
-				const year = work.year || 'Unknown';
-				if (!grouped[year]) grouped[year] = [];
-				grouped[year].push(work);
-			});
-			return Object.entries(grouped)
-				.sort(([a], [b]) => Number(b) - Number(a))
-				.map(([year, works]) => ({ year: Number(year), works }));
-		}
-		// Fallback to hardcoded data until Directus migration is complete
-		return getLegacyWorksByYear();
+		if (apiLegacy.length === 0) return [];
+		const grouped = {};
+		apiLegacy.forEach(work => {
+			const year = work.year || 'Unknown';
+			if (!grouped[year]) grouped[year] = [];
+			grouped[year].push(work);
+		});
+		return Object.entries(grouped)
+			.sort(([a], [b]) => Number(b) - Number(a))
+			.map(([year, works]) => ({ year: Number(year), works }));
 	});
 
 	// Mock albums fallback

@@ -14,6 +14,9 @@
 	// Check if we're on an error page to conditionally hide footer
 	const isErrorPage = $derived($page.status >= 400);
 
+	// Skip default OG tags on share pages (they provide their own)
+	const isSharePage = $derived($page.url.pathname.startsWith('/share/'));
+
 	// State to control footer visibility after initial load
 	let pageReady = $state(false);
 
@@ -52,32 +55,34 @@
 	<meta name="author" content="Jamaal Ephriam" />
 	<meta
 		name="description"
-		content="The official website of musician, composer, and producer KEY JAY!"
+		content="The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!"
 	/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<!-- Canonical URL -->
 	<link rel="canonical" href={PUBLIC_SITE_URL} />
-	<!-- Facebook Meta Tags -->
-	<meta property="og:url" content={PUBLIC_SITE_URL} />
-	<meta property="og:type" content="website" />
-	<meta property="og:title" content="KEY JAY ONLINE" />
-	<meta
-		property="og:description"
-		content="The official website of musician, composer, and producer KEY JAY!"
-	/>
-	<meta property="og:image" content="{PUBLIC_SITE_URL}/img/social_1200.jpg" />
-	<meta property="og:site_name" content="KEY JAY ONLINE" />
-	<!-- Twitter Meta Tags -->
-	<meta name="twitter:card" content="summary_large_image" />
-	<meta property="twitter:domain" content={PUBLIC_SITE_URL.replace('https://', '')} />
-	<meta property="twitter:url" content={PUBLIC_SITE_URL} />
-	<meta name="twitter:title" content="KEY JAY ONLINE" />
-	<meta
-		name="twitter:description"
-		content="The official website of musician, composer, and producer KEY JAY!"
-	/>
-	<meta name="twitter:image" content="{PUBLIC_SITE_URL}/img/social_1200.jpg" />
-	<link rel="icon" href="/img/kj_logo_icon.svg" type="image/svg+xml" />
+	{#if !isSharePage}
+		<!-- Facebook Meta Tags -->
+		<meta property="og:url" content={PUBLIC_SITE_URL} />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="KEY JAY ONLINE" />
+		<meta
+			property="og:description"
+			content="The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!"
+		/>
+		<meta property="og:image" content="{PUBLIC_SITE_URL}/img/og-social.png" />
+		<meta property="og:site_name" content="KEY JAY ONLINE" />
+		<!-- Twitter Meta Tags -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta property="twitter:domain" content={PUBLIC_SITE_URL.replace('https://', '')} />
+		<meta property="twitter:url" content={PUBLIC_SITE_URL} />
+		<meta name="twitter:title" content="KEY JAY ONLINE" />
+		<meta
+			name="twitter:description"
+			content="The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!"
+		/>
+		<meta name="twitter:image" content="{PUBLIC_SITE_URL}/img/og-social.png" />
+	{/if}
+	<link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
 	<!-- JSON-LD Structured Data -->
 	{@html `<script type="application/ld+json">
 	{
@@ -86,8 +91,8 @@
 		"name": "KEY JAY",
 		"alternateName": "Jamaal Ephriam",
 		"url": "${PUBLIC_SITE_URL}",
-		"image": "${PUBLIC_SITE_URL}/img/social_1200.jpg",
-		"description": "Musician, composer, producer, voice actor, and creative professional.",
+		"image": "${PUBLIC_SITE_URL}/img/og-social.png",
+		"description": "The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!",
 		"sameAs": [
 			${data?.socialLinks?.map(s => `"${s.url}"`).join(',\n\t\t\t') || ''}
 		],

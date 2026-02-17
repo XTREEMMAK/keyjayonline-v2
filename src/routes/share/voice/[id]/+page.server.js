@@ -126,7 +126,7 @@ export async function load({ params, parent }) {
 			description:
 				projectData.description ||
 				`Listen to ${projectData.title} voice-over project by KEY JAY.${categories.length > 0 ? ` Categories: ${categories.map((c) => c.name).join(', ')}` : ''}`,
-			image: `${PUBLIC_SITE_URL}/img/social_1200.jpg`,
+			image: `${PUBLIC_SITE_URL}/img/og-social.png`,
 			type: 'voice'
 		};
 

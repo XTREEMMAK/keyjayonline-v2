@@ -28,7 +28,7 @@ export async function load({ params, parent }) {
 		description:
 			production.description ||
 			`Check out ${production.title} by KEY JAY.${categoryNames ? ` Categories: ${categoryNames}` : ''}`,
-		image: production.image || `${PUBLIC_SITE_URL}/img/social_1200.jpg`,
+		image: production.image || `${PUBLIC_SITE_URL}/img/og-social.png`,
 		type: 'production'
 	};
 
