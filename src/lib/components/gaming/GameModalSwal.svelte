@@ -71,7 +71,7 @@
 						${game.igdb_rating ? `
 							<div style="margin-top: 12px; text-align: center;">
 								<div style="background: rgba(255, 193, 7, 0.2); color: #ffc107; padding: 8px 16px; border-radius: 20px; display: inline-block;">
-									<iconify-icon icon="mdi:star" style="margin-right: 4px;"></iconify-icon>
+									<iconify-icon noobserver icon="mdi:star" style="margin-right: 4px;"></iconify-icon>
 									IGDB: ${game.igdb_rating}/10
 								</div>
 							</div>
@@ -92,7 +92,7 @@
 								<div style="display: flex; align-items: center; gap: 8px;">
 									<span style="color: #d1d5db; font-weight: 500;">My Rating:</span>
 									<div style="display: flex; align-items: center; gap: 4px;">
-										<iconify-icon icon="mdi:star" style="color: #fbbf24;"></iconify-icon>
+										<iconify-icon noobserver icon="mdi:star" style="color: #fbbf24;"></iconify-icon>
 										<span style="color: #ffffff; font-weight: bold; font-size: 1.1rem;">${game.rating || game.personal_rating}/10</span>
 									</div>
 								</div>
@@ -101,14 +101,14 @@
 						
 						${game.playtime ? `
 							<div style="margin-bottom: 16px; color: #9ca3af;">
-								<iconify-icon icon="mdi:clock" style="margin-right: 8px;"></iconify-icon>
+								<iconify-icon noobserver icon="mdi:clock" style="margin-right: 8px;"></iconify-icon>
 								<span>${game.playtime} hours played</span>
 							</div>
 						` : ''}
 						
 						${game.last_played ? `
 							<div style="margin-bottom: 16px; color: #9ca3af;">
-								<iconify-icon icon="mdi:calendar" style="margin-right: 8px;"></iconify-icon>
+								<iconify-icon noobserver icon="mdi:calendar" style="margin-right: 8px;"></iconify-icon>
 								<span>Last played: ${new Date(game.last_played).toLocaleDateString()}</span>
 							</div>
 						` : ''}
@@ -151,7 +151,7 @@
 										${game.pros?.length > 0 ? `
 											<div>
 												<h4 style="color: #22c55e; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-													<iconify-icon icon="mdi:check-circle"></iconify-icon>
+													<iconify-icon noobserver icon="mdi:check-circle"></iconify-icon>
 													Pros
 												</h4>
 												<ul style="list-style: none; padding: 0;">
@@ -166,7 +166,7 @@
 										${game.cons?.length > 0 ? `
 											<div>
 												<h4 style="color: #ef4444; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-													<iconify-icon icon="mdi:close-circle"></iconify-icon>
+													<iconify-icon noobserver icon="mdi:close-circle"></iconify-icon>
 													Cons
 												</h4>
 												<ul style="list-style: none; padding: 0;">

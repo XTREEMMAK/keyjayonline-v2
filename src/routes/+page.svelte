@@ -185,7 +185,7 @@
 			setPortalScrollLock(true);
 
 			const portalBar = document.querySelector('.section-sticky-nav');
-			const portalBarHeight = portalBar ? portalBar.offsetHeight : 55;
+			const portalBarHeight = portalBar ? portalBar.offsetHeight : 60;
 			const filterBar = document.querySelector('.music-filter-bar');
 			const filterBarHeight = filterBar ? filterBar.offsetHeight : 0;
 
@@ -273,38 +273,38 @@
 <!-- Music Section Sticky Sub-Nav Portal -->
 {#if $activeSection === 'music'}
 	<SectionStickyNav section="music">
-		<div class="flex gap-2 flex-wrap justify-center">
+		<div class="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
 			<button
 				onclick={() => { musicActiveView.set('albums'); scrollToSectionContent(); }}
-				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+				class="px-2.5 sm:px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 flex items-center gap-1 sm:gap-1.5 {
 					$musicActiveView === 'albums'
 						? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
 						: 'text-gray-300 hover:text-white hover:bg-white/10'
 				}"
 			>
-				<Icon icon="mdi:album" class="text-base" />
+				<Icon icon="mdi:album" class="text-sm sm:text-base" />
 				Albums
 			</button>
 			<button
 				onclick={() => { musicActiveView.set('legacy'); scrollToSectionContent(); }}
-				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+				class="px-2.5 sm:px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 flex items-center gap-1 sm:gap-1.5 {
 					$musicActiveView === 'legacy'
 						? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
 						: 'text-gray-300 hover:text-white hover:bg-white/10'
 				}"
 			>
-				<Icon icon="mdi:archive" class="text-base" />
+				<Icon icon="mdi:archive" class="text-sm sm:text-base" />
 				Legacy
 			</button>
 			<button
 				onclick={() => { musicActiveView.set('studio'); scrollToSectionContent(); }}
-				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+				class="px-2.5 sm:px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 flex items-center gap-1 sm:gap-1.5 {
 					$musicActiveView === 'studio'
 						? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
 						: 'text-gray-300 hover:text-white hover:bg-white/10'
 				}"
 			>
-				<Icon icon="mdi:music-box-multiple" class="text-base" />
+				<Icon icon="mdi:music-box-multiple" class="text-sm sm:text-base" />
 				Studio
 			</button>
 		</div>
@@ -312,7 +312,7 @@
 	{#if $musicActiveView === 'albums' && $activeStickySection === 'music' && !$sectionModalOpen}
 		<div
 			class="music-filter-bar fixed left-0 right-0 z-[39] bg-black/40 border-b border-white/5 backdrop-blur-[12px] backdrop-saturate-[1.1]"
-			style="top: 55px"
+			style="top: 60px"
 			in:fly={{ y: -20, duration: 200 }}
 		>
 			<div class="container mx-auto px-4">
@@ -427,6 +427,7 @@
 		onclick={handleScrollToTop}
 		aria-label="Scroll to top"
 		in:fade={{ duration: 300 }}
+		out:fade={{ duration: 200 }}
 	>
 		<svg class="scroll-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path>

@@ -8,7 +8,6 @@
 	import PersistentMusicPlayer from '$lib/components/music/PersistentMusicPlayer.svelte';
 	import ScrollToTop from '$lib/components/ui/ScrollToTop.svelte';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
-
 	let { children, data } = $props();
 
 	// Check if we're on an error page to conditionally hide footer
@@ -100,8 +99,8 @@
 		"knowsAbout": ["Music Production", "Voice Acting", "Web Development", "Game Development"]
 	}
 	</script>`}
-	<!-- Iconify for icons -->
-	<script async src="https://code.iconify.design/iconify-icon/2.0.0/iconify-icon.min.js"></script>
+	<!-- Iconify web component (v2.1.0 adds noobserver attribute for modal scroll fix) -->
+	<script async src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </svelte:head>
 
 <!-- Page Content -->

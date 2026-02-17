@@ -144,7 +144,7 @@
 								${project.externalLinks.map(link => `
 									<a href="${link.url}" target="_blank" rel="noopener noreferrer"
 									   class="external-link-btn ${link.isPrimary ? 'primary' : ''} ${getPlatformClass(link)}">
-										${link.iconValue ? `<iconify-icon icon="${link.iconValue}" width="18" height="18"></iconify-icon>` : `<iconify-icon icon="mdi:link-variant" width="18" height="18"></iconify-icon>`}
+										${link.iconValue ? `<iconify-icon noobserver icon="${link.iconValue}" width="18" height="18"></iconify-icon>` : `<iconify-icon noobserver icon="mdi:link-variant" width="18" height="18"></iconify-icon>`}
 										${link.label}
 									</a>
 								`).join('')}
@@ -162,7 +162,7 @@
 									   class="video-thumbnail-link">
 										<img src="https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg" alt="${video.title}" />
 										<div class="video-play-overlay">
-											<iconify-icon icon="mdi:play-circle" width="40" height="40"></iconify-icon>
+											<iconify-icon noobserver icon="mdi:play-circle" width="40" height="40"></iconify-icon>
 										</div>
 										<span class="video-title">${video.title}</span>
 									</a>

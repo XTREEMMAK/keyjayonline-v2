@@ -337,14 +337,20 @@
 		max-height: 100dvh !important; /* Dynamic viewport height for mobile browsers */
 		margin: 0 !important;
 		border-radius: 0 !important; /* Fullscreen on mobile */
-		/* Reduce expensive backdrop-filter for better scroll performance */
-		backdrop-filter: blur(6px) !important;
-		-webkit-backdrop-filter: blur(6px) !important;
+		/* Remove backdrop-filter entirely on mobile for smooth scrolling */
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		background-color: rgba(15, 23, 42, 0.98) !important;
 	}
 
 	.latest-project-modal-content {
 		max-height: calc(100vh - 60px) !important;
 		max-height: calc(100dvh - 60px) !important;
+		/* Scroll performance optimizations */
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior: contain;
+		transform: translateZ(0);
+		scroll-behavior: auto !important;
 	}
 
 	.project-header {

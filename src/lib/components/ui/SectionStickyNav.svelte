@@ -119,6 +119,7 @@
 		right: 0;
 		top: 0;
 		z-index: 40;
+		height: 60px;
 		background: rgba(42, 45, 53, 0.55);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 		box-shadow:
@@ -152,7 +153,7 @@
 		position: fixed;
 		left: 50%;
 		transform: translateX(-50%);
-		top: 60px;
+		top: 64px;
 		z-index: 45;
 		background: rgba(42, 45, 53, 0.6);
 		border-radius: 20px;

@@ -11,57 +11,62 @@ import { buildAssetUrl } from '../core/assets.js';
 import { extractYouTubeId } from '$lib/utils/youtube.js';
 import { getSocialPlatformColors } from '$lib/utils/colors.js';
 
+// In-memory cache — persists across requests in the same Node.js process
+let cachedSettings = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
 /**
  * Fetches general site configuration from Directus
  * Includes maintenance mode status, page enable/disable states, featured works, and social links
  * Provides comprehensive fallback data if database is unavailable
+ * Results are cached in memory for 30 seconds to avoid hitting Directus on every page load
  * @returns {Promise<Object>} Site configuration object with status and page settings
  */
 export async function getSiteSettings() {
+  // Return cached result if still fresh
+  const now = Date.now();
+  if (cachedSettings && (now - cacheTimestamp) < CACHE_TTL_MS) {
+    return cachedSettings;
+  }
+
   try {
     const directus = getDirectusInstance();
-    
-    const settings = await directus.request(
-      readItems('kjov2_general', {
-        fields: [
-          'id',
-          'status',
-          'music_page_disabled',
-          'games_page_disabled',
-          'tech_page_disabled',
-          'voice_page_disabled',
-          'production_page_disabled'
-        ],
-        limit: 1
-      })
-    );
 
-    // Fetch socials from separate table with icon reference expanded
-    let socials = [];
-    try {
-      socials = await directus.request(
+    // Run all 3 queries in parallel — they are independent
+    const [settingsResult, socialsResult, supportResult] = await Promise.allSettled([
+      directus.request(
+        readItems('kjov2_general', {
+          fields: [
+            'id',
+            'status',
+            'music_page_disabled',
+            'games_page_disabled',
+            'tech_page_disabled',
+            'voice_page_disabled',
+            'production_page_disabled'
+          ],
+          limit: 1
+        })
+      ),
+      directus.request(
         readItems('kjov2_socials', {
           fields: ['id', 'name', 'url', 'sort', 'icon_selector_name.icon_reference_id'],
           sort: ['sort', 'id']
         })
-      );
-    } catch {
-      // Continue with empty socials array if table doesn't exist or fetch fails
-    }
-
-    // Fetch support platforms (Ko-Fi, Patreon, etc.)
-    let supportPlatforms = [];
-    try {
-      supportPlatforms = await directus.request(
+      ),
+      directus.request(
         readItems('kjov2_support_platforms', {
-          fields: ['id', 'name', 'url', 'icon', 'enabled', 'display_order'],
-          filter: { enabled: { _eq: true } },
+          fields: ['id', 'name', 'url', 'icon', 'display_order'],
+          filter: { status: { _eq: 'published' } },
           sort: ['display_order', 'id']
         })
-      );
-    } catch {
-      // Table may not exist yet - continue with empty array
-    }
+      )
+    ]);
+
+    const settings = settingsResult.status === 'fulfilled' ? settingsResult.value : null;
+    const socials = socialsResult.status === 'fulfilled' ? socialsResult.value : [];
+    const supportPlatforms = supportResult.status === 'fulfilled' ? supportResult.value : [];
 
     // Handle the case where settings is an object (single record) instead of array
     const siteConfig = Array.isArray(settings) ? settings[0] : settings;
@@ -182,6 +187,10 @@ export async function getSiteSettings() {
         }
       }
     };
+
+    // Cache successful result
+    cachedSettings = result;
+    cacheTimestamp = Date.now();
 
     return result;
 

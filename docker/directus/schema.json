@@ -654,6 +654,34 @@
       }
     },
     {
+      "collection": "kjov2_music_releases_kjov2_music_samples",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": null,
+        "archive_value": null,
+        "collapse": "open",
+        "collection": "kjov2_music_releases_kjov2_music_samples",
+        "color": null,
+        "display_template": null,
+        "group": null,
+        "hidden": true,
+        "icon": "import_export",
+        "item_duplication_fields": null,
+        "note": null,
+        "preview_url": null,
+        "singleton": false,
+        "sort": null,
+        "sort_field": null,
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      },
+      "schema": {
+        "name": "kjov2_music_releases_kjov2_music_samples"
+      }
+    },
+    {
       "collection": "kjov2_music_samples",
       "meta": {
         "accountability": "all",
@@ -7906,7 +7934,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 23,
+        "sort": 22,
         "special": [
           "o2m"
         ],
@@ -7982,7 +8010,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 24,
+        "sort": 23,
         "special": [
           "o2m"
         ],
@@ -8049,36 +8077,6 @@
         "has_auto_increment": false,
         "foreign_key_table": null,
         "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "kjov2_music_releases",
-      "field": "tracks",
-      "type": "alias",
-      "meta": {
-        "collection": "kjov2_music_releases",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "tracks",
-        "group": null,
-        "hidden": false,
-        "interface": "list-o2m",
-        "note": null,
-        "options": {
-          "template": "Track {{track_number}} - {{track_name}}"
-        },
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 20,
-        "special": [
-          "o2m"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
       }
     },
     {
@@ -8285,6 +8283,36 @@
         "has_auto_increment": false,
         "foreign_key_table": null,
         "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_music_releases",
+      "field": "tracks",
+      "type": "alias",
+      "meta": {
+        "collection": "kjov2_music_releases",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "tracks",
+        "group": null,
+        "hidden": false,
+        "interface": "list-m2m",
+        "note": null,
+        "options": {
+          "template": "{{kjov2_music_samples_id.track_name}} - {{kjov2_music_samples_id.artist}}"
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 20,
+        "special": [
+          "m2m"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
       }
     },
     {
@@ -8548,6 +8576,138 @@
         "generation_expression": null,
         "has_auto_increment": false,
         "foreign_key_table": "kjov2_music_credits",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "kjov2_music_releases_kjov2_music_samples",
+      "field": "id",
+      "type": "integer",
+      "meta": {
+        "collection": "kjov2_music_releases_kjov2_music_samples",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "id",
+        "group": null,
+        "hidden": true,
+        "interface": null,
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 1,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "id",
+        "table": "kjov2_music_releases_kjov2_music_samples",
+        "data_type": "integer",
+        "default_value": "nextval('kjov2_music_releases_kjov2_music_samples_id_seq'::regclass)",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": false,
+        "is_unique": true,
+        "is_indexed": false,
+        "is_primary_key": true,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": true,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_music_releases_kjov2_music_samples",
+      "field": "kjov2_music_releases_id",
+      "type": "uuid",
+      "meta": {
+        "collection": "kjov2_music_releases_kjov2_music_samples",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "kjov2_music_releases_id",
+        "group": null,
+        "hidden": true,
+        "interface": null,
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 2,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "kjov2_music_releases_id",
+        "table": "kjov2_music_releases_kjov2_music_samples",
+        "data_type": "uuid",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "kjov2_music_releases",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "kjov2_music_releases_kjov2_music_samples",
+      "field": "kjov2_music_samples_id",
+      "type": "integer",
+      "meta": {
+        "collection": "kjov2_music_releases_kjov2_music_samples",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "kjov2_music_samples_id",
+        "group": null,
+        "hidden": true,
+        "interface": null,
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 3,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "kjov2_music_samples_id",
+        "table": "kjov2_music_releases_kjov2_music_samples",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "kjov2_music_samples",
         "foreign_key_column": "id"
       }
     },
@@ -8867,52 +9027,6 @@
         "generation_expression": null,
         "has_auto_increment": false,
         "foreign_key_table": "directus_files",
-        "foreign_key_column": "id"
-      }
-    },
-    {
-      "collection": "kjov2_music_samples",
-      "field": "music_sample_id",
-      "type": "uuid",
-      "meta": {
-        "collection": "kjov2_music_samples",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "music_sample_id",
-        "group": null,
-        "hidden": true,
-        "interface": "input",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 2,
-        "special": [
-          "uuid"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "music_sample_id",
-        "table": "kjov2_music_samples",
-        "data_type": "uuid",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": "kjov2_music_releases",
         "foreign_key_column": "id"
       }
     },
@@ -20606,6 +20720,56 @@
       }
     },
     {
+      "collection": "kjov2_music_releases_kjov2_music_samples",
+      "field": "kjov2_music_samples_id",
+      "related_collection": "kjov2_music_samples",
+      "meta": {
+        "junction_field": "kjov2_music_releases_id",
+        "many_collection": "kjov2_music_releases_kjov2_music_samples",
+        "many_field": "kjov2_music_samples_id",
+        "one_allowed_collections": null,
+        "one_collection": "kjov2_music_samples",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "kjov2_music_releases_kjov2_music_samples",
+        "column": "kjov2_music_samples_id",
+        "foreign_key_table": "kjov2_music_samples",
+        "foreign_key_column": "id",
+        "constraint_name": "kjov2_music_releases_kjov2_music_samples_kjo__88ae5c_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "kjov2_music_releases_kjov2_music_samples",
+      "field": "kjov2_music_releases_id",
+      "related_collection": "kjov2_music_releases",
+      "meta": {
+        "junction_field": "kjov2_music_samples_id",
+        "many_collection": "kjov2_music_releases_kjov2_music_samples",
+        "many_field": "kjov2_music_releases_id",
+        "one_allowed_collections": null,
+        "one_collection": "kjov2_music_releases",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": "tracks",
+        "sort_field": null
+      },
+      "schema": {
+        "table": "kjov2_music_releases_kjov2_music_samples",
+        "column": "kjov2_music_releases_id",
+        "foreign_key_table": "kjov2_music_releases",
+        "foreign_key_column": "id",
+        "constraint_name": "kjov2_music_releases_kjov2_music_samples_k__7e2d2973_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    },
+    {
       "collection": "kjov2_music_samples",
       "field": "user_created",
       "related_collection": "directus_users",
@@ -20651,31 +20815,6 @@
         "foreign_key_table": "directus_files",
         "foreign_key_column": "id",
         "constraint_name": "kjov2_music_samples_music_sample_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
-      }
-    },
-    {
-      "collection": "kjov2_music_samples",
-      "field": "music_sample_id",
-      "related_collection": "kjov2_music_releases",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "kjov2_music_samples",
-        "many_field": "music_sample_id",
-        "one_allowed_collections": null,
-        "one_collection": "kjov2_music_releases",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": "tracks",
-        "sort_field": null
-      },
-      "schema": {
-        "table": "kjov2_music_samples",
-        "column": "music_sample_id",
-        "foreign_key_table": "kjov2_music_releases",
-        "foreign_key_column": "id",
-        "constraint_name": "kjov2_music_samples_music_sample_id_foreign",
         "on_update": "NO ACTION",
         "on_delete": "SET NULL"
       }

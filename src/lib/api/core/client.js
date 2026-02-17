@@ -19,9 +19,14 @@ const DIRECTUS_TOKEN = env.DIRECTUS_TOKEN ?? '';
  */
 export function getDirectusInstance() {
   const directus = createDirectus(DIRECTUS_URL)
-    .with(rest())
+    .with(rest({
+      onRequest: (options) => {
+        options.signal = AbortSignal.timeout(5000);
+        return options;
+      }
+    }))
     .with(staticToken(DIRECTUS_TOKEN));
-  
+
   return directus;
 }
 

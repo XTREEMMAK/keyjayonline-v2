@@ -21,28 +21,36 @@ export async function GET({ params }) {
   try {
     const directus = getDirectusInstance();
     
-    // Filter by music_sample_id (which is a UUID matching the release ID)
-    const samples = await directus.request(
-      readItems('kjov2_music_samples', {
-        filter: {
-          music_sample_id: { _eq: releaseId }
-        },
+    // Fetch release with M2M tracks expanded through junction table
+    const releases = await directus.request(
+      readItems('kjov2_music_releases', {
+        filter: { id: { _eq: releaseId } },
         fields: [
-          'id',
-          'track_name',
-          'track_number',
-          'sort',
-          'status',
           {
-            music_sample: ['id', 'filename_disk', 'filename_download', 'type', 'filesize']
+            tracks: [
+              {
+                kjov2_music_samples_id: [
+                  'id',
+                  'track_name',
+                  'track_number',
+                  'sort',
+                  'status',
+                  { music_sample: ['id', 'filename_disk', 'filename_download', 'type', 'filesize'] }
+                ]
+              }
+            ]
           }
         ],
-        sort: ['track_number', 'sort']
+        limit: 1
       })
     );
-    
-    // If no samples found, return empty array
-    if (!samples || samples.length === 0) {
+
+    // M2M returns junction objects — unwrap to get actual sample data
+    const samples = (releases?.[0]?.tracks || [])
+      .map(junc => junc.kjov2_music_samples_id)
+      .filter(Boolean);
+
+    if (samples.length === 0) {
       return json([]);
     }
     

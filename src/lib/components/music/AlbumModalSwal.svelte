@@ -252,14 +252,14 @@ import {
 	function generateCreditSocialIconsHtml(credit) {
 		const icons = [];
 		if (credit.website_url) {
-			icons.push(`<a href="${credit.website_url}" target="_blank" rel="noopener noreferrer" title="Website" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon icon="mdi:web" width="18" height="18"></iconify-icon></a>`);
+			icons.push(`<a href="${credit.website_url}" target="_blank" rel="noopener noreferrer" title="Website" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon noobserver icon="mdi:web" width="18" height="18"></iconify-icon></a>`);
 		}
 		const socialLinks = Array.isArray(credit.social_links) ? credit.social_links : [];
 		for (const social of socialLinks) {
 			if (!social.network_url) continue;
 			const icon = resolveSocialIcon(social);
 			const label = social.network || 'Link';
-			icons.push(`<a href="${social.network_url}" target="_blank" rel="noopener noreferrer" title="${label}" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon icon="${icon}" width="16" height="16"></iconify-icon></a>`);
+			icons.push(`<a href="${social.network_url}" target="_blank" rel="noopener noreferrer" title="${label}" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon noobserver icon="${icon}" width="16" height="16"></iconify-icon></a>`);
 		}
 		if (icons.length === 0) return '';
 		return `<div style="display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0;">${icons.join('')}</div>`;
@@ -330,10 +330,10 @@ import {
 						onmouseover="this.style.background='rgba(59, 130, 246, 0.25)'"
 						onmouseout="this.style.background='rgba(59, 130, 246, 0.15)'">
 						<span style="display: flex; align-items: center; gap: 8px;">
-							<iconify-icon icon="mdi:account-group" width="18" height="18" style="color: #3b82f6;"></iconify-icon>
+							<iconify-icon noobserver icon="mdi:account-group" width="18" height="18" style="color: #3b82f6;"></iconify-icon>
 							${category} <span style="color: #9ca3af; font-weight: 400;">(${categoryCredits.length})</span>
 						</span>
-						<iconify-icon id="${uniqueId}-arrow" icon="mdi:chevron-down" width="20" height="20" style="color: #9ca3af; transition: transform 0.3s ease; transform: rotate(180deg);"></iconify-icon>
+						<iconify-icon noobserver id="${uniqueId}-arrow" icon="mdi:chevron-down" width="20" height="20" style="color: #9ca3af; transition: transform 0.3s ease; transform: rotate(180deg);"></iconify-icon>
 					</button>
 					<div id="${uniqueId}" class="credit-group-content" style="max-height: 2000px; overflow: hidden; transition: max-height 0.4s ease; padding-top: 12px;">
 						<div style="display: grid; gap: 8px;">
@@ -341,7 +341,7 @@ import {
 								<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease;"
 									 onmouseover="this.style.background='rgba(55, 65, 81, 0.5)'; this.style.boxShadow='0 0 20px rgba(59, 130, 246, 0.3)'; this.style.borderLeftColor='#60a5fa'"
 									 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'">
-									${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : `<div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><iconify-icon icon="mdi:account" width="24" height="24" style="color: #3b82f6;"></iconify-icon></div>`}
+									${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : `<div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><iconify-icon noobserver icon="mdi:account" width="24" height="24" style="color: #3b82f6;"></iconify-icon></div>`}
 									<div style="flex: 1; min-width: 0;">
 										<div style="color: #ffffff; font-weight: 500; font-size: 0.9rem; margin-bottom: 2px;">${credit.name}</div>
 										<div style="color: #9ca3af; font-size: 0.8rem;">${credit.displayRoles || credit.role}</div>
@@ -399,7 +399,7 @@ import {
 								<a href="${link.url}" target="_blank" title="${link.label}" style="display: inline-block; padding: 10px; background: ${colors.bg}; border-radius: 50%; color: ${colors.color}; text-decoration: none; transition: all 0.3s; flex-shrink: 0;"
 								   onmouseover="this.style.transform='scale(1.1)'; this.style.background='${colors.bgHover}'"
 								   onmouseout="this.style.transform='scale(1)'; this.style.background='${colors.bg}'">
-									<iconify-icon icon="${getExternalLinkIcon(link)}" width="28" height="28" style="display: block; pointer-events: none;"></iconify-icon>
+									<iconify-icon noobserver icon="${getExternalLinkIcon(link)}" width="28" height="28" style="display: block; pointer-events: none;"></iconify-icon>
 								</a>
 								`;
 							}).join('') : ''}
@@ -409,7 +409,7 @@ import {
 							<button id="album-share-btn" onclick="handleAlbumShare()" title="Share album" style="display: inline-flex; align-items: center; justify-content: center; padding: 10px; background: rgba(139, 92, 246, 0.2); border-radius: 50%; color: #a78bfa; border: none; cursor: pointer; transition: all 0.3s; flex-shrink: 0;"
 							   onmouseover="this.style.transform='scale(1.1)'; this.style.background='rgba(139, 92, 246, 0.3)'"
 							   onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(139, 92, 246, 0.2)'">
-								<iconify-icon id="album-share-icon" icon="mdi:share-variant" width="28" height="28" style="display: block; pointer-events: none;"></iconify-icon>
+								<iconify-icon noobserver id="album-share-icon" icon="mdi:share-variant" width="28" height="28" style="display: block; pointer-events: none;"></iconify-icon>
 							</button>
 						</div>
 						
@@ -525,7 +525,7 @@ import {
 						<div class="accordion-section">
 							<button class="accordion-header" onclick="toggleAccordion('accordion-details')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(55, 65, 81, 0.3); border: none; border-radius: 8px; color: #ffffff; font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 8px; transition: all 0.3s ease;">
 								<span>Main Details</span>
-								<iconify-icon class="accordion-arrow" icon="mdi:chevron-down" width="20" height="20" style="transition: transform 0.3s ease; color: #9ca3af;"></iconify-icon>
+								<iconify-icon noobserver class="accordion-arrow" icon="mdi:chevron-down" width="20" height="20" style="transition: transform 0.3s ease; color: #9ca3af;"></iconify-icon>
 							</button>
 							<div id="accordion-details" class="accordion-content expanded">
 								<div class="accordion-content-inner" style="padding: 0 16px 16px;">
@@ -575,7 +575,7 @@ import {
 						<div class="accordion-section">
 							<button class="accordion-header" onclick="toggleAccordion('accordion-credits')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(55, 65, 81, 0.3); border: none; border-radius: 8px; color: #ffffff; font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 8px; transition: all 0.3s ease;">
 								<span>Credits</span>
-								<iconify-icon class="accordion-arrow" icon="mdi:chevron-down" width="20" height="20" style="transition: transform 0.3s ease; color: #9ca3af;"></iconify-icon>
+								<iconify-icon noobserver class="accordion-arrow" icon="mdi:chevron-down" width="20" height="20" style="transition: transform 0.3s ease; color: #9ca3af;"></iconify-icon>
 							</button>
 							<div id="accordion-credits" class="accordion-content collapsed">
 								<div class="accordion-content-inner" style="padding: 0 16px 16px;">
@@ -591,7 +591,7 @@ import {
 						<div class="accordion-section">
 							<button class="accordion-header" onclick="toggleAccordion('accordion-videos')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(55, 65, 81, 0.3); border: none; border-radius: 8px; color: #ffffff; font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 8px; transition: all 0.3s ease;">
 								<span>Videos</span>
-								<iconify-icon class="accordion-arrow" icon="mdi:chevron-down" width="20" height="20" style="transition: transform 0.3s ease; color: #9ca3af;"></iconify-icon>
+								<iconify-icon noobserver class="accordion-arrow" icon="mdi:chevron-down" width="20" height="20" style="transition: transform 0.3s ease; color: #9ca3af;"></iconify-icon>
 							</button>
 							<div id="accordion-videos" class="accordion-content collapsed">
 								<div class="accordion-content-inner" style="padding: 0 16px 16px;">

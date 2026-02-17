@@ -53,8 +53,8 @@
 	<meta name="description" content="Key Jay Online is currently under maintenance. We'll be back soon!">
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center px-4">
-	<div class="text-center max-w-2xl mx-auto" in:fade={{ duration: 800 }}>
+<div class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center px-3 sm:px-4">
+	<div class="text-center max-w-2xl w-full mx-auto" in:fade={{ duration: 800 }}>
 		
 		<!-- Logo/Icon -->
 		<div class="mb-8" in:fly={{ y: -30, duration: 800, delay: 200 }}>
@@ -65,11 +65,11 @@
 		
 		<!-- Main Content -->
 		<div in:fly={{ y: 50, duration: 800, delay: 400 }}>
-			<h1 class="text-4xl md:text-5xl font-light text-white mb-6 uppercase tracking-widest">
+			<h1 class="text-2xl sm:text-4xl md:text-5xl font-light text-white mb-6 uppercase tracking-wider sm:tracking-widest">
 				Under Maintenance
 			</h1>
 			
-			<p class="text-lg md:text-xl text-gray-300 mb-8 leading-relaxed">
+			<p class="text-base sm:text-lg md:text-xl text-gray-300 mb-8 leading-relaxed">
 				We're currently performing some updates to improve your experience. 
 				<br class="hidden md:block">
 				We'll be back online shortly!
@@ -78,7 +78,7 @@
 			<!-- Time Display -->
 			<div class="bg-black/20 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-2xl mb-8">
 				<div class="text-gray-400 text-sm uppercase tracking-wider mb-2">Current Time ({timezoneLabel})</div>
-				<div class="text-3xl md:text-4xl font-mono text-white">{currentTime}</div>
+				<div class="text-2xl sm:text-3xl md:text-4xl font-mono text-white">{currentTime}</div>
 			</div>
 			
 			<!-- Expected Return -->

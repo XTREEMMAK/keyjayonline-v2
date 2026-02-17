@@ -6,6 +6,7 @@
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { scrollButtonVisible } from '$lib/stores/scrollButton.js';
 	import { sectionModalOpen } from '$lib/stores/stickyNav.js';
+	import { immediateTap } from '$lib/actions/immediateTap.js';
 
 	let visible = $state(false);
 	let scrollY = $state(0);
@@ -53,10 +54,12 @@
 
 {#if visible && !$contentViewerOpen && !$sectionModalOpen}
 	<button
+		use:immediateTap={scrollToTop}
 		onclick={scrollToTop}
 		class="scroll-to-top-btn {bottomClass}"
 		aria-label="Scroll to top"
 		in:fly={{ y: 20, duration: 300 }}
+		out:fly={{ y: 20, duration: 200 }}
 	>
 		<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
@@ -80,6 +83,8 @@
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
 		cursor: pointer;
+		/* Prevent scroll from consuming taps — fixed element doesn't scroll */
+		touch-action: none;
 		/* Hide on desktop - page has its own desktop scroll button */
 		display: none;
 	}

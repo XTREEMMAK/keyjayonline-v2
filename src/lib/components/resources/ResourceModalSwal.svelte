@@ -89,7 +89,7 @@
 						${resource.featured_image ? 
 							`<img src="${resource.featured_image}" alt="${resource.title}" style="width: 100%; max-width: 350px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);" />` :
 							`<div style="width: 100%; max-width: 350px; height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; items-center: justify-content: center;">
-								<iconify-icon icon="mdi:tools" style="font-size: 64px; color: white;"></iconify-icon>
+								<iconify-icon noobserver icon="mdi:tools" style="font-size: 64px; color: white;"></iconify-icon>
 							</div>`
 						}
 					</div>
@@ -108,7 +108,7 @@
 								<div style="display: flex; align-items: center; gap: 8px;">
 									<span style="color: #d1d5db; font-weight: 500;">My Rating:</span>
 									<div style="display: flex; align-items: center; gap: 4px;">
-										<iconify-icon icon="mdi:star" style="color: #fbbf24;"></iconify-icon>
+										<iconify-icon noobserver icon="mdi:star" style="color: #fbbf24;"></iconify-icon>
 										<span style="color: #ffffff; font-weight: bold; font-size: 1.1rem;">${resource.personal_rating}/10</span>
 									</div>
 								</div>
@@ -120,21 +120,21 @@
 							${resource.website_url ? `
 								<a href="${resource.website_url}" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: transform 0.2s;" 
 								   onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-									<iconify-icon icon="mdi:web"></iconify-icon>
+									<iconify-icon noobserver icon="mdi:web"></iconify-icon>
 									Visit Website
 								</a>
 							` : ''}
 							${resource.download_url ? `
 								<a href="${resource.download_url}" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: linear-gradient(45deg, #10b981, #22c55e); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: transform 0.2s;"
 								   onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-									<iconify-icon icon="mdi:download"></iconify-icon>
+									<iconify-icon noobserver icon="mdi:download"></iconify-icon>
 									Download
 								</a>
 							` : ''}
 							${resource.documentation_url ? `
 								<a href="${resource.documentation_url}" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: rgba(107, 114, 128, 0.2); color: #d1d5db; text-decoration: none; border-radius: 8px; font-weight: 500; border: 1px solid rgba(107, 114, 128, 0.3); transition: all 0.2s;"
 								   onmouseover="this.style.background='rgba(107, 114, 128, 0.3)'" onmouseout="this.style.background='rgba(107, 114, 128, 0.2)'">
-									<iconify-icon icon="mdi:book-open"></iconify-icon>
+									<iconify-icon noobserver icon="mdi:book-open"></iconify-icon>
 									Documentation
 								</a>
 							` : ''}
@@ -194,7 +194,7 @@
 								${resource.installation_notes ? `
 									<div style="margin-bottom: 32px;">
 										<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 16px; text-align: left; display: flex; align-items: center; gap: 8px;">
-											<iconify-icon icon="mdi:download-circle" style="color: #10b981;"></iconify-icon>
+											<iconify-icon noobserver icon="mdi:download-circle" style="color: #10b981;"></iconify-icon>
 											Installation Notes
 										</h3>
 										<div style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; padding: 16px; border-radius: 8px;">
@@ -229,7 +229,7 @@
 										${resource.pros?.length > 0 ? `
 											<div>
 												<h3 style="color: #22c55e; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: clamp(1.1rem, 3vw, 1.5rem);">
-													<iconify-icon icon="mdi:check-circle" style="font-size: 1.2em;"></iconify-icon>
+													<iconify-icon noobserver icon="mdi:check-circle" style="font-size: 1.2em;"></iconify-icon>
 													Pros
 												</h3>
 												<ul style="list-style: none; padding: 0; display: grid; gap: 12px;">
@@ -245,7 +245,7 @@
 										${resource.cons?.length > 0 ? `
 											<div>
 												<h3 style="color: #ef4444; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: clamp(1.1rem, 3vw, 1.5rem);">
-													<iconify-icon icon="mdi:close-circle" style="font-size: 1.2em;"></iconify-icon>
+													<iconify-icon noobserver icon="mdi:close-circle" style="font-size: 1.2em;"></iconify-icon>
 													Cons
 												</h3>
 												<ul style="list-style: none; padding: 0; display: grid; gap: 12px;">
@@ -284,14 +284,14 @@
 									${resource.tutorial_links?.length > 0 ? `
 										<div style="margin-bottom: 32px;">
 											<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-												<iconify-icon icon="mdi:school" style="color: #8b5cf6;"></iconify-icon>
+												<iconify-icon noobserver icon="mdi:school" style="color: #8b5cf6;"></iconify-icon>
 												Tutorial Links
 											</h3>
 											<div style="display: grid; gap: 12px;">
 												${resource.tutorial_links.map(link => `
 													<a href="${link.url || link}" target="_blank" style="display: flex; items-center; gap: 12px; padding: 12px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 8px; text-decoration: none; transition: all 0.2s;"
 													   onmouseover="this.style.background='rgba(139, 92, 246, 0.2)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.1)'">
-														<iconify-icon icon="mdi:external-link" style="color: #8b5cf6; font-size: 1.2em;"></iconify-icon>
+														<iconify-icon noobserver icon="mdi:external-link" style="color: #8b5cf6; font-size: 1.2em;"></iconify-icon>
 														<div>
 															<div style="color: #ffffff; font-weight: 500;">${link.title || link}</div>
 															${link.description ? `<div style="color: #9ca3af; font-size: 0.85rem; margin-top: 2px;">${link.description}</div>` : ''}
@@ -305,7 +305,7 @@
 									${resource.alternative_tools?.length > 0 ? `
 										<div>
 											<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-												<iconify-icon icon="mdi:swap-horizontal" style="color: #f59e0b;"></iconify-icon>
+												<iconify-icon noobserver icon="mdi:swap-horizontal" style="color: #f59e0b;"></iconify-icon>
 												Alternatives
 											</h3>
 											<div style="display: flex; flex-wrap: wrap; gap: 8px;">

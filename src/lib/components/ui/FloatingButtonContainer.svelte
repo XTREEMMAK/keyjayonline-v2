@@ -4,6 +4,7 @@
 	import { activeSection, navigateTo, sectionMeta, enabledSections } from '$lib/stores/navigation.js';
 	import { toggleMobileMenu, mobileMenuOpen, closeMobileMenu } from '$lib/stores/mobileNav.js';
 	import { sectionModalOpen } from '$lib/stores/stickyNav.js';
+	import { immediateTap } from '$lib/actions/immediateTap.js';
 
 	// Props
 	let { socialLinks = [] } = $props();
@@ -92,6 +93,7 @@
 		<!-- Position 1: Home Button -->
 		<button
 			class="bar-button home-button"
+			use:immediateTap={goHome}
 			onclick={goHome}
 			aria-label="Go to home"
 		>
@@ -103,6 +105,7 @@
 			<button
 				class="bar-button music-button"
 				class:music-glow={showMusicGlow}
+				use:immediateTap={handleMusicClick}
 				onclick={handleMusicClick}
 				aria-label="Play music"
 			>
@@ -116,6 +119,7 @@
 		<button
 			class="bar-button hamburger-button"
 			class:open={$mobileMenuOpen}
+			use:immediateTap={handleMenuToggle}
 			onclick={handleMenuToggle}
 			aria-label={$mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
 			aria-expanded={$mobileMenuOpen}
@@ -128,6 +132,7 @@
 		<!-- Position 4: Contact Button -->
 		<button
 			class="bar-button contact-button"
+			use:immediateTap={handleContactClick}
 			onclick={handleContactClick}
 			aria-label="Go to contact"
 		>
@@ -138,6 +143,7 @@
 		<button
 			class="bar-button social-button"
 			class:active={socialMenuOpen}
+			use:immediateTap={toggleSocialMenu}
 			onclick={toggleSocialMenu}
 			aria-label={socialMenuOpen ? 'Close social menu' : 'Open social menu'}
 			aria-expanded={socialMenuOpen}
@@ -239,15 +245,12 @@
 		gap: 8px;
 		/* Smooth transition for opacity */
 		transition: opacity 0.2s ease, transform 0.2s ease;
-		/* Force separate compositing layer - isolate from page transitions */
-		transform: translate3d(0, 0, 0);
-		will-change: transform, opacity;
-		backface-visibility: hidden;
-		-webkit-backface-visibility: hidden;
-		/* Full containment - completely isolate from page layout changes */
-		contain: strict;
-		/* Create new stacking context */
-		isolation: isolate;
+		/* GPU compositing layer for smooth visibility transitions */
+		transform: translateZ(0);
+		/* Isolate layout/paint from page to prevent shifts */
+		contain: layout paint;
+		/* Prevent scroll from consuming taps — fixed element doesn't scroll */
+		touch-action: none;
 	}
 
 	/* Hidden state for home page - use CSS instead of DOM removal to prevent shifts */
@@ -273,6 +276,7 @@
 		justify-content: center;
 		flex-shrink: 0;
 		color: white;
+		touch-action: manipulation;
 	}
 
 	.bar-button:hover {
@@ -467,6 +471,7 @@
 		cursor: pointer;
 		transition: all 0.2s ease;
 		text-align: left;
+		touch-action: manipulation;
 	}
 
 	.mobile-menu-item:hover {

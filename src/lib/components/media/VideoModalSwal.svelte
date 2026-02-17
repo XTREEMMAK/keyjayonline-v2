@@ -120,7 +120,7 @@
 								   style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255, 0, 0, 0.2); color: #ff0000; text-decoration: none; border-radius: 8px; transition: all 0.3s;"
 								   onmouseover="this.style.background='rgba(255, 0, 0, 0.3)'; this.style.transform='scale(1.05)'"
 								   onmouseout="this.style.background='rgba(255, 0, 0, 0.2)'; this.style.transform='scale(1)'">
-									<iconify-icon icon="simple-icons:youtube" width="20" height="20"></iconify-icon>
+									<iconify-icon noobserver icon="simple-icons:youtube" width="20" height="20"></iconify-icon>
 									<span style="font-size: 0.9rem; font-weight: 500;">Watch on YouTube</span>
 								</a>
 							</div>

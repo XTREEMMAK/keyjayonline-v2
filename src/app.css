@@ -84,6 +84,31 @@
 }
 
 /* =============================================================================
+   Iconify Icon Stability in Modal Scroll Containers
+   Prevents layout shifts from IntersectionObserver toggling SVG content,
+   and prevents Chromium mobile compositor from culling SVG paint.
+   ============================================================================= */
+iconify-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1em;
+  min-height: 1em;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+@media (max-width: 1024px) {
+  /* Force icons onto own compositor layer to prevent Chromium culling during scroll */
+  .swal2-html-container iconify-icon,
+  .overflow-y-auto svg.iconify {
+    content-visibility: visible;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+}
+
+/* =============================================================================
    Mobile Modal Fullscreen — SweetAlert2 overrides
    All Swal modals fill the viewport on mobile to prevent cutoffs and h-scroll
    ============================================================================= */

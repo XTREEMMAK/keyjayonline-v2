@@ -182,7 +182,7 @@
 		transition:fade={{ duration: 200 }}
 	>
 		<!-- Click outside to close -->
-		<div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick={handleClose}></div>
+		<div class="absolute inset-0 bg-black/90" onclick={handleClose}></div>
 
 		<!-- Modal Container -->
 		<div
@@ -212,7 +212,7 @@
 			</div>
 
 			<!-- Scrollable content -->
-			<div class="overflow-y-auto flex-1 custom-scrollbar">
+			<div class="overflow-y-auto flex-1 custom-scrollbar overscroll-contain" style="transform: translateZ(0); -webkit-overflow-scrolling: touch;">
 				{#if loading}
 					<!-- Loading state -->
 					<div class="flex flex-col items-center justify-center gap-4 py-32 text-white/70">

@@ -138,7 +138,7 @@
 					${release.projectLink ? `
 						<div class="project-link-container">
 							<a href="${release.projectLink}" target="_blank" rel="noopener noreferrer" class="project-link-btn">
-								<iconify-icon icon="mdi:open-in-new" width="20" height="20"></iconify-icon>
+								<iconify-icon noobserver icon="mdi:open-in-new" width="20" height="20"></iconify-icon>
 								${release.projectLinkLabel || 'View Project'}
 							</a>
 						</div>
@@ -152,7 +152,7 @@
 								${release.streamingPlatforms.map(platform => `
 									<a href="${platform.url}" target="_blank" rel="noopener noreferrer"
 									   class="streaming-platform-link" title="${platform.name}">
-										<iconify-icon icon="${platform.icon}" width="32" height="32"></iconify-icon>
+										<iconify-icon noobserver icon="${platform.icon}" width="32" height="32"></iconify-icon>
 										<span class="platform-name">${platform.name}</span>
 									</a>
 								`).join('')}
@@ -168,7 +168,7 @@
 								${release.externalLinks.map(link => `
 									<a href="${link.url}" target="_blank" rel="noopener noreferrer"
 									   class="external-link-btn">
-										<iconify-icon icon="mdi:link-variant" width="18" height="18"></iconify-icon>
+										<iconify-icon noobserver icon="mdi:link-variant" width="18" height="18"></iconify-icon>
 										${link.label}
 									</a>
 								`).join('')}

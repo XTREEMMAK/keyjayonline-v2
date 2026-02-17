@@ -12,9 +12,8 @@ body.swal2-shown {
 	height: 2.5rem !important;
 	font-size: 2rem !important;
 	z-index: 1000 !important;
-	background: rgba(0, 0, 0, 0.5) !important;
+	background: rgba(0, 0, 0, 0.6) !important;
 	border-radius: 50% !important;
-	backdrop-filter: blur(4px) !important;
 }
 
 .swal2-close:hover {
@@ -43,11 +42,11 @@ body.swal2-shown {
 		max-height: 100vh !important;
 		max-height: 100dvh !important; /* Dynamic viewport height for mobile browsers */
 		margin: 0 !important;
-		/* Further reduce backdrop-filter for better scroll performance */
-		backdrop-filter: blur(6px) !important;
-		-webkit-backdrop-filter: blur(6px) !important;
-		/* Increase background opacity to compensate for less blur */
-		background-color: rgba(15, 23, 42, 0.95) !important;
+		/* Remove backdrop-filter entirely on mobile for smooth scrolling */
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		/* Solid background compensates for no blur */
+		background-color: rgba(15, 23, 42, 0.98) !important;
 	}
 
 	.album-modal-content {

@@ -288,7 +288,7 @@
 {#if isOpen}
 	<!-- Backdrop -->
 	<div
-		class="fixed inset-0 z-[99999] bg-black/95 backdrop-blur-sm"
+		class="fixed inset-0 z-[99999] bg-black/95"
 		transition:fade={{ duration: 250 }}
 		role="dialog"
 		aria-modal="true"

@@ -99,7 +99,7 @@
 					<div class="code-info">
 						<div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
 							<div style="display: flex; align-items: center; gap: 8px;">
-								<iconify-icon icon="${getLanguageIcon(snippet.programming_language)}" style="font-size: 24px;"></iconify-icon>
+								<iconify-icon noobserver icon="${getLanguageIcon(snippet.programming_language)}" style="font-size: 24px;"></iconify-icon>
 								<span style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; padding: 6px 12px; border-radius: 16px; font-weight: 500; font-size: 0.9rem;">${snippet.programming_language}</span>
 							</div>
 							<span style="background: ${difficulty.bg}; color: ${difficulty.color}; padding: 6px 12px; border-radius: 16px; font-weight: 500; font-size: 0.9rem;">${snippet.difficulty_level}</span>
@@ -130,12 +130,12 @@
 						<div style="display: flex; gap: 12px;">
 							<button onclick="copyCodeToClipboard()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: linear-gradient(45deg, #10b981, #22c55e); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: transform 0.2s;" 
 								onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-								<iconify-icon icon="mdi:content-copy"></iconify-icon>
+								<iconify-icon noobserver icon="mdi:content-copy"></iconify-icon>
 								Copy Code
 							</button>
 							${snippet.category ? `
 								<span style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-radius: 8px; font-size: 0.9rem;">
-									<iconify-icon icon="mdi:folder"></iconify-icon>
+									<iconify-icon noobserver icon="mdi:folder"></iconify-icon>
 									${snippet.category.name}
 								</span>
 							` : ''}
@@ -156,7 +156,7 @@
 								<span style="color: #8b949e; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace; font-size: 0.85rem;">${snippet.programming_language.toLowerCase()}.${getFileExtension(snippet.programming_language)}</span>
 							</div>
 							<button id="copy-btn" onclick="copyCodeToClipboard()" style="background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; font-family: inherit;">
-								<iconify-icon icon="mdi:content-copy" style="margin-right: 4px;"></iconify-icon>
+								<iconify-icon noobserver icon="mdi:content-copy" style="margin-right: 4px;"></iconify-icon>
 								Copy
 							</button>
 						</div>
@@ -226,7 +226,7 @@
 			
 			// Update button to show success
 			const originalHTML = copyBtn.innerHTML;
-			copyBtn.innerHTML = '<iconify-icon icon="mdi:check" style="margin-right: 4px;"></iconify-icon>Copied!';
+			copyBtn.innerHTML = '<iconify-icon noobserver icon="mdi:check" style="margin-right: 4px;"></iconify-icon>Copied!';
 			copyBtn.style.background = 'rgba(34, 197, 94, 0.15)';
 			copyBtn.style.color = '#22c55e';
 			copyBtn.style.borderColor = 'rgba(34, 197, 94, 0.3)';
@@ -252,7 +252,7 @@
 			
 			// Show success message
 			const originalHTML = copyBtn.innerHTML;
-			copyBtn.innerHTML = '<iconify-icon icon="mdi:check" style="margin-right: 4px;"></iconify-icon>Copied!';
+			copyBtn.innerHTML = '<iconify-icon noobserver icon="mdi:check" style="margin-right: 4px;"></iconify-icon>Copied!';
 			setTimeout(() => {
 				copyBtn.innerHTML = originalHTML;
 			}, 2000);

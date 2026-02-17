@@ -366,7 +366,7 @@
 		aria-label={selectedProject.name || 'Project details'}
 		transition:fade={{ duration: 200 }}
 	>
-		<div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick={handleModalClose} onkeydown={(e) => e.key === 'Escape' && handleModalClose()} role="button" tabindex="-1"></div>
+		<div class="absolute inset-0 bg-black/90" onclick={handleModalClose} onkeydown={(e) => e.key === 'Escape' && handleModalClose()} role="button" tabindex="-1"></div>
 
 		<div
 			class="relative w-full max-w-full md:max-w-3xl h-full md:h-auto max-h-full md:max-h-[90vh] bg-gradient-to-br from-[#0a1628] via-[#0d1f3c] to-[#0f172a] rounded-none md:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
@@ -383,7 +383,7 @@
 				</button>
 			</div>
 
-			<div class="overflow-y-auto flex-1 custom-scrollbar">
+			<div class="overflow-y-auto flex-1 custom-scrollbar overscroll-contain" style="transform: translateZ(0); -webkit-overflow-scrolling: touch;">
 				<!-- Hero Image -->
 				{#if selectedProject.cover_image}
 					<div class="relative aspect-video md:aspect-[21/9] overflow-hidden">
@@ -535,15 +535,15 @@
 					</div>
 
 					<!-- Persistent Action Buttons (visible on all tabs) -->
-					<div class="flex flex-wrap gap-3 mt-8 pt-6 border-t border-white/10">
+					<div class="flex flex-wrap gap-2 sm:gap-3 mt-8 pt-6 border-t border-white/10">
 						{#if selectedProject.project_url}
 							<a
 								href={selectedProject.project_url}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2"
+								class="px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2"
 							>
-								<Icon icon="mdi:open-in-new" class="text-xl" />
+								<Icon icon="mdi:open-in-new" class="text-lg sm:text-xl" />
 								View Live
 							</a>
 						{/if}
@@ -552,16 +552,16 @@
 								href={selectedProject.repo_url}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="px-6 py-3 neu-button text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
+								class="px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base neu-button text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
 							>
-								<Icon icon="mdi:github" class="text-xl" />
+								<Icon icon="mdi:github" class="text-lg sm:text-xl" />
 								Source Code
 							</a>
 						{/if}
 						{#if selectedProject.gallery}
 							<button
 								onclick={() => openContentViewer(selectedProject.gallery.id, selectedProject.name)}
-								class="px-6 py-3 neu-button text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
+								class="px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base neu-button text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
 							>
 								<Icon icon="mdi:view-gallery" class="text-xl" />
 								Gallery{#if selectedProject.gallery.title}: {selectedProject.gallery.title}{/if}
@@ -624,10 +624,10 @@
 			class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-6 z-30"
 		>
 			<div class="container mx-auto px-4">
-				<div class="flex justify-center gap-3">
+				<div class="flex justify-center gap-1.5 sm:gap-3">
 					<button
 						onclick={() => switchTab('stack')}
-						class="px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2
+						class="px-3 sm:px-6 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 flex items-center gap-1.5 sm:gap-2
 							{activeTab === 'stack'
 								? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white scale-105'
 								: 'neu-filter-button text-gray-300 hover:text-white hover:scale-105'}"
@@ -637,7 +637,7 @@
 					</button>
 					<button
 						onclick={() => switchTab('projects')}
-						class="px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2
+						class="px-3 sm:px-6 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 flex items-center gap-1.5 sm:gap-2
 							{activeTab === 'projects'
 								? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white scale-105'
 								: 'neu-filter-button text-gray-300 hover:text-white hover:scale-105'}"
@@ -647,7 +647,7 @@
 					</button>
 					<button
 						onclick={() => switchTab('showcase')}
-						class="px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2
+						class="px-3 sm:px-6 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 flex items-center gap-1.5 sm:gap-2
 							{activeTab === 'showcase'
 								? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white scale-105'
 								: 'neu-filter-button text-gray-300 hover:text-white hover:scale-105'}"
@@ -781,8 +781,8 @@
 													</div>
 												</div>
 
-												<div class="p-8 lg:p-12 flex flex-col justify-center">
-													<h2 class="text-3xl lg:text-4xl font-bold text-white mb-4">{featuredProject.name}</h2>
+												<div class="p-4 sm:p-8 lg:p-12 flex flex-col justify-center">
+													<h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">{featuredProject.name}</h2>
 													{#if featuredProject.tagline}
 														<p class="text-gray-300 text-lg mb-6 leading-relaxed">{featuredProject.tagline}</p>
 													{/if}
@@ -804,22 +804,22 @@
 														</div>
 													{/if}
 
-													<div class="flex flex-wrap gap-3">
+													<div class="flex flex-wrap gap-2 sm:gap-3">
 														{#if featuredProject.project_url}
-															<a href={featuredProject.project_url} target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
-																<Icon icon="mdi:open-in-new" class="text-xl" />
+															<a href={featuredProject.project_url} target="_blank" rel="noopener noreferrer" class="px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+																<Icon icon="mdi:open-in-new" class="text-lg sm:text-xl" />
 																View Live
 															</a>
 														{/if}
 														{#if featuredProject.repo_url}
-															<a href={featuredProject.repo_url} target="_blank" rel="noopener noreferrer" class="neu-button px-6 py-3 text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
-																<Icon icon="mdi:github" class="text-xl" />
+															<a href={featuredProject.repo_url} target="_blank" rel="noopener noreferrer" class="neu-button px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2">
+																<Icon icon="mdi:github" class="text-lg sm:text-xl" />
 																Source Code
 															</a>
 														{/if}
 														<button
 															onclick={() => handleCardClick(featuredProject)}
-															class="neu-button px-6 py-3 text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
+															class="neu-button px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
 														>
 															<Icon icon="mdi:information-outline" class="text-xl" />
 															Details
@@ -833,7 +833,7 @@
 
 								<!-- Project Cards Grid -->
 								{#if gridProjects.length > 0}
-									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
 										{#each gridProjects as project (project.id)}
 											<button
 												class="neu-card overflow-hidden hover:scale-[1.02] transition-transform duration-300 group cursor-pointer text-left w-full border-none bg-transparent p-0"

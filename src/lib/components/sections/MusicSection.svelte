@@ -797,6 +797,7 @@
 				{/if}
 		</div>
 		<div class="music-view-panel" class:active={view === 'beats'}>
+			{#if view === 'beats'}
 				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 					{#each beats as beat, i}
 						<div
@@ -841,6 +842,7 @@
 						</div>
 					{/each}
 				</div>
+			{/if}
 		</div>
 		<div class="music-view-panel" class:active={view === 'legacy'}>
 				<!-- Legacy Works Notice -->
