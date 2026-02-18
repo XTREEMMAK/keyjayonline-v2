@@ -59,10 +59,12 @@ See `.github/workflows/deploy.yml` for the complete list.
 
 4. **`DIRECTUS_ADMIN_PASSWORD`** - Admin login password (choose a strong password)
 
-5. **`DIRECTUS_PUBLIC_URL`** - External URL for Directus asset URLs
+5. **`DIRECTUS_PUBLIC_URL`** - Browser-accessible Directus URL (e.g., `https://director.keyjayonline.com`)
+   - Must be the public Directus domain, **not** the app domain
+   - Used by: Directus `PUBLIC_URL` config, and `buildDirectusAssetUrl()` for gallery image transforms
    - If behind reverse proxy: `https://cms.example.com`
    - If direct access: `http://your-server-ip:8055`
-   - Used for generating public asset URLs in Directus responses
+   - Does NOT affect CDN-routed assets (music, photos, etc.) — only gallery transforms
 
 6. **`DIRECTUS_TOKEN`** - API token for app access (**add to secrets after first boot**):
    - First deployment: use a placeholder value, deploy will partially fail
