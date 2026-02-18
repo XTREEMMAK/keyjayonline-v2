@@ -83,8 +83,12 @@ export function buildDirectusAssetUrl(fileId, options = {}) {
   const assetId = typeof fileId === 'object' ? fileId.id : fileId;
   if (!assetId) return null;
 
-  // Use public Directus URL (browser-accessible), fall back to internal URL
-  const publicUrl = DIRECTUS_PUBLIC_URL || DIRECTUS_URL;
+  // DIRECTUS_PUBLIC_URL is required for browser-facing Directus asset URLs.
+  // DIRECTUS_URL is internal (Docker network) and must not be used for browser URLs.
+  if (!DIRECTUS_PUBLIC_URL) {
+    console.warn('DIRECTUS_PUBLIC_URL not set — falling back to buildAssetUrl()');
+    return buildAssetUrl(fileId, options.key ? { key: options.key } : {});
+  }
 
   const params = new URLSearchParams();
   if (options.key) params.set('key', options.key);
@@ -94,5 +98,5 @@ export function buildDirectusAssetUrl(fileId, options = {}) {
   }
 
   const queryString = params.toString() ? `?${params.toString()}` : '';
-  return `${publicUrl}/assets/${assetId}${queryString}`;
+  return `${DIRECTUS_PUBLIC_URL}/assets/${assetId}${queryString}`;
 }

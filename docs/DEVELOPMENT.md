@@ -50,6 +50,7 @@ DIRECTUS_TOKEN=your_external_directus_token
 ```bash
 # Directus API
 DIRECTUS_URL=http://your-directus-host:8055
+DIRECTUS_PUBLIC_URL=http://your-directus-host:8055  # Browser-accessible URL for image transforms
 
 # App
 NODE_ENV=development

@@ -65,7 +65,8 @@ This project uses Vite's auto-loading for environment files:
 - `DEV_ADMIN_PASSWORD` - Directus admin password (for `schema:snapshot`)
 
 **Required in `.env.development`:**
-- `DIRECTUS_URL` - Directus instance URL
+- `DIRECTUS_URL` - Directus instance URL (internal/server-side)
+- `DIRECTUS_PUBLIC_URL` - Browser-accessible Directus URL (for image transforms, e.g., `https://director.keyjayonline.com`)
 - `PUBLIC_SITE_URL` - Site URL (e.g., `http://localhost:5173`)
 - `PUBLIC_CONTACT_EMAIL` - Contact form email
 
