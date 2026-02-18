@@ -506,7 +506,7 @@
 											{:else}
 												<button
 													onclick={() => onAction(action)}
-													class="px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-900/30"
+													class="px-10 py-4 bg-gradient-to-r {action.actionType === 'audio_player' ? 'from-green-600 to-emerald-600 shadow-green-900/30' : 'from-orange-600 to-red-600 shadow-orange-900/30'} text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
 												>
 													<Icon icon={action.icon} class="text-xl" />
 													{action.label}

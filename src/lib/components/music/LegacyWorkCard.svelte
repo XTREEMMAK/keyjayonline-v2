@@ -1,11 +1,12 @@
 <script>
-	import { slide } from 'svelte/transition';
+	import { fly, fade } from 'svelte/transition';
 	import AudioPlayer from './AudioPlayer.svelte';
 	import Icon from '@iconify/svelte';
+	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 
 	let { work } = $props();
 
-	let descriptionOpen = $state(false);
+	let showInfoModal = $state(false);
 
 	function stripHtml(html) {
 		if (!html) return '';
@@ -13,6 +14,7 @@
 	}
 
 	const descriptionText = $derived(stripHtml(work.description));
+	const sanitizedDescription = $derived(sanitizeHtml(work.description));
 	const genres = $derived(Array.isArray(work.genre) ? work.genre : work.genre ? [work.genre] : []);
 	const externalLinks = $derived(
 		(work.externalLinks || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
@@ -83,19 +85,87 @@
 	{#if descriptionText}
 		<div class="mt-2">
 			<button
-				onclick={() => descriptionOpen = !descriptionOpen}
+				onclick={() => showInfoModal = true}
 				class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 transition-colors"
 			>
-				<span class="inline-flex transition-transform duration-300 {descriptionOpen ? 'rotate-180' : ''}">
-					<Icon icon="mdi:chevron-down" width={14} height={14} />
-				</span>
-				{descriptionOpen ? 'Hide info' : 'Track info'}
+				<Icon icon="mdi:information-outline" width={14} height={14} />
+				Track info
 			</button>
-			{#if descriptionOpen}
-				<div class="mt-2 bg-white/5 rounded-lg p-3 border border-white/10" transition:slide={{ duration: 250 }}>
-					<p class="text-gray-400 text-sm leading-relaxed">{descriptionText}</p>
-				</div>
-			{/if}
 		</div>
 	{/if}
 </div>
+
+<!-- Track Info Modal -->
+{#if showInfoModal}
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-label="Track information">
+		<div
+			class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+			transition:fade={{ duration: 200 }}
+			onclick={() => showInfoModal = false}
+			onkeydown={(e) => e.key === 'Escape' && (showInfoModal = false)}
+			role="button"
+			tabindex="-1"
+			aria-label="Close track info"
+		></div>
+
+		<div class="relative w-full max-w-sm" transition:fly={{ y: 40, duration: 250 }}>
+			<div class="rounded-2xl bg-[#1e2028] border border-white/10 p-5 space-y-4 shadow-2xl">
+				<!-- Close button -->
+				<button
+					onclick={() => showInfoModal = false}
+					class="absolute top-3 right-3 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+					aria-label="Close"
+				>
+					<Icon icon="mdi:close" width={18} height={18} class="text-gray-400" />
+				</button>
+
+				<!-- Title & genres -->
+				<div class="space-y-1 pt-1 pr-8">
+					<h3 class="text-lg font-bold text-white">{work.title}</h3>
+					{#if genres.length > 0}
+						<div class="flex items-center gap-2 flex-wrap">
+							{#each genres as genre}
+								<span class="text-sm text-blue-400">{genre}</span>
+							{/each}
+						</div>
+					{/if}
+				</div>
+
+				<!-- Description -->
+				<div class="desc-content text-sm text-gray-400 leading-relaxed max-h-[40vh] overflow-y-auto">
+					{@html sanitizedDescription}
+				</div>
+
+				<!-- External links -->
+				{#if externalLinks.length > 0}
+					<div class="flex items-center justify-center gap-3 pt-1">
+						{#each externalLinks as link}
+							<a
+								href={link.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 text-gray-400 hover:text-blue-400 hover:bg-white/10 transition-colors"
+								title={link.label}
+							>
+								<Icon icon={getLinkIcon(link)} width={20} height={20} />
+							</a>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		</div>
+	</div>
+{/if}
+
+<style>
+	.desc-content :global(a) {
+		color: #60a5fa;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+		transition: color 0.2s;
+	}
+
+	.desc-content :global(a:hover) {
+		color: #93c5fd;
+	}
+</style>

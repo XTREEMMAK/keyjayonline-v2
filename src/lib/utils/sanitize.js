@@ -12,13 +12,24 @@ export function sanitizeHtml(html, options = {}) {
   }
 
   const defaultOptions = {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
-    ALLOWED_ATTR: [],
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'a'],
+    ALLOWED_ATTR: ['href', 'target', 'rel'],
     KEEP_CONTENT: true,
     ...options
   };
 
-  return DOMPurify.sanitize(html, defaultOptions);
+  // Force safe attributes on all links
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (node.tagName === 'A') {
+      node.setAttribute('target', '_blank');
+      node.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+
+  const result = DOMPurify.sanitize(html, defaultOptions);
+  DOMPurify.removeAllHooks();
+
+  return result;
 }
 
 /**

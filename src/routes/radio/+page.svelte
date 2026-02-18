@@ -56,7 +56,7 @@
 		</header>
 
 		<!-- Now Playing (scrollable center area) -->
-		<div class="relative z-10 flex-1 overflow-y-auto flex items-center justify-center">
+		<div class="relative flex-1 overflow-y-auto flex items-center justify-center">
 			{#if data.tracks && data.tracks.length > 0}
 				<NowPlaying supportPlatforms={data.supportPlatforms} />
 			{:else}
