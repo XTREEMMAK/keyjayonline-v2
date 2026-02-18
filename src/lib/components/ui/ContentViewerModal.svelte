@@ -36,6 +36,9 @@
 	let imageLoading = $state(true);
 	let containerRef = $state(null);
 	let captionExpanded = $state(false);
+	let slideDirection = $state(1); // 1 = forward (slide left), -1 = backward (slide right)
+	let showAllPages = $state(false);
+	let downloading = $state(false);
 
 	// Drag-to-pan state (active when zoomed in)
 	let panX = $state(0);
@@ -61,6 +64,7 @@
 	// Navigate to next/prev page
 	function nextPage() {
 		if (hasNext) {
+			slideDirection = 1;
 			currentPage++;
 			zoomLevel = 1;
 			panX = 0;
@@ -72,6 +76,7 @@
 
 	function prevPage() {
 		if (hasPrev) {
+			slideDirection = -1;
 			currentPage--;
 			zoomLevel = 1;
 			panX = 0;
@@ -79,6 +84,19 @@
 			imageLoading = true;
 			captionExpanded = false;
 		}
+	}
+
+	// Navigate to specific page (from grid or dots)
+	function goToPage(index) {
+		if (index === currentPage) return;
+		slideDirection = index > currentPage ? 1 : -1;
+		currentPage = index;
+		zoomLevel = 1;
+		panX = 0;
+		panY = 0;
+		imageLoading = true;
+		captionExpanded = false;
+		showAllPages = false;
 	}
 
 	// Toggle zoom on click
@@ -162,19 +180,25 @@
 
 		switch (event.key) {
 			case 'Escape':
-				handleClose();
+				if (showAllPages) {
+					showAllPages = false;
+				} else {
+					handleClose();
+				}
 				break;
 			case 'ArrowRight':
 			case 'ArrowDown':
-				nextPage();
+				if (!showAllPages) nextPage();
 				break;
 			case 'ArrowLeft':
 			case 'ArrowUp':
-				prevPage();
+				if (!showAllPages) prevPage();
 				break;
 			case ' ':
-				event.preventDefault();
-				toggleZoom();
+				if (!showAllPages) {
+					event.preventDefault();
+					toggleZoom();
+				}
 				break;
 		}
 	}
@@ -209,17 +233,28 @@
 		imageLoading = false;
 	}
 
-	// Download original image
-	function handleDownload() {
-		if (!currentPageData?.downloadUrl) return;
-		const a = document.createElement('a');
-		a.href = currentPageData.downloadUrl;
-		a.download = currentPageData.title || `page-${currentPage + 1}`;
-		a.target = '_blank';
-		a.rel = 'noopener noreferrer';
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
+	// Download original image via fetch + Blob to force file save (cross-origin download attr is ignored)
+	async function handleDownload() {
+		if (!currentPageData?.downloadUrl || downloading) return;
+		downloading = true;
+		try {
+			const response = await fetch(currentPageData.downloadUrl);
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			const ext = currentPageData.downloadUrl.split('.').pop()?.split('?')[0] || 'jpg';
+			a.download = `${currentPageData.title || `page-${currentPage + 1}`}.${ext}`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (err) {
+			console.error('Download failed:', err);
+			window.open(currentPageData.downloadUrl, '_blank');
+		} finally {
+			downloading = false;
+		}
 	}
 
 	// Reset state when modal opens and handle body scroll lock
@@ -231,6 +266,9 @@
 			panY = 0;
 			imageLoading = true;
 			captionExpanded = false;
+			showAllPages = false;
+			downloading = false;
+			slideDirection = 1;
 
 			// Update store to hide navbar and scroll button (skip if parent modal handles it)
 			if (manageOverlayStore) contentViewerOpen.set(true);
@@ -329,26 +367,40 @@
 
 			<!-- Controls -->
 			<div class="flex items-center gap-2">
+				<!-- All pages grid button -->
+				{#if totalPages > 1}
+					<button
+						onclick={() => (showAllPages = !showAllPages)}
+						class="p-2 text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/10 {showAllPages ? 'bg-white/20 text-white' : ''}"
+						title={showAllPages ? 'Back to viewer' : 'View all pages'}
+					>
+						<Icon icon={showAllPages ? 'mdi:image' : 'mdi:view-grid'} class="text-xl" />
+					</button>
+				{/if}
+
 				<!-- Download button -->
 				{#if canDownload && currentPageData?.downloadUrl}
 					<button
 						onclick={handleDownload}
-						class="p-2 text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+						disabled={downloading}
+						class="p-2 text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/10 {downloading ? 'opacity-50' : ''}"
 						title="Download original"
 					>
-						<Icon icon="mdi:download" class="text-xl" />
+						<Icon icon={downloading ? 'mdi:loading' : 'mdi:download'} class="text-xl {downloading ? 'animate-spin' : ''}" />
 					</button>
 				{/if}
 
 				<!-- Zoom indicator -->
-				<button
-					onclick={toggleZoom}
-					class="p-2 text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-					title="Toggle zoom (Space)"
-				>
-					<Icon icon="mdi:magnify-plus" class="text-xl" />
-					<span class="text-xs ml-1">{Math.round(zoomLevel * 100)}%</span>
-				</button>
+				{#if !showAllPages}
+					<button
+						onclick={toggleZoom}
+						class="p-2 text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+						title="Toggle zoom (Space)"
+					>
+						<Icon icon="mdi:magnify-plus" class="text-xl" />
+						<span class="text-xs ml-1">{Math.round(zoomLevel * 100)}%</span>
+					</button>
+				{/if}
 
 				<!-- Close button -->
 				<button
@@ -366,11 +418,42 @@
 			bind:this={containerRef}
 			class="absolute inset-0 flex items-center justify-center overflow-hidden pt-14 pb-16"
 			in:fade={{ duration: 300, delay: 150 }}
-			ontouchstart={handleTouchStart}
-			ontouchend={handleTouchEnd}
+			ontouchstart={showAllPages ? undefined : handleTouchStart}
+			ontouchend={showAllPages ? undefined : handleTouchEnd}
 			role="presentation"
 		>
-			{#if loading}
+			{#if showAllPages}
+				<!-- All pages grid view -->
+				<div
+					class="w-full h-full overflow-y-auto px-4 py-4 custom-scrollbar"
+					in:fade={{ duration: 200 }}
+				>
+					<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-w-5xl mx-auto">
+						{#each pages as page, index}
+							<button
+								onclick={() => goToPage(index)}
+								class="group relative rounded-lg overflow-hidden bg-gray-900/50 aspect-[3/4] transition-all duration-200 hover:scale-[1.03]
+									{index === currentPage ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : 'hover:ring-1 hover:ring-white/40'}"
+							>
+								<img
+									src={page.imageUrl}
+									alt={page.title || `Page ${index + 1}`}
+									class="w-full h-full object-cover"
+									loading="lazy"
+								/>
+								<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+									<span class="text-white text-xs font-medium">
+										{index + 1}
+									</span>
+									{#if page.title}
+										<p class="text-white/70 text-xs truncate">{page.title}</p>
+									{/if}
+								</div>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{:else if loading}
 				<!-- Loading state -->
 				<div class="flex flex-col items-center gap-4 text-white/70">
 					<Icon icon="mdi:loading" class="text-5xl animate-spin" />
@@ -383,79 +466,85 @@
 					<p>No pages available</p>
 				</div>
 			{:else}
-				<!-- Image + caption container -->
-				<div class="flex flex-col items-center max-w-[90vw]" class:max-h-full={!captionExpanded}>
-					<!-- Image container with zoom -->
+				<!-- Image + caption container with slide transition -->
+				{#key currentPage}
 					<div
-						class="relative ease-out select-none"
-						class:transition-transform={!isPanning}
-						style="transform: scale({zoomLevel}) translate({panX / zoomLevel}px, {panY / zoomLevel}px); touch-action: pinch-zoom;"
-						onmousedown={handleMouseDown}
-						onmousemove={handleMouseMove}
-						onmouseup={handleMouseUp}
-						onmouseleave={() => { if (isPanning) isPanning = false; }}
-						onwheel={handleWheel}
-						role="presentation"
+						class="flex flex-col items-center max-w-[90vw]"
+						class:max-h-full={!captionExpanded}
+						in:fly={{ x: slideDirection * 300, duration: 250 }}
 					>
-						{#if imageLoading}
-							<div
-								class="absolute inset-0 flex items-center justify-center bg-gray-900/50 rounded-lg"
-							>
-								<Icon icon="mdi:loading" class="text-4xl text-white/70 animate-spin" />
-							</div>
-						{/if}
+						<!-- Image container with zoom -->
+						<div
+							class="relative ease-out select-none"
+							class:transition-transform={!isPanning}
+							style="transform: scale({zoomLevel}) translate({panX / zoomLevel}px, {panY / zoomLevel}px); touch-action: pinch-zoom;"
+							onmousedown={handleMouseDown}
+							onmousemove={handleMouseMove}
+							onmouseup={handleMouseUp}
+							onmouseleave={() => { if (isPanning) isPanning = false; }}
+							onwheel={handleWheel}
+							role="presentation"
+						>
+							{#if imageLoading}
+								<div
+									class="absolute inset-0 flex items-center justify-center bg-gray-900/50 rounded-lg"
+								>
+									<Icon icon="mdi:loading" class="text-4xl text-white/70 animate-spin" />
+								</div>
+							{/if}
 
-						<!-- Image -->
-						<img
-							src={currentPageData.imageUrl}
-							alt={currentPageData.title || `Page ${currentPage + 1}`}
-							class="max-w-[90vw] object-contain rounded-lg shadow-2xl {currentPageData.caption || currentPageData.title ? 'max-h-[65vh]' : 'max-h-[80vh]'} {zoomLevel > 1 ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'}"
-							onload={handleImageLoad}
-							draggable="false"
-						/>
-					</div>
+							<!-- Image -->
+							<img
+								src={currentPageData.imageUrl}
+								alt={currentPageData.title || `Page ${currentPage + 1}`}
+								class="max-w-[90vw] object-contain rounded-lg shadow-2xl {currentPageData.caption || currentPageData.title ? 'max-h-[65vh]' : 'max-h-[80vh]'} {zoomLevel > 1 ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'}"
+								onload={handleImageLoad}
+								draggable="false"
+							/>
+						</div>
 
-					<!-- Caption panel (hidden when zoomed) -->
-					{#if (currentPageData.caption || currentPageData.title) && zoomLevel <= 1}
-						<div class="w-full mt-2 rounded-lg bg-black/80 backdrop-blur-sm">
-							<!-- Caption header (always visible, centered when collapsed) -->
-							<button
-								class="w-full flex items-center justify-center px-4 py-2.5 gap-2"
-								onclick={() => (captionExpanded = !captionExpanded)}
-							>
-								{#if currentPageData.title}
-									<span class="text-white font-medium text-sm truncate">
-										{currentPageData.title}
-									</span>
-								{/if}
-								<span class="flex-shrink-0 caption-chevron" class:caption-chevron-hint={!captionExpanded}>
-									<Icon
-										icon={captionExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down'}
-										class="text-lg text-white/70"
-									/>
-								</span>
-							</button>
-
-							<!-- Expandable caption body (CSS grid for smooth open/close) -->
-							<div class="caption-body" class:caption-body-open={captionExpanded}>
-								<div class="overflow-hidden">
-									{#if currentPageData.caption}
-										<div class="px-4 pb-3 caption-content custom-scrollbar">
-											<div class="caption-rich-content text-gray-300 text-sm leading-relaxed">
-												{@html sanitizeHtml(currentPageData.caption, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'], ALLOWED_ATTR: ['href', 'target', 'rel'] })}
-											</div>
-										</div>
+						<!-- Caption panel (hidden when zoomed) -->
+						{#if (currentPageData.caption || currentPageData.title) && zoomLevel <= 1}
+							<div class="w-full mt-2 rounded-lg bg-black/80 backdrop-blur-sm">
+								<!-- Caption header (always visible, centered when collapsed) -->
+								<button
+									class="w-full flex items-center justify-center px-4 py-2.5 gap-2"
+									onclick={() => (captionExpanded = !captionExpanded)}
+								>
+									{#if currentPageData.title}
+										<span class="text-white font-medium text-sm truncate">
+											{currentPageData.title}
+										</span>
 									{/if}
+									<span class="flex-shrink-0 caption-chevron" class:caption-chevron-hint={!captionExpanded}>
+										<Icon
+											icon={captionExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down'}
+											class="text-lg text-white/70"
+										/>
+									</span>
+								</button>
+
+								<!-- Expandable caption body (CSS grid for smooth open/close) -->
+								<div class="caption-body" class:caption-body-open={captionExpanded}>
+									<div class="overflow-hidden">
+										{#if currentPageData.caption}
+											<div class="px-4 pb-3 caption-content custom-scrollbar">
+												<div class="caption-rich-content text-gray-300 text-sm leading-relaxed">
+													{@html sanitizeHtml(currentPageData.caption, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'], ALLOWED_ATTR: ['href', 'target', 'rel'] })}
+												</div>
+											</div>
+										{/if}
+									</div>
 								</div>
 							</div>
-						</div>
-					{/if}
-				</div>
+						{/if}
+					</div>
+				{/key}
 			{/if}
 		</div>
 
-		<!-- Navigation arrows -->
-		{#if totalPages > 1}
+		<!-- Navigation arrows (hidden in grid view) -->
+		{#if totalPages > 1 && !showAllPages}
 			<!-- Previous -->
 			<button
 				onclick={prevPage}
@@ -479,8 +568,8 @@
 			</button>
 		{/if}
 
-		<!-- Footer with page thumbnails (optional, for many pages) -->
-		{#if totalPages > 1}
+		<!-- Footer with page dots (hidden in grid view) -->
+		{#if totalPages > 1 && !showAllPages}
 			<div
 				class="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-center gap-1 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent"
 				in:fly={{ y: 20, duration: 300, delay: 200 }}
@@ -489,14 +578,7 @@
 				<div class="flex gap-1.5 max-w-full overflow-x-auto py-1">
 					{#each pages as page, index}
 						<button
-							onclick={() => {
-								currentPage = index;
-								zoomLevel = 1;
-								panX = 0;
-								panY = 0;
-								imageLoading = true;
-								captionExpanded = false;
-							}}
+							onclick={() => goToPage(index)}
 							class="w-2 h-2 rounded-full transition-all duration-200 flex-shrink-0
                                    {index === currentPage
 								? 'bg-white w-6'
