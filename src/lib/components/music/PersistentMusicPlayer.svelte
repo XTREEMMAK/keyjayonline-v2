@@ -5,6 +5,7 @@
 	import Icon from '@iconify/svelte';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { getPersistentPlayerConfig, pauseAllTrackPlayers } from '$lib/utils/wavesurfer-helpers.js';
+	import { setupMediaSessionHandlers, updateMediaSessionMetadata, updateMediaSessionPlaybackState } from '$lib/utils/mediaSession.js';
 	import { activeSection } from '$lib/stores/navigation.js';
 	import {
 		playerVisible,
@@ -23,7 +24,8 @@
 		closePlayerCompletely,
 		nextTrack,
 		previousTrack,
-		playlistSource
+		playlistSource,
+		radioMode
 	} from '$lib/stores/musicPlayer.js';
 	import { extractCoverArt } from '$lib/utils/coverArtExtractor.js';
 	import { formatTime } from '$lib/utils/time.js';
@@ -67,40 +69,7 @@
 			wavesurferInstance.set(wavesurfer);
 
 			// Setup Media Session API for car/Bluetooth controls
-			if ('mediaSession' in navigator) {
-				navigator.mediaSession.setActionHandler('play', () => {
-					pauseAllTrackPlayers();
-					wavesurfer.play();
-				});
-
-				navigator.mediaSession.setActionHandler('pause', () => {
-					wavesurfer.pause();
-				});
-
-				navigator.mediaSession.setActionHandler('seekbackward', () => {
-					const currentTime = wavesurfer.getCurrentTime();
-					const duration = wavesurfer.getDuration();
-					if (duration > 0) {
-						wavesurfer.seekTo(Math.max(0, currentTime - 10) / duration);
-					}
-				});
-
-				navigator.mediaSession.setActionHandler('seekforward', () => {
-					const currentTime = wavesurfer.getCurrentTime();
-					const duration = wavesurfer.getDuration();
-					if (duration > 0) {
-						wavesurfer.seekTo(Math.min(duration, currentTime + 10) / duration);
-					}
-				});
-
-				navigator.mediaSession.setActionHandler('previoustrack', () => {
-					previousTrack();
-				});
-
-				navigator.mediaSession.setActionHandler('nexttrack', () => {
-					nextTrack();
-				});
-			}
+			setupMediaSessionHandlers(wavesurfer);
 
 			// Set initial volume
 			wavesurfer.setVolume($volume);
@@ -135,9 +104,7 @@
 				isPlaying.set(true);
 				// Poll at 10Hz as fallback for smooth updates on Android
 				playbackInterval = setInterval(syncPlayhead, 100);
-				if ('mediaSession' in navigator) {
-					navigator.mediaSession.playbackState = 'playing';
-				}
+				updateMediaSessionPlaybackState('playing');
 			});
 
 			wavesurfer.on('pause', () => {
@@ -145,9 +112,7 @@
 				isPlaying.set(false);
 				clearInterval(playbackInterval);
 				syncPlayhead(); // Final sync on pause
-				if ('mediaSession' in navigator) {
-					navigator.mediaSession.playbackState = 'paused';
-				}
+				updateMediaSessionPlaybackState('paused');
 			});
 			
 			wavesurfer.on('finish', () => {
@@ -337,15 +302,8 @@
 
 	// Update Media Session metadata when track or artwork changes
 	$effect(() => {
-		if ('mediaSession' in navigator && $currentTrack) {
-			navigator.mediaSession.metadata = new MediaMetadata({
-				title: $currentTrack.title || 'Unknown Track',
-				artist: $currentTrack.artist || 'KEY JAY',
-				album: $currentTrack.album || 'Streaming',
-				artwork: $currentTrackArtwork ? [
-					{ src: $currentTrackArtwork, sizes: '512x512', type: 'image/png' }
-				] : []
-			});
+		if ($currentTrack) {
+			updateMediaSessionMetadata($currentTrack, $currentTrackArtwork);
 		}
 	});
 
@@ -517,7 +475,7 @@
 	});
 </script>
 
-{#if $playerVisible && !$sectionModalOpen}
+{#if $playerVisible && !$sectionModalOpen && !$radioMode}
 	<div
 		class="music-player fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-md border-t border-white/10 shadow-2xl"
 		class:minimized={$playerMinimized}

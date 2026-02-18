@@ -23,7 +23,12 @@ export const currentTrackIndex = writable(0);
 export const playerPosition = writable(0);
 export const playerDuration = writable(0);
 export const volume = writable(0.6);
-export const playlistSource = writable('library'); // 'library' | 'production'
+export const playlistSource = writable('library'); // 'library' | 'production' | 'radio'
+
+// Radio-specific state
+export const radioMode = writable(false);
+export const shuffleMode = writable(false);
+export const shuffleHistory = writable([]); // Last N played track indices (no repeats)
 
 // Player instance (for sharing across components)
 export const wavesurferInstance = writable(null);
@@ -269,13 +274,79 @@ async function preloadPlaylistArtwork(tracks) {
 	}, 100); // Small delay to not interfere with current track loading
 }
 
+/**
+ * Load a radio playlist and enter radio mode.
+ * Sets radioMode, transforms URLs, extracts artwork.
+ * @param {Array} tracks - Array of track objects from the radio API
+ */
+export function loadRadioPlaylist(tracks) {
+	radioMode.set(true);
+	playlistSource.set('radio');
+	const transformedTracks = tracks.map(transformTrackUrls);
+	playlist.set(transformedTracks);
+	currentTrackIndex.set(0);
+	if (transformedTracks[0]) {
+		currentTrack.set(transformedTracks[0]);
+		extractTrackArtwork(transformedTracks[0]);
+		preloadPlaylistArtwork(transformedTracks);
+	}
+}
+
+/**
+ * Exit radio mode and reset all radio-specific state.
+ */
+export function exitRadioMode() {
+	radioMode.set(false);
+	shuffleMode.set(false);
+	shuffleHistory.set([]);
+	closePlayerCompletely();
+}
+
+/**
+ * Get upcoming tracks from the current position.
+ * @param {number} count - Number of upcoming tracks to return
+ * @returns {Array} Array of upcoming track objects with queueIndex
+ */
+export function getUpcomingQueue(count = 10) {
+	const tracks = get(playlist);
+	const currentIndex = get(currentTrackIndex);
+
+	if (!tracks || tracks.length === 0) return [];
+
+	const upcoming = [];
+	for (let i = 1; i <= tracks.length && upcoming.length < count; i++) {
+		const idx = (currentIndex + i) % tracks.length;
+		if (idx === currentIndex) break; // Full loop
+		upcoming.push({ ...tracks[idx], queueIndex: idx });
+	}
+	return upcoming;
+}
+
 export function nextTrack() {
 	let tracks, currentIndex;
 	playlist.subscribe(val => tracks = val)();
 	currentTrackIndex.subscribe(val => currentIndex = val)();
 
 	if (tracks && tracks.length > 0) {
-		const nextIndex = (currentIndex + 1) % tracks.length;
+		let nextIndex;
+		const isShuffle = get(shuffleMode);
+
+		if (isShuffle) {
+			const history = get(shuffleHistory);
+			const maxHistory = Math.min(10, tracks.length - 1);
+			const recentIndices = new Set(history.slice(-maxHistory));
+			const candidates = [];
+			for (let i = 0; i < tracks.length; i++) {
+				if (!recentIndices.has(i)) candidates.push(i);
+			}
+			nextIndex = candidates.length > 0
+				? candidates[Math.floor(Math.random() * candidates.length)]
+				: Math.floor(Math.random() * tracks.length);
+			shuffleHistory.update(h => [...h.slice(-(maxHistory - 1)), nextIndex]);
+		} else {
+			nextIndex = (currentIndex + 1) % tracks.length;
+		}
+
 		playTrack(nextIndex);
 		return tracks[nextIndex];
 	}

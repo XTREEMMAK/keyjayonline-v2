@@ -441,6 +441,7 @@ export async function getLegacySamples() {
           'artist',
           'genre',
           'release_year',
+          'description',
           { music_sample: ['id', 'filename_disk'] },
           { thumbnail: ['id', 'filename_disk'] }
         ],
@@ -456,7 +457,7 @@ export async function getLegacySamples() {
       genre: sample.genre || [],
       audioUrl: sample.music_sample ? buildAssetUrl(sample.music_sample) : null,
       thumbnail: sample.thumbnail ? buildAssetUrl(sample.thumbnail) : null,
-      description: null,
+      description: sample.description || null,
       externalLinks: []
     }));
   } catch {

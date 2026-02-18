@@ -16,6 +16,9 @@
 	// Skip default OG tags on share pages (they provide their own)
 	const isSharePage = $derived($page.url.pathname.startsWith('/share/'));
 
+	// Radio page uses standalone layout — hide site chrome
+	const isRadioPage = $derived($page.url.pathname.startsWith('/radio'));
+
 	// State to control footer visibility after initial load
 	let pageReady = $state(false);
 
@@ -108,8 +111,8 @@
 	{@render children?.()}
 </main>
 
-<!-- Global Footer - Hidden on error pages and during initial load, always on top of content -->
-{#if !isErrorPage && pageReady}
+<!-- Global Footer - Hidden on error pages, radio page, and during initial load -->
+{#if !isErrorPage && !isRadioPage && pageReady}
 	<div class="relative z-20 footer-wrapper" class:home-footer={$page.url.pathname === '/'}>
 		<Footer siteSettings={data?.siteSettings} socialLinks={data?.socialLinks} supportPlatforms={data?.siteSettings?.supportPlatforms} />
 	</div>
@@ -135,11 +138,13 @@
 	}
 </style>
 
-<!-- Floating Button Container (Mobile Only) -->
-<FloatingButtonContainer socialLinks={data?.socialLinks ?? []} />
+{#if !isRadioPage}
+	<!-- Floating Button Container (Mobile Only) -->
+	<FloatingButtonContainer socialLinks={data?.socialLinks ?? []} />
 
-<!-- Scroll to Top Button (Mobile Only) -->
-<ScrollToTop />
+	<!-- Scroll to Top Button (Mobile Only) -->
+	<ScrollToTop />
+{/if}
 
 <!-- Persistent Music Player -->
 <PersistentMusicPlayer />

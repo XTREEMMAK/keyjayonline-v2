@@ -80,6 +80,24 @@ export function getAudioPlayerConfig(options = {}) {
 }
 
 /**
+ * Configuration for the radio player
+ * @returns {Object} Radio player configuration
+ */
+export function getRadioPlayerConfig() {
+  return {
+    ...getBaseWaveSurferConfig(),
+    height: 48,
+    waveColor: 'rgba(102, 126, 234, 0.6)',
+    progressColor: 'rgba(118, 75, 162, 0.8)',
+    cursorColor: '#ffffff',
+    interact: true,
+    barWidth: 3,
+    barGap: 1,
+    barRadius: 3
+  };
+}
+
+/**
  * SVG icons for play/pause buttons
  */
 export const PLAYER_ICONS = {

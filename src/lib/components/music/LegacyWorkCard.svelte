@@ -1,9 +1,18 @@
 <script>
+	import { slide } from 'svelte/transition';
 	import AudioPlayer from './AudioPlayer.svelte';
 	import Icon from '@iconify/svelte';
 
 	let { work } = $props();
 
+	let descriptionOpen = $state(false);
+
+	function stripHtml(html) {
+		if (!html) return '';
+		return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
+	}
+
+	const descriptionText = $derived(stripHtml(work.description));
 	const genres = $derived(Array.isArray(work.genre) ? work.genre : work.genre ? [work.genre] : []);
 	const externalLinks = $derived(
 		(work.externalLinks || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
@@ -62,17 +71,31 @@
 		{/if}
 	</div>
 
-	{#if work.description}
-		<p class="text-gray-400 text-sm mb-3">{work.description}</p>
-	{/if}
-
 	{#if work.audioUrl}
 		<AudioPlayer
 			audioUrl={work.audioUrl}
-			trackTitle={work.title}
 			waveColor="#60A5FA"
 			progressColor="#2563EB"
 			height={50}
 		/>
+	{/if}
+
+	{#if descriptionText}
+		<div class="mt-2">
+			<button
+				onclick={() => descriptionOpen = !descriptionOpen}
+				class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 transition-colors"
+			>
+				<span class="inline-flex transition-transform duration-300 {descriptionOpen ? 'rotate-180' : ''}">
+					<Icon icon="mdi:chevron-down" width={14} height={14} />
+				</span>
+				{descriptionOpen ? 'Hide info' : 'Track info'}
+			</button>
+			{#if descriptionOpen}
+				<div class="mt-2 bg-white/5 rounded-lg p-3 border border-white/10" transition:slide={{ duration: 250 }}>
+					<p class="text-gray-400 text-sm leading-relaxed">{descriptionText}</p>
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
