@@ -623,7 +623,7 @@
 		<section
 			class="bg-[var(--neu-bg)]/95 backdrop-blur-sm py-6 z-30"
 		>
-			<div class="container mx-auto px-4">
+			<div class="container mx-auto px-6">
 				<div class="flex justify-center gap-1.5 sm:gap-3">
 					<button
 						onclick={() => switchTab('stack')}
@@ -1020,6 +1020,7 @@
 	/* Section-level tabs — CSS-based switching keeps DOM alive (no image re-fetching) */
 	.tech-tab-panel {
 		display: none;
+		overflow-x: hidden;
 	}
 
 	.tech-tab-panel.active {

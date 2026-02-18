@@ -92,6 +92,12 @@
 	let lastTapY = 0;
 	let longPressTimer = null;
 
+	// Pan momentum (inertia) state
+	let prevMoveX = 0;
+	let prevMoveY = 0;
+	let prevMoveTime = 0;
+	let momentumRaf = null;
+
 	// Fullscreen support detection
 	const fullscreenSupported = browser && (document.fullscreenEnabled || document.webkitFullscreenEnabled || false);
 
@@ -213,6 +219,7 @@
 		if (document.fullscreenElement || document.webkitFullscreenElement) {
 			document.exitFullscreen?.() || document.webkitExitFullscreen?.();
 		}
+		cancelMomentum();
 		popModalState(); // Go back in history if we pushed a state
 		currentPage = 0;
 		zoomLevel = 1;
@@ -270,6 +277,7 @@
 
 	function handleDoubleTap() {
 		if (zoomLevel > 1) {
+			cancelMomentum();
 			zoomLevel = 1;
 			panX = 0;
 			panY = 0;
@@ -322,6 +330,34 @@
 		resetInactivityTimer();
 	}
 
+	function cancelMomentum() {
+		if (momentumRaf) {
+			cancelAnimationFrame(momentumRaf);
+			momentumRaf = null;
+		}
+	}
+
+	function startMomentum(vx, vy) {
+		const friction = 0.95;
+		const minVelocity = 0.05;
+
+		function animate() {
+			vx *= friction;
+			vy *= friction;
+			panX += vx * 16;
+			panY += vy * 16;
+
+			if (Math.abs(vx) > minVelocity || Math.abs(vy) > minVelocity) {
+				momentumRaf = requestAnimationFrame(animate);
+			} else {
+				momentumRaf = null;
+				isPanning = false;
+			}
+		}
+
+		momentumRaf = requestAnimationFrame(animate);
+	}
+
 	function handleMouseActivity() {
 		// Skip during drag-pan and post-drag cooldown
 		if (isPanning || dragCooldownTimer) return;
@@ -329,6 +365,9 @@
 	}
 
 	function handleTouchStart(event) {
+		// Cancel any running momentum from a previous pan
+		cancelMomentum();
+
 		const touches = event.touches;
 
 		if (touches.length === 2) {
@@ -350,6 +389,9 @@
 		touchStartX = touch.clientX;
 		touchStartY = touch.clientY;
 		touchStartTime = Date.now();
+		prevMoveX = touch.clientX;
+		prevMoveY = touch.clientY;
+		prevMoveTime = Date.now();
 
 		if (zoomLevel > 1) {
 			// At >1x zoom: immediate pan mode
@@ -415,6 +457,10 @@
 			totalDragDistance = Math.sqrt(moveDx * moveDx + moveDy * moveDy);
 			panX = dragStartPanX + moveDx;
 			panY = dragStartPanY + moveDy;
+			// Track velocity for momentum
+			prevMoveX = lastTouchX;
+			prevMoveY = lastTouchY;
+			prevMoveTime = Date.now();
 		}
 
 		lastTouchX = touch.clientX;
@@ -440,13 +486,26 @@
 		}
 
 		if (touchState === 'panning') {
-			isPanning = false;
 			// If barely moved while panning (long-press without drag), revert zoom
 			if (totalDragDistance < TAP_THRESHOLD) {
+				isPanning = false;
 				zoomLevel = 1;
 				panX = 0;
 				panY = 0;
 				if (isTouchDevice) resetInactivityTimer();
+			} else {
+				// Calculate velocity for momentum
+				const now = Date.now();
+				const dt = Math.max(now - prevMoveTime, 1);
+				const vx = (lastTouchX - prevMoveX) / dt;
+				const vy = (lastTouchY - prevMoveY) / dt;
+
+				if (Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1) {
+					// Start momentum — isPanning stays true during animation
+					startMomentum(vx, vy);
+				} else {
+					isPanning = false;
+				}
 			}
 			touchState = 'idle';
 			return;
