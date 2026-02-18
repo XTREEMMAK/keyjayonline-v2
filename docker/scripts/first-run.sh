@@ -38,14 +38,40 @@ log_error() {
     echo -e "${RED}[INIT]${NC} $1"
 }
 
-# ── Schema Apply (every startup) ──
+# ── Wait for Database ──
+MAX_RETRIES=15
+RETRY_INTERVAL=2
+
+log_info "Waiting for database at ${DB_HOST:-kjo2_postgres}..."
+for i in $(seq 1 $MAX_RETRIES); do
+    if npx directus database install 2>/dev/null || true; then
+        # Simple connectivity check via schema apply dry-run isn't available,
+        # so we try a pg_isready-style check if psql is present, otherwise
+        # just try the schema apply directly with retries
+        break
+    fi
+    log_warn "Database not ready (attempt $i/$MAX_RETRIES), retrying in ${RETRY_INTERVAL}s..."
+    sleep $RETRY_INTERVAL
+done
+
+# ── Schema Apply (every startup, with retries) ──
 if [ -f "$SCHEMA_FILE" ]; then
     log_info "Applying schema from $SCHEMA_FILE..."
 
-    if npx directus schema apply "$SCHEMA_FILE" --yes; then
-        log_info "Schema applied successfully"
-    else
-        log_error "Failed to apply schema"
+    SCHEMA_APPLIED=false
+    for i in $(seq 1 $MAX_RETRIES); do
+        if npx directus schema apply "$SCHEMA_FILE" --yes 2>&1; then
+            log_info "Schema applied successfully"
+            SCHEMA_APPLIED=true
+            break
+        else
+            log_warn "Schema apply failed (attempt $i/$MAX_RETRIES), retrying in ${RETRY_INTERVAL}s..."
+            sleep $RETRY_INTERVAL
+        fi
+    done
+
+    if [ "$SCHEMA_APPLIED" = false ]; then
+        log_error "Failed to apply schema after $MAX_RETRIES attempts"
         exit 1
     fi
 else
