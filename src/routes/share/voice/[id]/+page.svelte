@@ -181,20 +181,30 @@
 			duration = formatTime(wavesurfer.getDuration());
 		});
 
-		wavesurfer.on('audioprocess', () => {
-			currentTime = formatTime(wavesurfer.getCurrentTime());
-		});
+		// Use native media element events for reliable Android playback
+		const mediaEl = wavesurfer.getMediaElement();
+		let playbackInterval = null;
+
+		function syncTime() {
+			currentTime = formatTime(mediaEl.currentTime);
+		}
+
+		mediaEl.addEventListener('timeupdate', syncTime);
 
 		wavesurfer.on('play', () => {
 			isPlaying = true;
+			playbackInterval = setInterval(syncTime, 100);
 		});
 
 		wavesurfer.on('pause', () => {
 			isPlaying = false;
+			clearInterval(playbackInterval);
+			syncTime();
 		});
 
 		wavesurfer.on('finish', () => {
 			isPlaying = false;
+			clearInterval(playbackInterval);
 		});
 	}
 

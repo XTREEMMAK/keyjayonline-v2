@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy, tick } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { fade, fly, slide } from 'svelte/transition';
 	import { togglePlayer, showPlayer, loadPlaylist, loadRandomTrack } from '$lib/stores/musicPlayer.js';
 	import AlbumCard from '$lib/components/music/AlbumCard.svelte';
 	import AlbumModalSwal from '$lib/components/music/AlbumModalSwal.svelte';
@@ -39,6 +39,7 @@
 	let albumModal = $state(null);
 	let activeFilter = $state('all');
 	let view = $state('albums');
+	let showFilters = $state(false); // Mobile filter toggle
 
 	// Sticky sub-nav state
 	let subNavSentinelRef = $state(null);
@@ -711,7 +712,8 @@
 
 				<!-- Filter buttons - centered below main buttons -->
 				{#if view === 'albums'}
-					<div class="flex gap-2 flex-wrap justify-center">
+					<!-- Desktop: always visible -->
+					<div class="hidden md:flex gap-2 flex-wrap justify-center">
 						<button
 							onclick={() => setFilter('all')}
 							class="px-3 py-1 text-sm rounded-full transition-all duration-300 {
@@ -734,6 +736,44 @@
 								{releaseType.charAt(0).toUpperCase() + releaseType.slice(1).replace(/_/g, ' ')}
 							</button>
 						{/each}
+					</div>
+
+					<!-- Mobile: collapsible toggle -->
+					<div class="md:hidden">
+						<button
+							onclick={() => showFilters = !showFilters}
+							class="flex items-center gap-2 mx-auto text-sm text-gray-400 hover:text-white transition-colors"
+						>
+							<Icon icon="mdi:filter-variant" class="text-base" />
+							<span>Filter: <span class="text-blue-400 font-semibold">{activeFilter === 'all' ? 'All' : activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1).replace(/_/g, ' ')}</span></span>
+							<Icon icon={showFilters ? 'mdi:chevron-up' : 'mdi:chevron-down'} class="text-base" />
+						</button>
+						{#if showFilters}
+							<div class="flex gap-2 flex-wrap justify-center mt-3" transition:slide={{ duration: 200 }}>
+								<button
+									onclick={() => { setFilter('all'); showFilters = false; }}
+									class="px-3 py-1 text-sm rounded-full transition-all duration-300 {
+										activeFilter === 'all'
+											? 'bg-blue-600/20 text-blue-400 border border-blue-600'
+											: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+									}"
+								>
+									All
+								</button>
+								{#each releaseTypes() as releaseType}
+									<button
+										onclick={() => { setFilter(releaseType); showFilters = false; }}
+										class="px-3 py-1 text-sm rounded-full transition-all duration-300 capitalize {
+											activeFilter === releaseType
+												? 'bg-blue-600/20 text-blue-400 border border-blue-600'
+												: 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+										}"
+									>
+										{releaseType.charAt(0).toUpperCase() + releaseType.slice(1).replace(/_/g, ' ')}
+									</button>
+								{/each}
+							</div>
+						{/if}
 					</div>
 				{/if}
 			</div>

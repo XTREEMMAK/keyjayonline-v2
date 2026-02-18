@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "directus": "11.15.3",
+  "directus": "11.15.4",
   "vendor": "postgres",
   "collections": [
     {
@@ -20289,7 +20289,7 @@
         "one_collection_field": null,
         "one_deselect_action": "nullify",
         "one_field": "pages",
-        "sort_field": null
+        "sort_field": "sort"
       },
       "schema": {
         "table": "kjov2_gallery_albums",

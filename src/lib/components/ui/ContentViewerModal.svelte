@@ -26,7 +26,8 @@
 		title = '',
 		onClose = () => {},
 		loading = false,
-		manageOverlayStore = true
+		manageOverlayStore = true,
+		canDownload = false
 	} = $props();
 
 	// State
@@ -208,6 +209,19 @@
 		imageLoading = false;
 	}
 
+	// Download original image
+	function handleDownload() {
+		if (!currentPageData?.downloadUrl) return;
+		const a = document.createElement('a');
+		a.href = currentPageData.downloadUrl;
+		a.download = currentPageData.title || `page-${currentPage + 1}`;
+		a.target = '_blank';
+		a.rel = 'noopener noreferrer';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+	}
+
 	// Reset state when modal opens and handle body scroll lock
 	$effect(() => {
 		if (isOpen) {
@@ -315,6 +329,17 @@
 
 			<!-- Controls -->
 			<div class="flex items-center gap-2">
+				<!-- Download button -->
+				{#if canDownload && currentPageData?.downloadUrl}
+					<button
+						onclick={handleDownload}
+						class="p-2 text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+						title="Download original"
+					>
+						<Icon icon="mdi:download" class="text-xl" />
+					</button>
+				{/if}
+
 				<!-- Zoom indicator -->
 				<button
 					onclick={toggleZoom}

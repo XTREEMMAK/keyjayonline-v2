@@ -68,7 +68,7 @@
 			property="og:description"
 			content="The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!"
 		/>
-		<meta property="og:image" content="{PUBLIC_SITE_URL}/img/og-social.png" />
+		<meta property="og:image" content="{PUBLIC_SITE_URL}/img/og-social.webp" />
 		<meta property="og:site_name" content="KEY JAY ONLINE" />
 		<!-- Twitter Meta Tags -->
 		<meta name="twitter:card" content="summary_large_image" />
@@ -79,7 +79,7 @@
 			name="twitter:description"
 			content="The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!"
 		/>
-		<meta name="twitter:image" content="{PUBLIC_SITE_URL}/img/og-social.png" />
+		<meta name="twitter:image" content="{PUBLIC_SITE_URL}/img/og-social.webp" />
 	{/if}
 	<link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
 	<!-- JSON-LD Structured Data -->
@@ -90,7 +90,7 @@
 		"name": "KEY JAY",
 		"alternateName": "Jamaal Ephriam",
 		"url": "${PUBLIC_SITE_URL}",
-		"image": "${PUBLIC_SITE_URL}/img/og-social.png",
+		"image": "${PUBLIC_SITE_URL}/img/og-social.webp",
 		"description": "The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!",
 		"sameAs": [
 			${data?.socialLinks?.map(s => `"${s.url}"`).join(',\n\t\t\t') || ''}

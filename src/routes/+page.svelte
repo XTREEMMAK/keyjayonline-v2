@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
 	import Hero from '$lib/components/layout/Hero.svelte';
 	import NeumorphicNavbar from '$lib/components/ui/NeumorphicNavbar.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
@@ -130,6 +130,13 @@
 			slug: cat.slug
 		}))
 	]);
+
+	// Get active filter label for the toggle button
+	const activeFilterLabel = $derived(
+		$musicActiveFilter === 'all'
+			? 'All'
+			: $musicActiveFilter.charAt(0).toUpperCase() + $musicActiveFilter.slice(1).replace(/_/g, ' ')
+	);
 
 	// Handle tab switch from portal
 	function handleAboutTabSwitch(tab) {
@@ -272,7 +279,7 @@
 
 <!-- Music Section Sticky Sub-Nav Portal -->
 {#if $activeSection === 'music'}
-	<SectionStickyNav section="music">
+	<SectionStickyNav section="music" filterLabel={$musicActiveView === 'albums' ? (activeFilterLabel !== 'All' ? activeFilterLabel : 'Albums') : $musicActiveView === 'legacy' ? 'Legacy' : 'Studio'}>
 		<div class="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
 			<button
 				onclick={() => { musicActiveView.set('albums'); scrollToSectionContent(); }}
@@ -308,46 +315,40 @@
 				Studio
 			</button>
 		</div>
-	</SectionStickyNav>
-	{#if $musicActiveView === 'albums' && $activeStickySection === 'music' && !$sectionModalOpen}
-		<div
-			class="music-filter-bar fixed left-0 right-0 z-[39] bg-black/40 border-b border-white/5 backdrop-blur-[12px] backdrop-saturate-[1.1]"
-			style="top: 60px"
-			in:fly={{ y: -20, duration: 200 }}
-		>
-			<div class="container mx-auto px-4">
-				<div class="flex gap-1.5 flex-wrap justify-center py-1.5">
+		<!-- Mobile-only: release type filters inside pullout dropdown -->
+		{#if $musicActiveView === 'albums' && musicReleaseTypes().length > 0}
+			<div class="md:hidden w-full border-t border-white/10 my-1"></div>
+			<div class="md:hidden flex gap-1.5 flex-wrap justify-center">
+				<button
+					onclick={() => { musicActiveFilter.set('all'); scrollToSectionContent(); }}
+					class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 {
+						$musicActiveFilter === 'all'
+							? 'bg-blue-600/20 text-blue-400 border border-blue-600'
+							: 'text-gray-400 hover:text-white hover:bg-white/10'
+					}"
+				>
+					All
+				</button>
+				{#each musicReleaseTypes() as releaseType}
 					<button
-						onclick={() => { musicActiveFilter.set('all'); scrollToSectionContent(); }}
-						class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 {
-							$musicActiveFilter === 'all'
+						onclick={() => { musicActiveFilter.set(releaseType); scrollToSectionContent(); }}
+						class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 capitalize {
+							$musicActiveFilter === releaseType
 								? 'bg-blue-600/20 text-blue-400 border border-blue-600'
 								: 'text-gray-400 hover:text-white hover:bg-white/10'
 						}"
 					>
-						All
+						{releaseType.charAt(0).toUpperCase() + releaseType.slice(1).replace(/_/g, ' ')}
 					</button>
-					{#each musicReleaseTypes() as releaseType}
-						<button
-							onclick={() => { musicActiveFilter.set(releaseType); scrollToSectionContent(); }}
-							class="px-2.5 py-1 text-xs rounded-full transition-all duration-300 capitalize {
-								$musicActiveFilter === releaseType
-									? 'bg-blue-600/20 text-blue-400 border border-blue-600'
-									: 'text-gray-400 hover:text-white hover:bg-white/10'
-							}"
-						>
-							{releaseType.charAt(0).toUpperCase() + releaseType.slice(1).replace(/_/g, ' ')}
-						</button>
-					{/each}
-				</div>
+				{/each}
 			</div>
-		</div>
-	{/if}
+		{/if}
+	</SectionStickyNav>
 {/if}
 
 <!-- Tech Section Sticky Sub-Nav Portal -->
 {#if $activeSection === 'tech'}
-	<SectionStickyNav section="tech">
+	<SectionStickyNav section="tech" filterLabel={$techActiveTab === 'stack' ? 'Stack' : $techActiveTab === 'projects' ? 'Projects' : 'Showcase'}>
 		<div class="flex gap-2 flex-wrap justify-center">
 			<button
 				onclick={() => { techActiveTab.set('stack'); scrollToSectionContent(); }}
@@ -388,7 +389,7 @@
 
 <!-- Productions Section Sticky Sub-Nav Portal -->
 {#if $activeSection === 'productions'}
-	<SectionStickyNav section="productions">
+	<SectionStickyNav section="productions" filterLabel={productionCategories.find(c => c.id === $productionsActiveFilter)?.label || 'All'}>
 		<div class="flex gap-2 flex-wrap justify-center">
 			{#each productionCategories as category}
 				<button

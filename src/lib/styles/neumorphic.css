@@ -45,7 +45,7 @@
   box-shadow:
     8px 8px 16px var(--neu-shadow-dark),
     -8px -8px 16px var(--neu-shadow-light);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .neu-card:hover {
@@ -549,6 +549,13 @@
 @keyframes gradientShift {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+}
+
+/* Disable continuous gradient animation on mobile to reduce paint cost */
+@media (max-width: 1024px) {
+  .gradient-animated::after {
+    animation: none;
+  }
 }
 
 /* Subsection gradient accents */

@@ -6,6 +6,10 @@
  */
 
 import { formatTime } from './time.js';
+import { pauseMusic } from '$lib/stores/musicPlayer.js';
+
+/** @type {Map<string, WaveSurfer>} Registry of active track player instances */
+const trackPlayerRegistry = new Map();
 
 /**
  * Base WaveSurfer configuration shared across all components
@@ -100,24 +104,34 @@ export function setupTrackPlayerEvents(wavesurfer, elements, trackId) {
     if (duration) duration.textContent = formatTime(wavesurfer.getDuration());
   });
   
-  wavesurfer.on('audioprocess', () => {
-    if (currentTime) currentTime.textContent = formatTime(wavesurfer.getCurrentTime());
-  });
-  
+  // Use native media element events for reliable Android playback
+  const mediaEl = wavesurfer.getMediaElement();
+  let playbackInterval = null;
+
+  function syncTime() {
+    if (currentTime) currentTime.textContent = formatTime(mediaEl.currentTime);
+  }
+
+  mediaEl.addEventListener('timeupdate', syncTime);
+
   wavesurfer.on('play', () => {
     if (playBtn) playBtn.innerHTML = PLAYER_ICONS.pause;
+    playbackInterval = setInterval(syncTime, 100);
   });
-  
+
   wavesurfer.on('pause', () => {
     if (playBtn) playBtn.innerHTML = PLAYER_ICONS.play;
+    clearInterval(playbackInterval);
+    syncTime();
   });
-  
+
   wavesurfer.on('finish', () => {
     if (playBtn) playBtn.innerHTML = PLAYER_ICONS.play;
+    clearInterval(playbackInterval);
   });
   
-  // Store wavesurfer instance globally for cross-player management
-  window[`wavesurfer-${trackId}`] = wavesurfer;
+  // Register instance for cross-player management
+  trackPlayerRegistry.set(trackId, wavesurfer);
   
   // Setup play button with global player management
   if (playBtn) {
@@ -131,19 +145,39 @@ export function setupTrackPlayerEvents(wavesurfer, elements, trackId) {
  * @param {string} currentTrackId - Current track ID
  */
 export function pauseOthersAndToggle(currentWavesurfer, currentTrackId) {
-  // Pause all other wavesurfer instances
-  Object.keys(window).forEach(key => {
-    if ((key.startsWith('wavesurfer-') || key.startsWith('wavesurfer-mobile-')) && 
-        key !== `wavesurfer-${currentTrackId}`) {
-      const otherWavesurfer = window[key];
-      if (otherWavesurfer && typeof otherWavesurfer.isPlaying === 'function' && otherWavesurfer.isPlaying()) {
-        otherWavesurfer.pause();
-      }
+  // Pause all other registered track players
+  for (const [id, ws] of trackPlayerRegistry) {
+    if (id !== currentTrackId && typeof ws.isPlaying === 'function' && ws.isPlaying()) {
+      ws.pause();
     }
-  });
-  
+  }
+
+  // Pause the persistent music player too
+  pauseMusic();
+
   // Toggle current wavesurfer
   currentWavesurfer.playPause();
+}
+
+/**
+ * Register a WaveSurfer instance in the cross-player registry.
+ * @param {string} id - Unique player identifier
+ * @param {WaveSurfer} wavesurfer - WaveSurfer instance
+ */
+export function registerTrackPlayer(id, wavesurfer) {
+  trackPlayerRegistry.set(id, wavesurfer);
+}
+
+/**
+ * Pause all registered track players (modal + voice).
+ * Called by the persistent player when it starts playing.
+ */
+export function pauseAllTrackPlayers() {
+  for (const [, ws] of trackPlayerRegistry) {
+    if (typeof ws.isPlaying === 'function' && ws.isPlaying()) {
+      ws.pause();
+    }
+  }
 }
 
 /**
@@ -153,12 +187,12 @@ export function pauseOthersAndToggle(currentWavesurfer, currentTrackId) {
  */
 export function cleanupTrackPlayer(trackId, prefixes = ['', 'mobile-']) {
   prefixes.forEach(prefix => {
-    const globalKey = `wavesurfer-${prefix}${trackId}`;
-    const wavesurfer = window[globalKey];
-    
+    const key = `${prefix}${trackId}`;
+    const wavesurfer = trackPlayerRegistry.get(key);
+
     if (wavesurfer && typeof wavesurfer.destroy === 'function') {
       wavesurfer.destroy();
-      delete window[globalKey];
+      trackPlayerRegistry.delete(key);
     }
   });
 }

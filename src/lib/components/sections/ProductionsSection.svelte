@@ -322,6 +322,7 @@
 	loading={viewerLoading}
 	onClose={closeContentViewer}
 	manageOverlayStore={!detailModalOpen}
+	canDownload={true}
 />
 
 <!-- ============================================================================ -->
@@ -502,7 +503,7 @@
 						{#each productions as production (production.id)}
 							<div class="mix-item {production.categorySlugs}">
 								<article
-									class="neu-card overflow-hidden hover:scale-[1.02] transition-transform duration-300 group cursor-pointer"
+									class="neu-card production-card overflow-hidden transition-transform duration-300 group cursor-pointer"
 									onclick={() => handleCardClick(production)}
 									role="button"
 									tabindex="0"
@@ -514,10 +515,10 @@
 											src={getImageUrl(production)}
 											alt={production.title}
 											onerror={(e) => handleImageError(e, production)}
-											class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+											class="w-full h-full object-cover transition-transform duration-500"
 											loading="lazy"
 										/>
-										<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent group-hover:scale-110 transition-transform duration-500"></div>
+										<div class="production-card-overlay absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent transition-transform duration-500"></div>
 
 										<!-- Category Badges -->
 										<div class="absolute top-4 left-4 flex flex-wrap gap-1">
@@ -536,7 +537,7 @@
 										</div>
 
 										<!-- Play/View Overlay -->
-										<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+										<div class="production-card-play absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300">
 											<div class="bg-white/20 rounded-full p-4">
 												{#if production.category.includes('video') || production.category.includes('audio')}
 													<Icon icon="mdi:play" class="text-white text-3xl" />
@@ -765,6 +766,33 @@
 		.line-clamp-2 {
 			-webkit-line-clamp: 2;
 			line-clamp: 2;
+		}
+	}
+
+	/* Skip rendering for off-screen grid items */
+	:global(.mix-item) {
+		content-visibility: auto;
+		contain-intrinsic-size: auto 400px;
+	}
+
+	/* Isolate each card as its own compositing boundary */
+	.production-card {
+		contain: layout style paint;
+	}
+
+	/* Only apply card hover transforms on devices with a pointer (not touch-scroll) */
+	@media (hover: hover) {
+		.production-card:hover {
+			transform: scale(1.02);
+		}
+		.production-card:hover img {
+			transform: scale(1.10);
+		}
+		.production-card:hover .production-card-overlay {
+			transform: scale(1.10);
+		}
+		.production-card:hover .production-card-play {
+			opacity: 1;
 		}
 	}
 

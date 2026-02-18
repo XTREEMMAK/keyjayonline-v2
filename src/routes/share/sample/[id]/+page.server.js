@@ -58,7 +58,7 @@ export async function load({ params }) {
 			const meta = {
 				title: `${sampleData.title} - ${sampleData.artist}`,
 				description: `Listen to ${sampleData.title} by ${sampleData.artist}. ${sampleData.genre ? `Genre: ${sampleData.genre}` : ''}`,
-				image: sampleData.thumbnail || `${PUBLIC_SITE_URL}/img/og-social.png`,
+				image: sampleData.thumbnail || `${PUBLIC_SITE_URL}/img/og-social.webp`,
 				type: 'music'
 			};
 

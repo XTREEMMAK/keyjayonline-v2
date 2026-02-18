@@ -8,7 +8,7 @@
  *   static/icons/icon-192.png    (PWA standard)
  *   static/icons/icon-512.png    (PWA standard)
  *   static/icons/icon-maskable-512.png (PWA maskable)
- *   static/img/og-social.png     (1200x630 OG social image)
+ *   static/img/og-social.webp    (1200x630 OG social image)
  */
 
 import sharp from 'sharp';
@@ -71,7 +71,7 @@ async function generateIcons() {
 		.png()
 		.toBuffer();
 
-	const ogOutputPath = resolve(projectRoot, 'static/img/og-social.png');
+	const ogOutputPath = resolve(projectRoot, 'static/img/og-social.webp');
 	await sharp(bgSvg)
 		.resize(ogWidth, ogHeight)
 		.composite([{
@@ -79,10 +79,10 @@ async function generateIcons() {
 			left: Math.round((ogWidth - logoSize) / 2),
 			top: Math.round((ogHeight - logoSize) / 2)
 		}])
-		.png()
+		.webp({ quality: 90 })
 		.toFile(ogOutputPath);
 
-	console.log(`Generated og-social.png (${ogWidth}x${ogHeight})`);
+	console.log(`Generated og-social.webp (${ogWidth}x${ogHeight})`);
 }
 
 generateIcons().catch(err => {

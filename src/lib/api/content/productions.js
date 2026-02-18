@@ -6,7 +6,7 @@
  */
 
 import { getDirectusInstance, readItems, readItem } from '../core/client.js';
-import { buildAssetUrl } from '../core/assets.js';
+import { buildAssetUrl, buildDirectusAssetUrl } from '../core/assets.js';
 import { transformCredit } from '../core/creditTransform.js';
 import { extractYouTubeId } from '../../utils/youtube.js';
 import { getExternalLinkIcon } from '../../utils/externalLinks.js';
@@ -453,7 +453,10 @@ export async function getGalleryAlbums(galleryId) {
       title: album.title,
       caption: album.caption,
       imageUrl: album.page_image
-        ? buildAssetUrl(album.page_image)
+        ? buildDirectusAssetUrl(album.page_image, { key: '1440w' })
+        : null,
+      downloadUrl: album.page_image
+        ? buildDirectusAssetUrl(album.page_image)
         : null,
       width: album.page_image?.width,
       height: album.page_image?.height

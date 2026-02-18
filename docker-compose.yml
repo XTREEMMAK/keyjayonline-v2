@@ -95,6 +95,9 @@ services:
       CORS_ENABLED: "true"
       CORS_ORIGIN: "true"
 
+      # Assets
+      ASSETS_TRANSFORM_IMAGE_MAX_DIMENSION: "7500"
+
       # Storage Configuration
       # Default: local storage for development
       # Production: set STORAGE_LOCATIONS=digitalocean in GitHub Secrets
@@ -173,6 +176,9 @@ services:
       # CDN Configuration
       CDN_BASE_URL: ${CDN_BASE_URL:-}
       USE_CDN_FOR_ASSETS: "true"
+
+      # Directus Public URL (for browser-accessible asset transforms)
+      DIRECTUS_PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
 
       # Public URLs
       PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://example.com}

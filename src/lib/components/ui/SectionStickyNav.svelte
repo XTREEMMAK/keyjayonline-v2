@@ -1,5 +1,5 @@
 <script>
-	import { fly, fade } from 'svelte/transition';
+	import { fly, fade, slide } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import Icon from '@iconify/svelte';
 	import {
@@ -10,10 +10,18 @@
 		hideMainNavOverlay
 	} from '$lib/stores/stickyNav.js';
 	import { navigateTo, enabledSections, sectionMeta } from '$lib/stores/navigation.js';
+	import { mobileMenuOpen } from '$lib/stores/mobileNav.js';
 
-	let { section, children } = $props();
+	let { section, children, filterLabel = 'Filters' } = $props();
 
-	const isActive = $derived($activeStickySection === section && !$sectionModalOpen);
+	const isActive = $derived($activeStickySection === section && !$sectionModalOpen && !$mobileMenuOpen);
+
+	let filterMenuOpen = $state(false);
+
+	// Close filter menu when section changes or nav deactivates
+	$effect(() => {
+		if (!isActive) filterMenuOpen = false;
+	});
 
 	// Lock body scroll when overlay menu is open
 	$effect(() => {
@@ -37,7 +45,7 @@
 	>
 		<div class="container mx-auto px-4">
 			<div class="flex items-center gap-3 py-2.5">
-				<!-- Hamburger button to show main nav -->
+				<!-- Hamburger button to show main nav (desktop only) -->
 				<button
 					onclick={toggleMainNavOverlay}
 					class="flex-shrink-0 neu-nav-hamburger hidden md:block"
@@ -47,13 +55,51 @@
 					<Icon icon={$mainNavOverlayVisible ? 'mdi:close' : 'mdi:menu'} class="text-xl" />
 				</button>
 
-				<!-- Sub-nav content (passed via children snippet) -->
-				<div class="flex-1 flex flex-col items-center justify-center overflow-x-auto">
+				<!-- Desktop: show children inline -->
+				<div class="hidden md:flex flex-1 items-center justify-center">
 					{@render children()}
+				</div>
+
+				<!-- Mobile: filter toggle button (neumorphic dropdown style) -->
+				<div class="md:hidden flex-1 flex justify-center">
+					<button
+						onclick={() => filterMenuOpen = !filterMenuOpen}
+						class="neu-filter-toggle"
+						class:active={filterMenuOpen}
+						aria-expanded={filterMenuOpen}
+					>
+						<Icon icon="mdi:filter-variant" class="text-base" />
+						<span class="font-semibold">{filterLabel}</span>
+						<Icon icon={filterMenuOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'} class="text-base transition-transform duration-200" />
+					</button>
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<!-- Mobile filter dropdown panel -->
+	{#if filterMenuOpen}
+		<!-- Backdrop -->
+		<button
+			class="fixed inset-0 z-[39] md:hidden"
+			onclick={() => filterMenuOpen = false}
+			aria-label="Close filters"
+			transition:fade={{ duration: 150 }}
+		></button>
+
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="filter-dropdown md:hidden"
+			transition:slide={{ duration: 200 }}
+			onclick={(e) => { if (e.target.closest('button')) filterMenuOpen = false; }}
+		>
+			<div class="container mx-auto px-4 py-3">
+				<div class="flex flex-wrap gap-2 justify-center">
+					{@render children()}
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Main Nav Overlay (slides down when hamburger clicked) -->
 	{#if $mainNavOverlayVisible}
@@ -127,6 +173,49 @@
 			inset 0 1px 0 rgba(255, 255, 255, 0.05);
 		backdrop-filter: blur(16px) saturate(1.2);
 		-webkit-backdrop-filter: blur(16px) saturate(1.2);
+	}
+
+	/* Mobile filter dropdown below sticky nav */
+	.filter-dropdown {
+		position: fixed;
+		left: 0;
+		right: 0;
+		top: 60px;
+		z-index: 40;
+		background: rgba(30, 33, 40, 0.9);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+		backdrop-filter: blur(16px) saturate(1.2);
+		-webkit-backdrop-filter: blur(16px) saturate(1.2);
+	}
+
+	/* Mobile filter toggle - neumorphic dropdown button */
+	.neu-filter-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 8px 18px;
+		border-radius: 50px;
+		font-size: 0.8rem;
+		color: var(--neu-text-secondary, #9ca3af);
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		cursor: pointer;
+		transition: all 0.2s ease;
+		box-shadow:
+			3px 3px 6px var(--neu-shadow-dark, rgba(18, 20, 24, 0.6)),
+			-3px -3px 6px var(--neu-shadow-light, rgba(60, 64, 72, 0.3));
+	}
+
+	.neu-filter-toggle:hover,
+	.neu-filter-toggle.active {
+		color: var(--neu-text-primary, #fff);
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.12);
+		box-shadow:
+			inset 2px 2px 4px var(--neu-shadow-dark, rgba(18, 20, 24, 0.6)),
+			inset -2px -2px 4px var(--neu-shadow-light, rgba(60, 64, 72, 0.3));
 	}
 
 	/* Hamburger button - neumorphic */

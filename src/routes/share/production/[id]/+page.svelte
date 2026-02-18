@@ -473,6 +473,7 @@
 	title={viewerTitle}
 	loading={viewerLoading}
 	onClose={closeContentViewer}
+	canDownload={true}
 />
 
 <style>

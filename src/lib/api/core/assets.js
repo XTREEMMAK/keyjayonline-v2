@@ -10,6 +10,7 @@
 import { env } from '$env/dynamic/private';
 
 const DIRECTUS_URL = env.DIRECTUS_URL ?? 'http://localhost:8055';
+const DIRECTUS_PUBLIC_URL = env.DIRECTUS_PUBLIC_URL ?? '';
 const DIRECTUS_TOKEN = env.DIRECTUS_TOKEN ?? '';
 const CDN_BASE_URL = env.CDN_BASE_URL ?? '';
 const S3_BUCKET_URL = env.S3_BUCKET_URL ?? '';
@@ -66,4 +67,32 @@ export function buildAssetUrl(fileId, transforms = {}) {
   // For DirectUS assets endpoint, use the ID without extension
   const assetId = typeof fileId === 'object' ? fileId.id : fileId;
   return `${baseUrl}/assets/${assetId}${queryString}`;
+}
+
+/**
+ * Builds a public Directus asset URL with optional transform presets.
+ * Uses Directus's /assets/ endpoint which can apply image transforms on-the-fly.
+ * @param {string|Object} fileId - File ID or Directus file object
+ * @param {Object} options
+ * @param {string} [options.key] - Directus transform preset key (e.g., '1440w')
+ * @returns {string|null}
+ */
+export function buildDirectusAssetUrl(fileId, options = {}) {
+  if (!fileId) return null;
+
+  const assetId = typeof fileId === 'object' ? fileId.id : fileId;
+  if (!assetId) return null;
+
+  // Use public Directus URL (browser-accessible), fall back to internal URL
+  const publicUrl = DIRECTUS_PUBLIC_URL || DIRECTUS_URL;
+
+  const params = new URLSearchParams();
+  if (options.key) params.set('key', options.key);
+  // In dev, add access_token since assets may not be public
+  if (NODE_ENV !== 'production' && DIRECTUS_TOKEN) {
+    params.set('access_token', DIRECTUS_TOKEN);
+  }
+
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+  return `${publicUrl}/assets/${assetId}${queryString}`;
 }

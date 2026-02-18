@@ -62,6 +62,19 @@
 		}
 	});
 
+	// Lock body scroll when mobile menu is open
+	$effect(() => {
+		if (!browser) return;
+		if ($mobileMenuOpen) {
+			document.body.style.overflow = 'hidden';
+		} else {
+			document.body.style.overflow = '';
+		}
+		return () => {
+			document.body.style.overflow = '';
+		};
+	});
+
 	onMount(() => {
 		if (!browser) return;
 
@@ -537,7 +550,7 @@
 		background: rgba(0, 0, 0, 0.4);
 		backdrop-filter: blur(2px);
 		-webkit-backdrop-filter: blur(2px);
-		z-index: 40;
+		z-index: 45;
 	}
 
 	.mobile-menu-item {

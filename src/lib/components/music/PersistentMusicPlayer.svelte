@@ -4,7 +4,7 @@
 	import WaveSurfer from 'wavesurfer.js';
 	import Icon from '@iconify/svelte';
 	import { getAudioUrl } from '$lib/utils/environment.js';
-	import { getPersistentPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
+	import { getPersistentPlayerConfig, pauseAllTrackPlayers } from '$lib/utils/wavesurfer-helpers.js';
 	import { activeSection } from '$lib/stores/navigation.js';
 	import {
 		playerVisible,
@@ -69,6 +69,7 @@
 			// Setup Media Session API for car/Bluetooth controls
 			if ('mediaSession' in navigator) {
 				navigator.mediaSession.setActionHandler('play', () => {
+					pauseAllTrackPlayers();
 					wavesurfer.play();
 				});
 
@@ -113,22 +114,27 @@
 				playerDuration.set(dur);
 			});
 			
-			wavesurfer.on('audioprocess', () => {
-				const current = wavesurfer.getCurrentTime();
-				currentTime = formatTime(current);
-				playerPosition.set(current);
-				
-				// Sync visual wavesurfer progress
+			// Use native media element timeupdate + setInterval for reliable Android playback.
+			// WaveSurfer's rAF-based timeupdate stalls on Android when throttled.
+			const mediaEl = wavesurfer.getMediaElement();
+			let playbackInterval = null;
+
+			function syncPlayhead() {
+				const t = mediaEl.currentTime;
+				currentTime = formatTime(t);
+				playerPosition.set(t);
 				if (visualWavesurfer && visualWavesurfer.getDuration() > 0) {
-					const progress = current / wavesurfer.getDuration();
-					visualWavesurfer.seekTo(progress);
+					visualWavesurfer.seekTo(t / mediaEl.duration);
 				}
-			});
-			
+			}
+
+			mediaEl.addEventListener('timeupdate', syncPlayhead);
+
 			wavesurfer.on('play', () => {
 				console.log('Wavesurfer play event');
 				isPlaying.set(true);
-				// Sync Media Session playback state
+				// Poll at 10Hz as fallback for smooth updates on Android
+				playbackInterval = setInterval(syncPlayhead, 100);
 				if ('mediaSession' in navigator) {
 					navigator.mediaSession.playbackState = 'playing';
 				}
@@ -137,7 +143,8 @@
 			wavesurfer.on('pause', () => {
 				console.log('Wavesurfer pause event');
 				isPlaying.set(false);
-				// Sync Media Session playback state
+				clearInterval(playbackInterval);
+				syncPlayhead(); // Final sync on pause
 				if ('mediaSession' in navigator) {
 					navigator.mediaSession.playbackState = 'paused';
 				}
@@ -374,6 +381,7 @@
 
 			if (autoPlay) {
 				console.log('Auto-playing:', track.title);
+				pauseAllTrackPlayers();
 				await wavesurfer.play();
 			}
 		} catch (error) {
@@ -432,6 +440,7 @@
 				}
 
 				console.log('Starting playback');
+				pauseAllTrackPlayers();
 				await wavesurfer.play();
 			}
 		} catch (error) {

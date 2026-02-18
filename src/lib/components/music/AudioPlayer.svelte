@@ -4,8 +4,7 @@
 	import Icon from '@iconify/svelte';
 	import { formatTime } from '$lib/utils/time.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
-	import { getAudioPlayerConfig } from '$lib/utils/wavesurfer-helpers.js';
-	import { pauseMusic } from '$lib/stores/musicPlayer.js';
+	import { getAudioPlayerConfig, pauseOthersAndToggle, cleanupTrackPlayer, registerTrackPlayer } from '$lib/utils/wavesurfer-helpers.js';
 	
 	let {
 		audioUrl,
@@ -27,57 +26,66 @@
 	let currentTime = $state('0:00');
 	let duration = $state('0:00');
 	let volume = $state(0.8);
-	
-	
+
+	// Unique ID for cross-player management registry
+	const playerId = `audio-player-${Math.random().toString(36).slice(2, 9)}`;
+
 	onMount(() => {
 		if (!container || !audioUrl) return;
-		
+
 		// Transform audio URL for CORS bypass in development
 		const transformedAudioUrl = getAudioUrl(audioUrl);
-		
+
 		wavesurfer = WaveSurfer.create({
 			container,
 			...getAudioPlayerConfig({ waveColor, progressColor, height }),
 			url: transformedAudioUrl
 		});
-		
+
 		wavesurfer.setVolume(volume);
-		
+
+		// Register in cross-player registry for exclusive playback
+		registerTrackPlayer(playerId, wavesurfer);
+
 		wavesurfer.on('ready', () => {
 			isLoading = false;
 			duration = formatTime(wavesurfer.getDuration());
 		});
-		
-		wavesurfer.on('audioprocess', () => {
-			currentTime = formatTime(wavesurfer.getCurrentTime());
-		});
-		
+
+		// Use native media element events for reliable Android playback
+		const mediaEl = wavesurfer.getMediaElement();
+		let playbackInterval = null;
+
+		function syncTime() {
+			currentTime = formatTime(mediaEl.currentTime);
+		}
+
+		mediaEl.addEventListener('timeupdate', syncTime);
+
 		wavesurfer.on('play', () => {
 			isPlaying = true;
+			playbackInterval = setInterval(syncTime, 100);
 		});
-		
+
 		wavesurfer.on('pause', () => {
 			isPlaying = false;
+			clearInterval(playbackInterval);
+			syncTime();
 		});
-		
+
 		wavesurfer.on('finish', () => {
 			isPlaying = false;
+			clearInterval(playbackInterval);
 		});
 	});
-	
+
 	onDestroy(() => {
-		if (wavesurfer) {
-			wavesurfer.destroy();
-		}
+		cleanupTrackPlayer(playerId, ['']);
 	});
-	
+
 	function togglePlayPause() {
 		if (wavesurfer) {
-			// Pause global music player before playing this sample
-			if (!isPlaying) {
-				pauseMusic();
-			}
-			wavesurfer.playPause();
+			pauseOthersAndToggle(wavesurfer, playerId);
 		}
 	}
 	

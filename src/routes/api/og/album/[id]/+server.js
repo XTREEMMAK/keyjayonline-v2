@@ -18,7 +18,7 @@ export async function GET({ params }) {
 		type: 'music.album',
 		title: 'KEY JAY ONLINE',
 		description: 'The official website and portfolio for musician, creative, tech enthusiast, and producer Key Jay!',
-		image: `${PUBLIC_SITE_URL}/img/og-social.png`,
+		image: `${PUBLIC_SITE_URL}/img/og-social.webp`,
 		siteName: 'KEY JAY ONLINE'
 	};
 

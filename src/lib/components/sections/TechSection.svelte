@@ -666,7 +666,7 @@
 		<!-- Stack Tab -->
 		<div class="tech-tab-panel" class:active={activeTab === 'stack'}>
 					<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-cyan-950/10 to-[var(--neu-bg)]/95 py-12 relative">
-						<div class="container mx-auto px-4">
+						<div class="container mx-auto px-6">
 							{#if techStack.length === 0}
 								<!-- Empty State -->
 								<div class="text-center py-16">
@@ -747,7 +747,7 @@
 		<!-- Projects Tab -->
 		<div class="tech-tab-panel" class:active={activeTab === 'projects'}>
 					<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-cyan-950/10 to-[var(--neu-bg)]/95 py-12 relative">
-						<div class="container mx-auto px-4">
+						<div class="container mx-auto px-6">
 							{#if projects.length === 0}
 								<!-- Empty State -->
 								<div class="text-center py-16">
@@ -909,7 +909,7 @@
 		<!-- Showcase Tab -->
 		<div class="tech-tab-panel" class:active={activeTab === 'showcase'}>
 					<section class="bg-gradient-to-b from-[var(--neu-bg)]/95 via-cyan-950/10 to-[var(--neu-bg)]/95 py-12 relative">
-						<div class="container mx-auto px-4">
+						<div class="container mx-auto px-6">
 							{#if showcaseItems.length === 0}
 								<!-- Empty State -->
 								<div class="text-center py-16">
