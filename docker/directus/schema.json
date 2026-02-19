@@ -4476,7 +4476,7 @@
         "display_options": null,
         "field": "sort",
         "group": null,
-        "hidden": false,
+        "hidden": true,
         "interface": "input",
         "note": null,
         "options": null,
@@ -4570,6 +4570,7 @@
         "interface": "list-o2m",
         "note": null,
         "options": {
+          "limit": 100,
           "template": "{{title}}"
         },
         "readonly": false,
@@ -8405,6 +8406,7 @@
         "options": {
           "enableLink": true,
           "enableSelect": false,
+          "limit": 50,
           "sort": "display_order",
           "template": "{{person_id.name}} - {{role}}"
         },
@@ -8437,6 +8439,7 @@
         "note": null,
         "options": {
           "enableSelect": false,
+          "limit": 50,
           "sort": "display_order",
           "template": "{{title}}"
         },
@@ -8513,6 +8516,7 @@
         "note": null,
         "options": {
           "enableSelect": false,
+          "limit": 50,
           "sort": "display_order",
           "template": "{{label}} ({{icon_type}})"
         },
@@ -8809,6 +8813,7 @@
         "interface": "list-m2m",
         "note": null,
         "options": {
+          "limit": 50,
           "template": "{{kjov2_music_samples_id.track_name}} - {{kjov2_music_samples_id.artist}}"
         },
         "readonly": false,
