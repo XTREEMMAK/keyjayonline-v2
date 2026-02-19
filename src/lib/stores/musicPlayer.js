@@ -23,7 +23,7 @@ export const currentTrackIndex = writable(0);
 export const playerPosition = writable(0);
 export const playerDuration = writable(0);
 export const volume = writable(0.6);
-export const playlistSource = writable('library'); // 'library' | 'production' | 'radio'
+export const playlistSource = writable('library'); // 'library' | 'production' | 'radio' | 'dynamic'
 
 // Radio-specific state
 export const radioMode = writable(false);
@@ -300,6 +300,92 @@ export function exitRadioMode() {
 	shuffleMode.set(false);
 	shuffleHistory.set([]);
 	closePlayerCompletely();
+}
+
+// ─── Dynamic Session Playlist ───────────────────────────────────────────────
+
+export const dynamicPlaylist = writable([]);
+
+// Hydrate from sessionStorage on module load (browser only)
+if (typeof sessionStorage !== 'undefined') {
+	try {
+		const saved = sessionStorage.getItem('kjo_dynamic_playlist');
+		if (saved) dynamicPlaylist.set(JSON.parse(saved));
+	} catch { /* ignore corrupt data */ }
+}
+
+// Auto-sync to sessionStorage on changes
+dynamicPlaylist.subscribe(tracks => {
+	if (typeof sessionStorage !== 'undefined') {
+		sessionStorage.setItem('kjo_dynamic_playlist', JSON.stringify(tracks));
+	}
+});
+
+/**
+ * Add a track to the dynamic session playlist.
+ * Prevents duplicates by id. Transforms URLs for CORS.
+ */
+export function addToDynamicPlaylist(track) {
+	const transformed = transformTrackUrls(track);
+	dynamicPlaylist.update(tracks => {
+		if (tracks.some(t => t.id === transformed.id)) return tracks;
+		return [...tracks, transformed];
+	});
+	// Sync the active playlist if currently in dynamic mode
+	if (get(playlistSource) === 'dynamic') {
+		playlist.set(get(dynamicPlaylist));
+	}
+}
+
+/**
+ * Remove a track from the dynamic playlist by id.
+ */
+export function removeFromDynamicPlaylist(trackId) {
+	dynamicPlaylist.update(tracks => tracks.filter(t => t.id !== trackId));
+	// Sync the active playlist if currently in dynamic mode
+	if (get(playlistSource) === 'dynamic') {
+		const tracks = get(dynamicPlaylist);
+		if (tracks.length === 0) {
+			closePlayerCompletely();
+		} else {
+			playlist.set(tracks);
+			// Adjust current index if it's now out of bounds
+			const currentIdx = get(currentTrackIndex);
+			if (currentIdx >= tracks.length) {
+				currentTrackIndex.set(tracks.length - 1);
+				currentTrack.set(tracks[tracks.length - 1]);
+			}
+		}
+	}
+}
+
+/**
+ * Clear the entire dynamic playlist.
+ */
+export function clearDynamicPlaylist() {
+	dynamicPlaylist.set([]);
+}
+
+/**
+ * Start playing the dynamic playlist from a given index.
+ */
+export function playDynamicPlaylist(startIndex = 0) {
+	const tracks = get(dynamicPlaylist);
+	if (tracks.length === 0) return;
+	playlistSource.set('dynamic');
+	playlist.set(tracks);
+	currentTrackIndex.set(startIndex);
+	currentTrack.set(tracks[startIndex]);
+	extractTrackArtwork(tracks[startIndex]);
+	preloadPlaylistArtwork(tracks);
+	playerVisible.set(true);
+}
+
+/**
+ * Check if a track is already in the dynamic playlist.
+ */
+export function isInDynamicPlaylist(trackId) {
+	return get(dynamicPlaylist).some(t => t.id === trackId);
 }
 
 /**

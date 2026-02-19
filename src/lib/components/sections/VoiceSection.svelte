@@ -312,6 +312,14 @@
 													waveColor="rgba(99, 102, 241, 0.3)"
 													progressColor="rgba(99, 102, 241, 0.8)"
 													height={60}
+													trackData={{
+														id: sample.id,
+														title: sample.title,
+														artist: 'Key Jay',
+														audioUrl: sample.audioUrl,
+														thumbnail: null,
+														genre: sample.type || null
+													}}
 												/>
 											{:else}
 												<div

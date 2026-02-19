@@ -1,11 +1,12 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import WaveSurfer from 'wavesurfer.js';
 	import Icon from '@iconify/svelte';
 	import { formatTime } from '$lib/utils/time.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { getAudioPlayerConfig, pauseOthersAndToggle, cleanupTrackPlayer, registerTrackPlayer } from '$lib/utils/wavesurfer-helpers.js';
-	
+	import { addToDynamicPlaylist, removeFromDynamicPlaylist, playDynamicPlaylist, dynamicPlaylist, playlistSource } from '$lib/stores/musicPlayer.js';
+
 	let {
 		audioUrl,
 		trackTitle = '',
@@ -16,8 +17,13 @@
 		canDownload = false,
 		downloadUrl = '',
 		onDownloadClick = null,
-		className = ''
+		className = '',
+		trackData = null
 	} = $props();
+
+	let inPlaylist = $derived(
+		trackData ? $dynamicPlaylist.some(t => t.id === trackData.id) : false
+	);
 	
 	let container = $state();
 	let wavesurfer = $state(null);
@@ -103,28 +109,59 @@
 			window.open(downloadUrl, '_blank');
 		}
 	}
+
+	function handleTogglePlaylist() {
+		if (!trackData) return;
+		if (inPlaylist) {
+			removeFromDynamicPlaylist(trackData.id);
+		} else {
+			addToDynamicPlaylist(trackData);
+			// If the persistent player isn't already playing the dynamic playlist,
+			// start it from the newly added track (last item)
+			if ($playlistSource !== 'dynamic') {
+				tick().then(() => {
+					playDynamicPlaylist($dynamicPlaylist.length - 1);
+				});
+			}
+		}
+	}
 </script>
 
 <div class="audio-player bg-gray-900/50 backdrop-blur-sm rounded-lg p-4 {className}">
-	{#if trackTitle || artist}
+	{#if trackTitle || artist || trackData}
 		<div class="flex items-center justify-between mb-3">
-			<div>
+			<div class="min-w-0 flex-1">
 				{#if trackTitle}
-					<h4 class="text-white font-medium">{trackTitle}</h4>
+					<h4 class="text-white font-medium truncate">{trackTitle}</h4>
 				{/if}
 				{#if artist}
-					<p class="text-gray-400 text-sm">{artist}</p>
+					<p class="text-gray-400 text-sm truncate">{artist}</p>
 				{/if}
 			</div>
-			{#if canDownload}
-				<button 
-					onclick={handleDownload}
-					class="p-2 bg-blue-600/20 hover:bg-blue-600/30 rounded-full transition-colors"
-					title="Download track"
-				>
-					<Icon icon="mdi:download" width={20} height={20} class="text-blue-400" />
-				</button>
-			{/if}
+			<div class="flex items-center gap-1 flex-shrink-0">
+				{#if trackData}
+					<button
+						onclick={handleTogglePlaylist}
+						class="p-2 rounded-full transition-colors {inPlaylist ? 'bg-green-600/20 hover:bg-red-600/20' : 'bg-blue-600/20 hover:bg-blue-600/30'}"
+						title={inPlaylist ? 'Remove from playlist' : 'Add to playlist'}
+					>
+						<Icon
+							icon={inPlaylist ? 'mdi:playlist-check' : 'mdi:playlist-plus'}
+							width={20} height={20}
+							class={inPlaylist ? 'text-green-400' : 'text-blue-400'}
+						/>
+					</button>
+				{/if}
+				{#if canDownload}
+					<button
+						onclick={handleDownload}
+						class="p-2 bg-blue-600/20 hover:bg-blue-600/30 rounded-full transition-colors"
+						title="Download track"
+					>
+						<Icon icon="mdi:download" width={20} height={20} class="text-blue-400" />
+					</button>
+				{/if}
+			</div>
 		</div>
 	{/if}
 	

@@ -1,6 +1,7 @@
 <script>
 	import { fly, fade } from 'svelte/transition';
-	import { playerVisible, playerMinimized, loadRandomTrack, showPlayer, hidePlayer, expandPlayer, minimizePlayer, hasTrackLoaded, isPlaying, currentTrack } from '$lib/stores/musicPlayer.js';
+	import { playerVisible, playerMinimized, loadRandomTrack, showPlayer, hidePlayer, expandPlayer, minimizePlayer, hasTrackLoaded, isPlaying, currentTrack, dynamicPlaylist, playDynamicPlaylist } from '$lib/stores/musicPlayer.js';
+	import { get } from 'svelte/store';
 	import { activeSection, navigateTo, sectionMeta, enabledSections } from '$lib/stores/navigation.js';
 	import { toggleMobileMenu, mobileMenuOpen, closeMobileMenu } from '$lib/stores/mobileNav.js';
 	import { sectionModalOpen } from '$lib/stores/stickyNav.js';
@@ -46,16 +47,21 @@
 
 	// Button handlers
 	function handleMusicClick() {
-		// If player is not visible: show it (load track if none loaded)
+		// If player is not visible: show it (prefer dynamic playlist, then existing track, then random)
 		// If player is visible and minimized: expand it
 		// If player is visible and expanded: minimize it (don't pause music)
 		if (!$playerVisible) {
-			// Show player, load random track only if nothing is loaded
-			if (!$currentTrack) {
-				loadRandomTrack();
+			const dynTracks = get(dynamicPlaylist);
+			if (dynTracks.length > 0) {
+				playDynamicPlaylist(0);
+				expandPlayer();
+			} else {
+				if (!$currentTrack) {
+					loadRandomTrack();
+				}
+				showPlayer();
+				expandPlayer();
 			}
-			showPlayer();
-			expandPlayer();
 		} else if ($playerMinimized) {
 			// Player is visible but minimized - expand it
 			expandPlayer();

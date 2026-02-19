@@ -25,13 +25,17 @@
 		nextTrack,
 		previousTrack,
 		playlistSource,
-		radioMode
+		radioMode,
+		dynamicPlaylist,
+		clearDynamicPlaylist,
+		playDynamicPlaylist
 	} from '$lib/stores/musicPlayer.js';
 	import { extractCoverArt } from '$lib/utils/coverArtExtractor.js';
 	import { formatTime } from '$lib/utils/time.js';
 	import PlaylistBrowser from '$lib/components/music/PlaylistBrowser.svelte';
 	import { sectionModalOpen } from '$lib/stores/stickyNav.js';
-	
+	import { browser } from '$app/environment';
+
 	let container = $state();
 	let visualContainer = $state();
 	let wavesurfer = $state(null);
@@ -307,6 +311,20 @@
 		}
 	});
 
+	// Scroll lock: prevent body scrolling when library browser or playlist panel is open
+	// Release when player is closed, minimized, or panels are collapsed
+	$effect(() => {
+		if (!browser) return;
+		if ($playerVisible && !$playerMinimized && (showBrowser || showPlaylist)) {
+			document.body.style.overflow = 'hidden';
+		} else {
+			document.body.style.overflow = '';
+		}
+		return () => {
+			document.body.style.overflow = '';
+		};
+	});
+
 	async function loadTrack(track, autoPlay = false) {
 		if (!wavesurfer || !track.audioUrl) {
 			console.log('Cannot load track:', { wavesurfer: !!wavesurfer, audioUrl: track?.audioUrl });
@@ -357,6 +375,11 @@
 		}
 		
 		if (!$currentTrack || !$currentTrack.audioUrl) {
+			// No track loaded — try dynamic playlist if one exists
+			if ($dynamicPlaylist.length > 0) {
+				playDynamicPlaylist(0);
+				return;
+			}
 			console.log('No current track or audio URL');
 			return;
 		}
@@ -414,6 +437,12 @@
 	async function toggleMinimize() {
 		const wasMinimized = $playerMinimized;
 
+		// Close panels when minimizing so scroll lock releases
+		if (wasMinimized === false) {
+			showBrowser = false;
+			showPlaylist = false;
+		}
+
 		playerMinimized.update(v => !v);
 
 		// Resize wavesurfer after animation completes
@@ -458,6 +487,8 @@
 	}
 	
 	function closePlayer() {
+		showBrowser = false;
+		showPlaylist = false;
 		if (wavesurfer) {
 			wavesurfer.pause();
 		}
@@ -631,7 +662,10 @@
 				<!-- Playlist Info and Controls -->
 				<div class="flex items-center justify-between">
 					<div class="text-xs text-gray-500">
-						{#if $playlist.length > 1}
+						{#if $playlistSource === 'dynamic'}
+							<span class="text-green-400">Dynamic Playlist</span>
+							{#if $playlist.length > 1} — Track {$currentTrackIndex + 1} of {$playlist.length}{/if}
+						{:else if $playlist.length > 1}
 							Track {$currentTrackIndex + 1} of {$playlist.length}
 						{:else if $currentTrack}
 							Now Playing
@@ -639,13 +673,23 @@
 					</div>
 					<div class="flex gap-2">
 						{#if $playlist.length > 1}
-							<button 
+							<button
 								onclick={() => showPlaylist = !showPlaylist}
 								class="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full transition-colors"
 								title="Toggle playlist"
 							>
 								<Icon icon="mdi:playlist-music" width={16} height={16} class="inline mr-1" />
 								Playlist
+							</button>
+						{/if}
+						{#if $playlistSource === 'dynamic'}
+							<button
+								onclick={() => { clearDynamicPlaylist(); closePlayer(); }}
+								class="px-3 py-1 text-xs bg-red-900/50 hover:bg-red-800/60 text-red-300 rounded-full transition-colors"
+								title="Clear dynamic playlist"
+							>
+								<Icon icon="mdi:playlist-remove" width={16} height={16} class="inline mr-1" />
+								Clear All
 							</button>
 						{/if}
 						{#if $playlistSource === 'library'}

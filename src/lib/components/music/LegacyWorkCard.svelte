@@ -44,7 +44,7 @@
 	}
 </script>
 
-<div class="neu-card p-4 scale-100 hover:scale-[1.02] transition-all duration-300 backdrop-blur-sm" style="background: rgba(42, 45, 53, 0.85);">
+<div class="legacy-card neu-card p-4" style="background: rgba(42, 45, 53, 0.92);">
 	<div class="flex items-start justify-between mb-3">
 		<div>
 			<h4 class="text-lg font-semibold text-white">{work.title}</h4>
@@ -79,6 +79,14 @@
 			waveColor="#60A5FA"
 			progressColor="#2563EB"
 			height={50}
+			trackData={{
+				id: work.id,
+				title: work.title,
+				artist: work.artist || 'Key Jay',
+				audioUrl: work.audioUrl,
+				thumbnail: work.coverArt || work.thumbnail || null,
+				genre: Array.isArray(work.genre) ? work.genre[0] : work.genre || null
+			}}
 		/>
 	{/if}
 
@@ -158,6 +166,15 @@
 {/if}
 
 <style>
+	.legacy-card {
+		will-change: transform;
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.legacy-card:hover {
+		transform: scale(1.02);
+	}
+
 	.desc-content :global(a) {
 		color: #60a5fa;
 		text-decoration: underline;

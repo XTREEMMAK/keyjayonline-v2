@@ -370,7 +370,7 @@
 						<div class="neu-card overflow-hidden">
 							<div class="grid grid-cols-1 lg:grid-cols-2">
 								<!-- Featured Image -->
-								<div class="aspect-video lg:aspect-auto relative">
+								<div class="aspect-video lg:aspect-auto relative overflow-hidden">
 									<img
 										src={getImageUrl(featuredProduction)}
 										alt={featuredProduction.title}
@@ -510,7 +510,7 @@
 									onkeypress={(e) => e.key === 'Enter' && handleCardClick(production)}
 								>
 									<!-- Card Image -->
-									<div class="aspect-video relative">
+									<div class="aspect-video relative overflow-hidden">
 										<img
 											src={getImageUrl(production)}
 											alt={production.title}
@@ -769,15 +769,9 @@
 		}
 	}
 
-	/* Skip rendering for off-screen grid items */
-	:global(.mix-item) {
-		content-visibility: auto;
-		contain-intrinsic-size: auto 400px;
-	}
-
 	/* Isolate each card as its own compositing boundary */
 	.production-card {
-		contain: layout style paint;
+		contain: layout style;
 	}
 
 	/* Only apply card hover transforms on devices with a pointer (not touch-scroll) */

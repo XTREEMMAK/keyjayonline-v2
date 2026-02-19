@@ -4,7 +4,8 @@
 	import Hero from '$lib/components/layout/Hero.svelte';
 	import NeumorphicNavbar from '$lib/components/ui/NeumorphicNavbar.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
-	import { showPlayer, loadRandomTrack, playerVisible, isPlaying } from '$lib/stores/musicPlayer.js';
+	import { showPlayer, loadRandomTrack, playerVisible, isPlaying, dynamicPlaylist, playDynamicPlaylist } from '$lib/stores/musicPlayer.js';
+	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import {
 		activeSection,
@@ -170,8 +171,13 @@
 	const showPlayButton = $derived($activeSection === 'music' && !$playerVisible);
 
 	function handlePlayButtonClick() {
-		loadRandomTrack();
-		showPlayer();
+		const dynTracks = get(dynamicPlaylist);
+		if (dynTracks.length > 0) {
+			playDynamicPlaylist(0);
+		} else {
+			loadRandomTrack();
+			showPlayer();
+		}
 	}
 
 	// Show scroll button when scrolled down (desktop only), hidden when modals are open
@@ -424,7 +430,7 @@
 {#if showScrollButton}
 	<button
 		class="fixed-scroll-button desktop-only"
-		style="bottom: {$activeSection === 'music' ? '188px' : '76px'}; right: {$activeSection === 'music' ? '76px' : '44px'};"
+		style="bottom: {$activeSection === 'music' ? ($playerVisible ? '76px' : '188px') : '76px'}; right: {$activeSection === 'music' && !$playerVisible ? '76px' : '44px'};"
 		onclick={handleScrollToTop}
 		aria-label="Scroll to top"
 		in:fade={{ duration: 300 }}

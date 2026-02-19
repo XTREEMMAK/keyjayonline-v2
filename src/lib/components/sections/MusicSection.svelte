@@ -7,7 +7,6 @@
 	import NewReleaseModalSwal from '$lib/components/music/NewReleaseModalSwal.svelte';
 	import LatestProjectModalSwal from '$lib/components/music/LatestProjectModalSwal.svelte';
 	import AudioPlayer from '$lib/components/music/AudioPlayer.svelte';
-	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
 	import LegacyWorkCard from '$lib/components/music/LegacyWorkCard.svelte';
 	import Icon from '@iconify/svelte';
 	import { browser } from '$app/environment';
@@ -58,6 +57,9 @@
 	// Radio modal
 	let radioModalOpen = $state(false);
 
+	// Legacy pagination
+	let legacyVisibleYears = $state(3);
+
 	// Latest Projects data and configuration
 	let customDesignOverride = $state(false);
 	let currentProjectIndex = $state(0);
@@ -92,8 +94,8 @@
 				description: project.description,
 				richContent: project.richContent,
 				linerNotes: project.linerNotes,
-				backgroundImageUrl: project.backgroundImageUrl || project.coverArt || '/img/hero-music-concert.webp',
-				mediaUrl: project.thumbnailUrl || project.coverArt || '/img/hero-music-concert.webp',
+				backgroundImageUrl: project.backgroundImageUrl || project.coverArt || null,
+				mediaUrl: project.thumbnailUrl || project.coverArt || null,
 				coverArt: project.coverArt,
 				mediaType: project.hasVideo ? 'video' : 'image',
 				hasVideo: project.hasVideo,
@@ -111,8 +113,8 @@
 				id: 'placeholder',
 				title: 'New Music Coming Soon',
 				description: 'Stay tuned for the latest releases.',
-				backgroundImageUrl: '/img/hero-music-concert.webp',
-				mediaUrl: '/img/hero-music-concert.webp',
+				backgroundImageUrl: null,
+				mediaUrl: null,
 				mediaType: 'image'
 			}
 		];
@@ -388,6 +390,7 @@
 			mixer = null;
 		}
 		view = newView;
+		if (newView === 'legacy') legacyVisibleYears = 3;
 	}
 
 	// Reactive mixer init/destroy based on view and container
@@ -411,11 +414,6 @@
 			};
 		}
 	});
-
-	function handlePlayButtonClick() {
-		loadRandomTrack();
-		showPlayer();
-	}
 
 	// Project rotator functions
 	function prevProject() {
@@ -538,7 +536,7 @@
 				<div
 					class="absolute inset-0 bg-cover bg-center"
 					style="
-						background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('{currentProject.backgroundImageUrl}');
+						{currentProject.backgroundImageUrl ? `background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('${currentProject.backgroundImageUrl}');` : 'background-color: var(--neu-bg-dark);'}
 						transform: translateY({parallaxY()}px);
 						transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-image 0.3s ease;
 						will-change: transform;
@@ -580,10 +578,18 @@
 							<div class="w-full h-full absolute inset-0"
 								 in:fly={{ y: 50, duration: 600, delay: 200 }}
 								 out:fly={{ y: -50, duration: 300 }}>
+								{#if currentProject.mediaUrl}
 								<SkeletonImage
 									src={currentProject.mediaUrl}
 									alt={currentProject.title}
 									class="w-full h-full rounded-2xl" />
+							{:else}
+								<!-- Skeleton placeholder while data loads -->
+								<div class="w-full h-full rounded-2xl bg-[var(--neu-bg-dark)] flex flex-col items-center justify-center gap-4">
+									<Icon icon="mdi:music-note" class="text-gray-600 text-6xl" />
+									<p class="text-gray-500 text-lg font-medium">{currentProject.title || 'Loading...'}</p>
+								</div>
+							{/if}
 
 								<!-- Content Overlay -->
 								<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
@@ -596,6 +602,7 @@
 								</div>
 
 								<!-- Play button overlay -->
+								{#if currentProject.mediaUrl}
 								<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
 									<div class="bg-black/60 rounded-full p-6 group-hover:bg-black/70 group-hover:scale-110 transition-transform duration-300">
 										<svg width="40" height="40" viewBox="0 0 24 24" fill="white">
@@ -603,6 +610,7 @@
 										</svg>
 									</div>
 								</div>
+								{/if}
 							</div>
 						{/key}
 
@@ -884,6 +892,14 @@
 								audioUrl={beat.audio_url}
 								trackTitle={beat.title}
 								className="mb-4"
+								trackData={{
+									id: beat.id || `beat-${beat.title}`,
+									title: beat.title,
+									artist: 'Key Jay',
+									audioUrl: beat.audio_url,
+									thumbnail: null,
+									genre: beat.mood || null
+								}}
 							/>
 
 							<div class="flex gap-3">
@@ -921,12 +937,12 @@
 				</div>
 
 				<!-- Year-Grouped Content -->
-				{#each legacyWorksByYear() as { year, works }, yearIndex}
+				{#each legacyWorksByYear().slice(0, legacyVisibleYears) as { year, works }, yearIndex}
 					<div id="legacy-year-{year}" class="mb-12" in:fly={{ y: 30, duration: 400, delay: yearIndex * 100 }}>
 						<h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
 							<span class="bg-amber-600/20 text-amber-400 px-4 py-1 rounded-full">{year}</span>
 						</h3>
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div class="grid grid-cols-1 {works.length > 1 ? 'md:grid-cols-2' : ''} gap-6">
 							{#each works as work, workIndex}
 								<div in:fly={{ y: 20, duration: 300, delay: yearIndex * 100 + workIndex * 50 }}>
 									<LegacyWorkCard {work} />
@@ -935,6 +951,18 @@
 						</div>
 					</div>
 				{/each}
+
+				{#if legacyVisibleYears < legacyWorksByYear().length}
+					<div class="text-center mt-4 mb-12">
+						<button
+							onclick={() => legacyVisibleYears += 3}
+							class="px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 neu-filter-button text-gray-300 hover:text-white hover:scale-105 flex items-center gap-2 mx-auto"
+						>
+							<Icon icon="mdi:chevron-down" class="text-lg" />
+							Load More ({legacyWorksByYear().length - legacyVisibleYears} more {legacyWorksByYear().length - legacyVisibleYears === 1 ? 'year' : 'years'})
+						</button>
+					</div>
+				{/if}
 
 				{#if legacyWorksByYear().length === 0}
 					<div class="text-center py-20">
