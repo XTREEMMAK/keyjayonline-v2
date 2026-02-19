@@ -5346,7 +5346,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 2,
+        "sort": 3,
         "special": [
           "file"
         ],
@@ -5372,6 +5372,52 @@
         "has_auto_increment": false,
         "foreign_key_table": "directus_files",
         "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "kjov2_general",
+      "field": "kj_radio_on",
+      "type": "boolean",
+      "meta": {
+        "collection": "kjov2_general",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "kj_radio_on",
+        "group": "music_page",
+        "hidden": false,
+        "interface": "boolean",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 2,
+        "special": [
+          "cast-boolean"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "kj_radio_on",
+        "table": "kjov2_general",
+        "data_type": "boolean",
+        "default_value": false,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -9637,6 +9683,30 @@
             {
               "text": "Gospel",
               "value": "Gospel"
+            },
+            {
+              "text": "DnB",
+              "value": "DnB"
+            },
+            {
+              "text": "House",
+              "value": "House"
+            },
+            {
+              "text": "Dubstep",
+              "value": "Dubstep"
+            },
+            {
+              "text": "Brostep",
+              "value": "Brostep"
+            },
+            {
+              "text": "World",
+              "value": "World"
+            },
+            {
+              "text": "Atmosphere",
+              "value": "Atmosphere"
             }
           ]
         },
