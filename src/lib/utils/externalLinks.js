@@ -44,7 +44,11 @@ export function getExternalLinkIcon(link) {
 		'read': 'mdi:book-open-variant',
 		'watch': 'mdi:play-circle',
 		'listen': 'mdi:headphones',
-		'play': 'mdi:gamepad-variant'
+		'play': 'mdi:gamepad-variant',
+		'deviantart': 'simple-icons:deviantart',
+		'artstation': 'simple-icons:artstation',
+		'patreon': 'simple-icons:patreon',
+		'facebook': 'simple-icons:facebook'
 	};
 
 	if (platformIcons[key]) return platformIcons[key];
@@ -75,7 +79,11 @@ export function getExternalLinkIcon(link) {
 			'tidal.com': 'simple-icons:tidal',
 			'deezer.com': 'simple-icons:deezer',
 			'amazon.com': 'simple-icons:amazonmusic',
-			'music.amazon.com': 'simple-icons:amazonmusic'
+			'music.amazon.com': 'simple-icons:amazonmusic',
+			'deviantart.com': 'simple-icons:deviantart',
+			'artstation.com': 'simple-icons:artstation',
+			'patreon.com': 'simple-icons:patreon',
+			'facebook.com': 'simple-icons:facebook'
 		};
 		try {
 			const hostname = new URL(link.url).hostname;
