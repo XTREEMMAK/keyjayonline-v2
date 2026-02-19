@@ -437,6 +437,7 @@ export async function getLegacySamples() {
         },
         fields: [
           'id',
+          'slug',
           'track_name',
           'artist',
           'genre',
@@ -451,6 +452,7 @@ export async function getLegacySamples() {
 
     return samples.map(sample => ({
       id: sample.id,
+      slug: sample.slug,
       title: sample.track_name,
       artist: sample.artist || 'Key Jay',
       year: sample.release_year || null,

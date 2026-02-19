@@ -17,6 +17,7 @@
 	import SkeletonImage from '$lib/components/ui/SkeletonImage.svelte';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
+	import { generateShareUrl } from '$lib/utils/shareLinks.js';
 
 	let { radioEnabled = false } = $props();
 
@@ -882,12 +883,14 @@
 								className="mb-4"
 								trackData={{
 									id: beat.id || `beat-${beat.title}`,
+									slug: beat.slug || null,
 									title: beat.title,
 									artist: 'Key Jay',
 									audioUrl: beat.audio_url,
 									thumbnail: null,
 									genre: beat.mood || null
 								}}
+								shareUrl={beat.slug ? generateShareUrl('sample', { slug: beat.slug }) : ''}
 							/>
 
 							<div class="flex gap-3">

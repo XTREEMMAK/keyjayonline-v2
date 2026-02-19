@@ -44,6 +44,7 @@ export async function GET({ url }) {
         filter,
         fields: [
           'id',
+          'slug',
           'track_name',
           'artist',
           'library',
@@ -60,6 +61,7 @@ export async function GET({ url }) {
     // Transform to frontend format
     const transformedSamples = samples.map(sample => ({
       id: sample.id,
+      slug: sample.slug,
       title: sample.track_name,
       artist: sample.artist || 'Key Jay',
       genre: sample.library,

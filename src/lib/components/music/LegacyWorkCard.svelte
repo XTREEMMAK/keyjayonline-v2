@@ -3,6 +3,7 @@
 	import AudioPlayer from './AudioPlayer.svelte';
 	import Icon from '@iconify/svelte';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
+	import { generateShareUrl } from '$lib/utils/shareLinks.js';
 
 	let { work } = $props();
 
@@ -81,12 +82,14 @@
 			height={50}
 			trackData={{
 				id: work.id,
+				slug: work.slug || null,
 				title: work.title,
 				artist: work.artist || 'Key Jay',
 				audioUrl: work.audioUrl,
 				thumbnail: work.coverArt || work.thumbnail || null,
 				genre: Array.isArray(work.genre) ? work.genre[0] : work.genre || null
 			}}
+			shareUrl={work.slug ? generateShareUrl('sample', { slug: work.slug }) : ''}
 		/>
 	{/if}
 

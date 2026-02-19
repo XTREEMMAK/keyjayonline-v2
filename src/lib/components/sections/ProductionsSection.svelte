@@ -12,7 +12,7 @@
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
-	import { loadPlaylist, showPlayer, expandPlayer } from '$lib/stores/musicPlayer.js';
+	import { loadPlaylist, showPlayer, expandPlayer, minimizePlayer } from '$lib/stores/musicPlayer.js';
 	// Title letters for animation
 	const titleLetters = 'Productions'.split('');
 
@@ -274,7 +274,12 @@
 			if (data.tracks?.length > 0) {
 				loadPlaylist(data.tracks, 0, 'production');
 				showPlayer();
-				expandPlayer();
+				// Start minimized when a modal is open so the player doesn't flash full-size
+				if (detailModalOpen) {
+					minimizePlayer();
+				} else {
+					expandPlayer();
+				}
 			}
 		} catch (err) {
 			console.error('Failed to play production playlist:', err);

@@ -508,9 +508,9 @@
 	});
 </script>
 
-{#if $playerVisible && !$sectionModalOpen && !$radioMode}
+{#if $playerVisible && !$radioMode}
 	<div
-		class="music-player fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-md border-t border-white/10 shadow-2xl"
+		class="music-player fixed bottom-0 left-0 right-0 {$sectionModalOpen ? 'z-[60]' : 'z-50'} bg-gray-900/95 backdrop-blur-md border-t border-white/10 shadow-2xl"
 		class:minimized={$playerMinimized}
 		transition:slide={{ duration: 300 }}>
 		

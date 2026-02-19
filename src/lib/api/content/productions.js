@@ -133,7 +133,7 @@ const ACTION_FIELDS = [
   'link_text',
   'link_type',
   { icon: ['id', 'icon_reference_id'] },
-  'gallery_id',
+  { gallery_id: ['id', 'status'] },
   'audio_playlist_id'
 ];
 
@@ -152,7 +152,7 @@ function buildProductionActions(production, rawActions) {
 
   for (let i = 0; i < records.length; i++) {
     const raw = records[i];
-    const actionType = raw.action_type || 'external_link';
+    const actionType = (raw.action_type || 'external_link').toLowerCase().replace(/\s+/g, '_');
     const label = raw.link_text || '';
     // icon is M2O → kjov2_icon_references; extract icon_reference_id string
     const icon = (raw.icon && typeof raw.icon === 'object') ? raw.icon.icon_reference_id : null;
@@ -170,6 +170,11 @@ function buildProductionActions(production, rawActions) {
         openInNewTab: false
       });
     } else if (actionType === 'viewer') {
+      // gallery_id is now a relational object { id, status } — skip unpublished galleries
+      const gallery = raw.gallery_id && typeof raw.gallery_id === 'object' ? raw.gallery_id : null;
+      const galleryId = gallery ? gallery.id : raw.gallery_id;
+      if (gallery && gallery.status !== 'published') continue;
+
       actions.push({
         id: raw.id,
         actionType: 'viewer',
@@ -178,7 +183,7 @@ function buildProductionActions(production, rawActions) {
         isPrimary: true,
         sortOrder: i,
         viewerType: raw.link_type || 'gallery',
-        galleryId: raw.gallery_id,
+        galleryId,
         openInNewTab: false
       });
     } else {
@@ -432,6 +437,16 @@ export async function getGalleryAlbums(galleryId) {
   try {
     const directus = getDirectusInstance();
 
+    // Verify the gallery is published before returning albums
+    const galleries = await directus.request(
+      readItems('kjov2_galleries', {
+        filter: { id: { _eq: galleryId }, status: { _eq: 'published' } },
+        fields: ['id'],
+        limit: 1
+      })
+    );
+    if (!galleries || galleries.length === 0) return [];
+
     const albums = await directus.request(
       readItems('kjov2_gallery_albums', {
         filter: {
@@ -505,7 +520,20 @@ export async function getAudioPlaylistTracks(playlistId) {
           'duration',
           'description',
           { audio_file: ['id', 'filename_disk'] },
-          { cover_art: ['id', 'filename_disk'] }
+          { cover_art: ['id', 'filename_disk'] },
+          'source_choice',
+          { source_music_sample: [
+            'id', 'track_name', 'artist', 'description',
+            { music_sample: ['id', 'filename_disk'] },
+            { thumbnail: ['id', 'filename_disk'] }
+          ]},
+          { source_voice_project: [
+            'id', 'title', 'description',
+            { clips: [
+              'id', 'title', 'sort',
+              { audio_file: ['id', 'filename_disk'] }
+            ]}
+          ]}
         ],
         sort: ['sort']
       })
@@ -515,20 +543,38 @@ export async function getAudioPlaylistTracks(playlistId) {
       ? buildAssetUrl(playlist.cover_art)
       : null;
 
-    const transformedTracks = tracks.map(track => ({
-      id: track.id,
-      title: track.title,
-      artist: track.artist || 'Key Jay',
-      audioUrl: track.audio_file
-        ? buildAssetUrl(track.audio_file)
-        : null,
-      thumbnail: track.cover_art
-        ? buildAssetUrl(track.cover_art)
-        : playlistCoverArt,
-      genre: playlist?.playlist_type || 'general',
-      duration: track.duration || null,
-      album: playlist?.title || null
-    }));
+    const transformedTracks = tracks.map(track => {
+      // Resolve fields: direct track fields take priority, fall back to source
+      let title = track.title;
+      let artist = track.artist;
+      let audioFile = track.audio_file;
+      let coverArt = track.cover_art;
+
+      if (track.source_choice === 'Music Sample Library' && track.source_music_sample) {
+        const src = track.source_music_sample;
+        if (!title) title = src.track_name;
+        if (!artist) artist = src.artist;
+        if (!audioFile) audioFile = src.music_sample;
+        if (!coverArt) coverArt = src.thumbnail;
+      } else if (track.source_choice === 'Voice Sample Library' && track.source_voice_project) {
+        const src = track.source_voice_project;
+        if (!title) title = src.title;
+        if (!audioFile && src.clips?.length > 0) {
+          audioFile = src.clips[0].audio_file;
+        }
+      }
+
+      return {
+        id: track.id,
+        title: title,
+        artist: artist || 'Key Jay',
+        audioUrl: audioFile ? buildAssetUrl(audioFile) : null,
+        thumbnail: coverArt ? buildAssetUrl(coverArt) : playlistCoverArt,
+        genre: playlist?.playlist_type || 'general',
+        duration: track.duration || null,
+        album: playlist?.title || null
+      };
+    });
 
     return {
       playlist: playlist ? {

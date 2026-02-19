@@ -31,6 +31,7 @@ export async function GET({ params }) {
               {
                 kjov2_music_samples_id: [
                   'id',
+                  'slug',
                   'track_name',
                   'track_number',
                   'sort',
@@ -57,6 +58,7 @@ export async function GET({ params }) {
     // Transform and return the samples
     const transformedSamples = samples.map(sample => ({
       id: sample.id,
+      slug: sample.slug,
       title: sample.track_name || 'Untitled Track',
       trackNumber: sample.track_number || 0,
       duration: sample.duration || null,

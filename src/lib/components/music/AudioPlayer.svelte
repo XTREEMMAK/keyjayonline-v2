@@ -6,6 +6,7 @@
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { getAudioPlayerConfig, pauseOthersAndToggle, cleanupTrackPlayer, registerTrackPlayer } from '$lib/utils/wavesurfer-helpers.js';
 	import { addToDynamicPlaylist, removeFromDynamicPlaylist, playDynamicPlaylist, dynamicPlaylist, playlistSource, radioModalOpen, radioEnabled } from '$lib/stores/musicPlayer.js';
+	import { copyShareUrl } from '$lib/utils/shareLinks.js';
 
 	let {
 		audioUrl,
@@ -18,7 +19,8 @@
 		downloadUrl = '',
 		onDownloadClick = null,
 		className = '',
-		trackData = null
+		trackData = null,
+		shareUrl = ''
 	} = $props();
 
 	let inPlaylist = $derived(
@@ -110,6 +112,18 @@
 		}
 	}
 
+	let shareSuccess = $state(false);
+
+	function handleShare() {
+		if (!shareUrl) return;
+		copyShareUrl(shareUrl).then(success => {
+			if (success) {
+				shareSuccess = true;
+				setTimeout(() => (shareSuccess = false), 2000);
+			}
+		});
+	}
+
 	function handleTogglePlaylist() {
 		if (!trackData) return;
 		if (inPlaylist) {
@@ -149,6 +163,19 @@
 							icon="mdi:radio-tower"
 							width={20} height={20}
 							class="text-orange-400"
+						/>
+					</button>
+				{/if}
+				{#if shareUrl && trackData?.slug}
+					<button
+						onclick={handleShare}
+						class="p-2 rounded-full transition-colors bg-purple-600/20 hover:bg-purple-600/30"
+						title={shareSuccess ? 'Link copied!' : 'Share track'}
+					>
+						<Icon
+							icon={shareSuccess ? 'mdi:check' : 'mdi:share-variant'}
+							width={20} height={20}
+							class={shareSuccess ? 'text-green-400' : 'text-purple-400'}
 						/>
 					</button>
 				{/if}

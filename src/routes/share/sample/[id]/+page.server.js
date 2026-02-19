@@ -13,7 +13,8 @@ import { buildAssetUrl } from '$lib/api/core/assets.js';
 import { error } from '@sveltejs/kit';
 import { PUBLIC_SITE_URL } from '$env/static/public';
 
-export async function load({ params }) {
+export async function load({ params, parent }) {
+	const parentData = await parent();
 	const { id: slug } = params;
 
 	try {
@@ -32,6 +33,7 @@ export async function load({ params }) {
 					'track_name',
 					'artist',
 					'library',
+					'description',
 					'music_sample.id',
 					'music_sample.filename_disk',
 					'thumbnail.id',
@@ -50,6 +52,7 @@ export async function load({ params }) {
 				title: sample.track_name,
 				artist: sample.artist || 'Key Jay',
 				genre: sample.library,
+				description: sample.description || null,
 				type: 'music',
 				audioUrl: sample.music_sample ? buildAssetUrl(sample.music_sample) : null,
 				thumbnail: sample.thumbnail ? buildAssetUrl(sample.thumbnail) : null
@@ -64,7 +67,9 @@ export async function load({ params }) {
 
 			return {
 				sample: sampleData,
-				meta
+				meta,
+				siteSettings: parentData.siteSettings,
+				socialLinks: parentData.socialLinks
 			};
 		}
 

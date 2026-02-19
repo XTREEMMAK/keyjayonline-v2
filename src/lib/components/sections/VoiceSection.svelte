@@ -8,7 +8,7 @@
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
-	import { copyShareUrl } from '$lib/utils/shareLinks.js';
+	import { copyShareUrl, generateShareUrl } from '$lib/utils/shareLinks.js';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
 
 	// Title letters for animation
@@ -314,12 +314,14 @@
 													height={60}
 													trackData={{
 														id: sample.id,
+														slug: sample.slug || null,
 														title: sample.title,
 														artist: 'Key Jay',
 														audioUrl: sample.audioUrl,
 														thumbnail: null,
 														genre: sample.type || null
 													}}
+													shareUrl={sample.slug ? generateShareUrl('voice', { slug: sample.slug }) : ''}
 												/>
 											{:else}
 												<div
