@@ -240,7 +240,7 @@
 		>
 			{#if mounted.music}
 				<div class="section-transition-container section-panel" class:active={$activeSection === 'music'}>
-					<MusicSection />
+					<MusicSection radioEnabled={data.siteSettings?.radioEnabled || false} />
 				</div>
 			{/if}
 			{#if mounted.voice}

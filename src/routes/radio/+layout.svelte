@@ -5,6 +5,7 @@
 
 <svelte:head>
 	<title>KEY JAY RADIO</title>
+	<link rel="manifest" href="/radio-manifest.json" />
 	<meta name="description" content="Listen to Key Jay Radio — continuous music from Key Jay's catalog" />
 	<meta property="og:url" content="{PUBLIC_SITE_URL}/radio" />
 	<meta property="og:type" content="music.radio_station" />

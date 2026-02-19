@@ -44,7 +44,8 @@ export async function getSiteSettings() {
             'games_page_disabled',
             'tech_page_disabled',
             'voice_page_disabled',
-            'production_page_disabled'
+            'production_page_disabled',
+            'kj_radio_on'
           ],
           limit: 1
         })
@@ -160,6 +161,7 @@ export async function getSiteSettings() {
 
     const result = {
       status: siteConfig.status?.toLowerCase() || 'live', // Normalize to lowercase: 'live' or 'maintenance'
+      radioEnabled: siteConfig.kj_radio_on || false,
       featuredWorks,
       socialLinks,
       supportPlatforms: processedSupportPlatforms,
@@ -200,6 +202,7 @@ export async function getSiteSettings() {
     // Realistic fallback data that matches production database state
     const fallbackResult = {
       status: 'live',
+      radioEnabled: false,
       featuredWorks: [], // Empty array if database is unavailable
       socialLinks: [], // Empty array if database is unavailable
       supportPlatforms: [], // Empty array if database is unavailable

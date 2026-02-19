@@ -4,9 +4,9 @@
 	let { item, compact = false, categoryIcon = 'mdi:code-tags' } = $props();
 </script>
 
-<div class="neu-card {compact ? 'p-3' : 'p-5'} flex items-start gap-{compact ? '3' : '4'} hover:scale-[1.02] transition-transform duration-300">
+<div class="neu-card {compact ? 'p-3' : 'p-4 sm:p-5'} flex items-start gap-{compact ? '3' : '4'} hover:scale-[1.02] transition-transform duration-300">
 	<!-- Icon -->
-	<div class="flex-shrink-0 {compact ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} bg-gradient-to-br from-cyan-600/20 to-blue-600/20 flex items-center justify-center">
+	<div class="flex-shrink-0 {compact ? 'w-9 h-9 rounded-lg' : 'w-10 h-10 sm:w-12 sm:h-12 rounded-xl'} bg-gradient-to-br from-cyan-600/20 to-blue-600/20 flex items-center justify-center">
 		{#if item.icon}
 			<Icon icon={item.icon} class="text-cyan-400 {compact ? 'text-lg' : 'text-2xl'}" />
 		{:else}

@@ -26,13 +26,12 @@ export async function GET({ url }) {
     const libraryParam = url.searchParams.get('library');
     const shuffleParam = url.searchParams.get('shuffle') === 'true';
 
-    // Build filter
+    // Build filter — only show published samples that have a library and are flagged for display
     const filter = {
-      status: { _eq: 'published' }  // Published only
+      status: { _eq: 'published' },
+      display_in_library: { _eq: true },
+      library: { _nnull: true }
     };
-
-    // Samples can appear in both library AND albums
-    // No music_sample_id filter - allow all published samples regardless of release linkage
 
     // Add library filter if provided
     if (libraryParam) {
@@ -51,7 +50,8 @@ export async function GET({ url }) {
           'music_sample.id',
           'music_sample.filename_disk',
           'thumbnail.id',
-          'thumbnail.filename_disk'
+          'thumbnail.filename_disk',
+          'display_in_library'
         ],
         sort: shuffleParam ? null : ['library', 'track_name']
       })

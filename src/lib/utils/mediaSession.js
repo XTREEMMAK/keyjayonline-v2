@@ -9,6 +9,8 @@
 import { nextTrack, previousTrack } from '$lib/stores/musicPlayer.js';
 import { pauseAllTrackPlayers } from './wavesurfer-helpers.js';
 
+const FALLBACK_ARTWORK = '/img/og-social.webp';
+
 /**
  * Setup Media Session action handlers for a WaveSurfer instance.
  * Call once when the WaveSurfer instance is created.
@@ -60,15 +62,13 @@ export function setupMediaSessionHandlers(wavesurfer) {
 export function updateMediaSessionMetadata(track, artworkUrl) {
 	if (typeof navigator === 'undefined' || !('mediaSession' in navigator) || !track) return;
 
-	const artworkArray = [];
-	if (artworkUrl) {
-		artworkArray.push(
-			{ src: artworkUrl, sizes: '96x96', type: 'image/png' },
-			{ src: artworkUrl, sizes: '128x128', type: 'image/png' },
-			{ src: artworkUrl, sizes: '256x256', type: 'image/png' },
-			{ src: artworkUrl, sizes: '512x512', type: 'image/png' }
-		);
-	}
+	const effectiveArtwork = artworkUrl || FALLBACK_ARTWORK;
+	const artworkArray = [
+		{ src: effectiveArtwork, sizes: '96x96', type: 'image/png' },
+		{ src: effectiveArtwork, sizes: '128x128', type: 'image/png' },
+		{ src: effectiveArtwork, sizes: '256x256', type: 'image/png' },
+		{ src: effectiveArtwork, sizes: '512x512', type: 'image/png' }
+	];
 
 	navigator.mediaSession.metadata = new MediaMetadata({
 		title: track.title || 'Unknown Track',

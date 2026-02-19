@@ -15,8 +15,11 @@
 	import { showSectionSubNav, hideSectionSubNav, musicActiveView, musicActiveFilter, portalScrollLock, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
+	import SkeletonImage from '$lib/components/ui/SkeletonImage.svelte';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
+
+	let { radioEnabled = false } = $props();
 
 	// Title letters for animation
 	const titleLetters = 'Music'.split('');
@@ -51,6 +54,9 @@
 	let releaseModal = $state(null);
 	let selectedProject = $state(null);
 	let projectModal = $state(null);
+
+	// Radio modal
+	let radioModalOpen = $state(false);
 
 	// Latest Projects data and configuration
 	let customDesignOverride = $state(false);
@@ -574,10 +580,10 @@
 							<div class="w-full h-full absolute inset-0"
 								 in:fly={{ y: 50, duration: 600, delay: 200 }}
 								 out:fly={{ y: -50, duration: 300 }}>
-								<img
+								<SkeletonImage
 									src={currentProject.mediaUrl}
 									alt={currentProject.title}
-									class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl">
+									class="w-full h-full rounded-2xl" />
 
 								<!-- Content Overlay -->
 								<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
@@ -708,6 +714,15 @@
 						<Icon icon="mdi:music-box-multiple" class="text-lg" />
 						Studio
 					</button>
+					{#if radioEnabled}
+						<button
+							onclick={() => radioModalOpen = true}
+							class="px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 text-white hover:scale-105 hover:from-orange-500 hover:to-red-500"
+						>
+							<Icon icon="mdi:radio-tower" class="text-lg" />
+							Radio
+						</button>
+					{/if}
 				</div>
 
 				<!-- Filter buttons - centered below main buttons -->
@@ -1058,6 +1073,79 @@
 		project={selectedProject}
 		bind:this={projectModal}
 	/>
+{/if}
+
+<!-- Radio Launch Modal -->
+{#if radioModalOpen}
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="KEY JAY RADIO">
+		<!-- Backdrop -->
+		<div
+			class="absolute inset-0 bg-black/70 backdrop-blur-sm"
+			transition:fade={{ duration: 200 }}
+			onclick={() => radioModalOpen = false}
+			onkeydown={(e) => e.key === 'Escape' && (radioModalOpen = false)}
+			role="button"
+			tabindex="-1"
+			aria-label="Close radio modal"
+		></div>
+
+		<!-- Modal Card -->
+		<div class="relative w-full max-w-md" transition:fly={{ y: 40, duration: 300 }}>
+			<div class="neu-card p-8 space-y-6 text-center relative overflow-hidden">
+				<!-- Decorative gradient background -->
+				<div class="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-transparent to-red-900/20 pointer-events-none"></div>
+
+				<!-- Close button -->
+				<button
+					onclick={() => radioModalOpen = false}
+					class="absolute top-4 right-4 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+					aria-label="Close"
+				>
+					<Icon icon="mdi:close" class="text-gray-300 text-lg" />
+				</button>
+
+				<!-- Radio branding -->
+				<div class="relative space-y-3">
+					<div class="flex justify-center">
+						<div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center shadow-lg">
+							<Icon icon="mdi:radio-tower" class="text-white text-4xl" />
+						</div>
+					</div>
+					<h2 class="text-3xl font-bold text-white tracking-wide">KEY JAY RADIO</h2>
+					<p class="text-gray-400 text-sm max-w-xs mx-auto">
+						Continuous music from Key Jay's catalog — beats, productions, and exclusive tracks in one stream.
+					</p>
+				</div>
+
+				<!-- Features list -->
+				<div class="relative flex flex-col gap-2 text-left max-w-xs mx-auto">
+					<div class="flex items-center gap-3 text-sm text-gray-300">
+						<Icon icon="mdi:shuffle-variant" class="text-orange-400 text-lg flex-shrink-0" />
+						<span>Shuffle through the full catalog</span>
+					</div>
+					<div class="flex items-center gap-3 text-sm text-gray-300">
+						<Icon icon="mdi:playlist-music" class="text-orange-400 text-lg flex-shrink-0" />
+						<span>Curated playlists & queue control</span>
+					</div>
+					<div class="flex items-center gap-3 text-sm text-gray-300">
+						<Icon icon="mdi:cellphone" class="text-orange-400 text-lg flex-shrink-0" />
+						<span>Works on car displays & lock screens</span>
+					</div>
+				</div>
+
+				<!-- Launch button -->
+				<div class="relative">
+					<button
+						onclick={() => { radioModalOpen = false; window.open('/radio', '_blank'); }}
+						class="w-full px-6 py-3 rounded-full font-bold text-white bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 transition-all duration-300 hover:scale-105 shadow-lg flex items-center justify-center gap-2"
+					>
+						<Icon icon="mdi:play-circle" class="text-xl" />
+						Launch Radio
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
 {/if}
 
 <style>

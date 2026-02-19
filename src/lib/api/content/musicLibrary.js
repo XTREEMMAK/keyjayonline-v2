@@ -122,7 +122,9 @@ export async function fetchShuffledSamples() {
  */
 export function groupSamplesByLibrary(samples) {
   return samples.reduce((acc, sample) => {
-    const library = sample.genre || 'unknown';
+    const library = sample.genre;
+    // Skip samples without a library assignment
+    if (!library) return acc;
     if (!acc[library]) {
       acc[library] = {
         ...getLibraryMetadata(library),
