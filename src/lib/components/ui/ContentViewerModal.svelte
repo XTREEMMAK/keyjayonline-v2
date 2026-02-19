@@ -56,6 +56,7 @@
 	let panX = $state(0);
 	let panY = $state(0);
 	let isPanning = $state(false);
+	let isPinching = $state(false);
 	let dragStartX = 0;
 	let dragStartY = 0;
 	let dragStartPanX = 0;
@@ -97,6 +98,11 @@
 	let prevMoveY = 0;
 	let prevMoveTime = 0;
 	let momentumRaf = null;
+
+	// Guard against synthesized mouse events after touch interactions.
+	// Mobile browsers fire mousedown/mouseup ~300ms after touchend, which
+	// can re-trigger toggleZoom() and undo a touch-initiated zoom exit.
+	let lastTouchEnd = 0;
 
 	// Fullscreen support detection
 	const fullscreenSupported = browser && (document.fullscreenEnabled || document.webkitFullscreenEnabled || false);
@@ -172,6 +178,7 @@
 
 	// Drag-to-pan handlers (mouse)
 	function handleMouseDown(event) {
+		if (Date.now() - lastTouchEnd < 500) return;
 		if (zoomLevel <= 1) return;
 		isPanning = true;
 		dragStartX = event.clientX;
@@ -196,6 +203,7 @@
 	}
 
 	function handleMouseUp() {
+		if (Date.now() - lastTouchEnd < 500) return;
 		if (!isPanning) {
 			// Not panning — treat as click for zoom toggle
 			toggleZoom();
@@ -295,6 +303,7 @@
 	let hintVisible = $state(false);
 	let hintTimer = null;
 	const HINT_DURATION = 2500;
+	let zoomHintShown = false; // Only show "Tap to exit zoom" once per zoom-in
 
 	function showHint() {
 		clearTimeout(hintTimer);
@@ -338,8 +347,8 @@
 	}
 
 	function startMomentum(vx, vy) {
-		const friction = 0.95;
-		const minVelocity = 0.05;
+		const friction = 0.90;
+		const minVelocity = 0.1;
 
 		function animate() {
 			vx *= friction;
@@ -373,6 +382,7 @@
 		if (touches.length === 2) {
 			// Two fingers: pinch zoom — hide overlays immediately
 			touchState = 'pinching';
+			isPinching = true;
 			clearTimeout(longPressTimer);
 			initialPinchDistance = getTouchDistance(touches);
 			initialPinchZoom = zoomLevel;
@@ -470,9 +480,11 @@
 	function handleTouchEnd(event) {
 		clearTimeout(longPressTimer);
 		const touchEndTime = Date.now();
+		lastTouchEnd = touchEndTime;
 		const duration = touchEndTime - touchStartTime;
 
 		if (touchState === 'pinching') {
+			isPinching = false;
 			// Snap to 1x if close enough
 			if (zoomLevel < 1.1) {
 				zoomLevel = 1;
@@ -486,9 +498,11 @@
 		}
 
 		if (touchState === 'panning') {
-			// If barely moved while panning (long-press without drag), revert zoom
-			if (totalDragDistance < TAP_THRESHOLD) {
+			// Tap-to-exit-zoom: must be quick (< 250ms) AND minimal movement (< 15px).
+			// Both constraints prevent short deliberate drags from triggering exit.
+			if (totalDragDistance < 15 && duration < 250) {
 				isPanning = false;
+				cancelMomentum();
 				zoomLevel = 1;
 				panX = 0;
 				panY = 0;
@@ -530,6 +544,7 @@
 					lastTapX = endX;
 					lastTapY = endY;
 					// Single tap: toggle overlay visibility on touch devices
+					// (zoom exit is handled in the panning touchend handler above)
 					if (isTouchDevice) {
 						if (overlaysVisible) {
 							overlaysVisible = false;
@@ -729,7 +744,14 @@
 			captionExpanded = false;
 			overlaysVisible = false;
 			clearInactivityTimer();
-			if (isTouchDevice) showHint();
+			// Show zoom hint only once per zoom-in session
+			if (isTouchDevice && !zoomHintShown) {
+				zoomHintShown = true;
+				showHint();
+			}
+		} else {
+			// Reset so hint can show again on next zoom-in
+			zoomHintShown = false;
 		}
 	});
 
@@ -892,13 +914,13 @@
 					<div
 						class="flex flex-col items-center max-w-[90vw]"
 						class:max-h-full={!captionExpanded}
-						in:fly={{ x: slideDirection * 300, duration: 250 }}
+						in:fly={{ x: slideDirection * 200, duration: 350 }}
 					>
 						<!-- Image container with zoom -->
 						<div
 							class="relative ease-out select-none"
-							class:transition-transform={!isPanning}
-							style="transform: scale({zoomLevel}) translate({panX / zoomLevel}px, {panY / zoomLevel}px); touch-action: none;"
+							class:transition-transform={!isPanning && !isPinching}
+							style="transform: scale({zoomLevel}) translate({panX / zoomLevel}px, {panY / zoomLevel}px); touch-action: none; will-change: transform; backface-visibility: hidden;"
 							onmousedown={handleMouseDown}
 							onmousemove={handleMouseMove}
 							onmouseup={handleMouseUp}
@@ -1033,7 +1055,7 @@
 		<!-- Contextual tap hint (mobile only, shown when overlays hidden) -->
 		{#if isTouchDevice && hintVisible && !showAllPages}
 			<div
-				class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm text-white/80 text-xs pointer-events-none"
+				class="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm text-white/80 text-xs pointer-events-none"
 				in:fade={{ duration: 200 }}
 				out:fade={{ duration: 300 }}
 			>

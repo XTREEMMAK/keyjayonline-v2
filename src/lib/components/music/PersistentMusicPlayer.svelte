@@ -28,7 +28,9 @@
 		radioMode,
 		dynamicPlaylist,
 		clearDynamicPlaylist,
-		playDynamicPlaylist
+		playDynamicPlaylist,
+		radioModalOpen,
+		radioEnabled
 	} from '$lib/stores/musicPlayer.js';
 	import { extractCoverArt } from '$lib/utils/coverArtExtractor.js';
 	import { formatTime } from '$lib/utils/time.js';
@@ -603,6 +605,19 @@
 					
 					<!-- Right Controls -->
 					<div class="flex items-center gap-2 ml-4">
+						<!-- Radio Mode Button -->
+						{#if $radioEnabled}
+							<button
+								onclick={() => radioModalOpen.set(true)}
+								class="p-2 hover:bg-white/10 rounded-full transition-colors flex items-center gap-1.5"
+								title="Key Jay Radio"
+							>
+								<Icon icon="mdi:radio-tower" width={20} height={20} class="text-orange-400" />
+								{#if $activeSection === 'music'}
+									<span class="text-xs text-orange-400 font-medium hidden sm:inline">Radio</span>
+								{/if}
+							</button>
+						{/if}
 						<!-- Volume Control -->
 						<div class="hidden sm:flex items-center gap-2">
 							<Icon icon="mdi:volume-high" width={20} height={20} class="text-gray-400" />
@@ -772,15 +787,24 @@
 				</div>
 				
 				<div class="flex items-center gap-2">
-					<button 
+					{#if $radioEnabled}
+						<button
+							onclick={() => radioModalOpen.set(true)}
+							class="p-2 hover:bg-white/10 rounded-full transition-colors"
+							title="Key Jay Radio"
+						>
+							<Icon icon="mdi:radio-tower" width={16} height={16} class="text-orange-400" />
+						</button>
+					{/if}
+					<button
 						onclick={toggleMinimize}
 						class="p-2 hover:bg-white/10 rounded-full transition-colors"
 						title="Expand player"
 					>
 						<Icon icon="mdi:chevron-up" width={16} height={16} class="text-gray-400" />
 					</button>
-					
-					<button 
+
+					<button
 						onclick={closePlayer}
 						class="p-2 hover:bg-white/10 rounded-full transition-colors"
 						title="Close player"

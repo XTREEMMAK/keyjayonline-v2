@@ -5,7 +5,7 @@
 	import { formatTime } from '$lib/utils/time.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { getAudioPlayerConfig, pauseOthersAndToggle, cleanupTrackPlayer, registerTrackPlayer } from '$lib/utils/wavesurfer-helpers.js';
-	import { addToDynamicPlaylist, removeFromDynamicPlaylist, playDynamicPlaylist, dynamicPlaylist, playlistSource } from '$lib/stores/musicPlayer.js';
+	import { addToDynamicPlaylist, removeFromDynamicPlaylist, playDynamicPlaylist, dynamicPlaylist, playlistSource, radioModalOpen, radioEnabled } from '$lib/stores/musicPlayer.js';
 
 	let {
 		audioUrl,
@@ -139,6 +139,19 @@
 				{/if}
 			</div>
 			<div class="flex items-center gap-1 flex-shrink-0">
+				{#if $radioEnabled}
+					<button
+						onclick={() => radioModalOpen.set(true)}
+						class="p-2 rounded-full transition-colors bg-orange-600/20 hover:bg-orange-600/30"
+						title="Key Jay Radio"
+					>
+						<Icon
+							icon="mdi:radio-tower"
+							width={20} height={20}
+							class="text-orange-400"
+						/>
+					</button>
+				{/if}
 				{#if trackData}
 					<button
 						onclick={handleTogglePlaylist}
@@ -188,12 +201,12 @@
 			</div>
 		</div>
 		
-		<div class="flex items-center gap-2">
+		<div class="hidden sm:flex items-center gap-2">
 			<Icon icon="mdi:volume-high" width={20} height={20} class="text-gray-400" />
-			<input 
-				type="range" 
-				min="0" 
-				max="1" 
+			<input
+				type="range"
+				min="0"
+				max="1"
 				step="0.05"
 				value={volume}
 				oninput={handleVolumeChange}

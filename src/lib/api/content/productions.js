@@ -102,6 +102,7 @@ function processEmbeds(embeds) {
 const STATUS_MAP = {
   'in_development': 'In Development',
   'in_production': 'In Production',
+  'on_hold': 'On Hold',
   'ongoing': 'Ongoing',
   'released': 'Released',
   'complete': 'Complete'

@@ -6,9 +6,16 @@
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import FloatingButtonContainer from '$lib/components/ui/FloatingButtonContainer.svelte';
 	import PersistentMusicPlayer from '$lib/components/music/PersistentMusicPlayer.svelte';
+	import RadioLaunchModal from '$lib/components/radio/RadioLaunchModal.svelte';
 	import ScrollToTop from '$lib/components/ui/ScrollToTop.svelte';
+	import { radioEnabled } from '$lib/stores/musicPlayer.js';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
 	let { children, data } = $props();
+
+	// Initialize radioEnabled store from server data
+	$effect(() => {
+		radioEnabled.set(data?.siteSettings?.radioEnabled || false);
+	});
 
 	// Check if we're on an error page to conditionally hide footer
 	const isErrorPage = $derived($page.status >= 400);
@@ -148,3 +155,6 @@
 
 <!-- Persistent Music Player -->
 <PersistentMusicPlayer />
+
+<!-- Global Radio Launch Modal -->
+<RadioLaunchModal />

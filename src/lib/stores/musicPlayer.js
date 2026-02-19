@@ -27,6 +27,8 @@ export const playlistSource = writable('library'); // 'library' | 'production' |
 
 // Radio-specific state
 export const radioMode = writable(false);
+export const radioModalOpen = writable(false);
+export const radioEnabled = writable(false);
 export const shuffleMode = writable(false);
 export const shuffleHistory = writable([]); // Last N played track indices (no repeats)
 

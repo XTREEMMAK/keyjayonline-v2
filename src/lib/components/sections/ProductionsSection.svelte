@@ -234,6 +234,7 @@
 			case 'Complete': return 'text-green-400 border-green-600/30 bg-green-600/20';
 			case 'In Production':
 			case 'In Development': return 'text-yellow-400 border-yellow-600/30 bg-yellow-600/20';
+			case 'On Hold': return 'text-orange-400 border-orange-600/30 bg-orange-600/20';
 			case 'Ongoing': return 'text-blue-400 border-blue-600/30 bg-blue-600/20';
 			default: return 'text-gray-400 border-gray-600/30 bg-gray-600/20';
 		}
@@ -366,7 +367,7 @@
 		{#if featuredProduction}
 			<section class="bg-gradient-to-b from-[var(--neu-bg-dark)]/95 via-orange-950/15 to-[var(--neu-bg-dark)]/95 py-16 relative">
 				<div class="container mx-auto px-4">
-					<div class="max-w-6xl mx-auto">
+					<div class="mx-auto">
 						<div class="neu-card overflow-hidden">
 							<div class="grid grid-cols-1 lg:grid-cols-2">
 								<!-- Featured Image -->
