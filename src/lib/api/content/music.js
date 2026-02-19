@@ -195,7 +195,7 @@ export async function getLatestProjects(limit = 3) {
           'liner_notes',
           { cover_art: ['id', 'filename_disk'] },
           { background_image: ['id', 'filename_disk'] },
-          { thumbnail_url: ['id', 'filename_disk'] },
+          { thumbnail_image: ['id', 'filename_disk'] },
           { videos: ['*'] },
           { external_links: ['*', { icon_value: ['icon_reference_id'] }] }
         ]
@@ -212,7 +212,7 @@ export async function getLatestProjects(limit = 3) {
 
       // Build thumbnail URL (fallback to cover art)
       // This field may not exist yet in Directus
-      const thumbnailUrl = buildAssetUrl(release.thumbnail_url) || coverArtUrl;
+      const thumbnailUrl = buildAssetUrl(release.thumbnail_image) || coverArtUrl;
 
       // Find featured video (first with featured=true, or first by display_order)
       const sortedVideos = [...(release.videos || [])].sort((a, b) => {
