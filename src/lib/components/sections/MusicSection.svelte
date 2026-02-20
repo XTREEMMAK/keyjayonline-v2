@@ -592,13 +592,6 @@
 								<!-- Content Overlay -->
 								<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
 
-								<!-- Project Title Overlay -->
-								<div class="absolute bottom-6 left-6 right-6">
-									<h3 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight text-center">
-										{currentProject.title}
-									</h3>
-								</div>
-
 								<!-- Play button overlay -->
 								{#if currentProject.mediaUrl}
 								<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">

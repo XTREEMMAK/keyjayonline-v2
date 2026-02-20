@@ -22,6 +22,9 @@
 	let duration = $state('0:00');
 	let currentClipIndex = $state(0);
 
+	// Volume control
+	let volume = $state(1);
+
 	// Share functionality
 	let shareSuccess = $state(false);
 
@@ -276,6 +279,31 @@
 		}, 100);
 	}
 
+	function handleVolumeChange(e) {
+		const newVolume = parseFloat(e.target.value);
+		volume = newVolume;
+		if (wavesurfer) {
+			wavesurfer.setVolume(newVolume);
+		}
+	}
+
+	function toggleMute() {
+		if (volume > 0) {
+			volume = 0;
+		} else {
+			volume = 1;
+		}
+		if (wavesurfer) {
+			wavesurfer.setVolume(volume);
+		}
+	}
+
+	const volumeIcon = $derived(
+		volume === 0 ? 'mdi:volume-off' :
+		volume < 0.5 ? 'mdi:volume-medium' :
+		'mdi:volume-high'
+	);
+
 	async function handleShare() {
 		const shareUrl = generateShareUrl('voice', { slug: project.slug });
 		const success = await copyShareUrl(shareUrl);
@@ -389,25 +417,38 @@
 						</div>
 					{/if}
 
-					<!-- Waveform Container -->
-					<div class="waveform-wrapper">
-						<div bind:this={waveformContainer} class="waveform-container"></div>
-					</div>
-
-					<!-- Playback Controls -->
-					<div class="playback-row">
+					<!-- Player Controls -->
+					<div class="player-controls">
 						<button onclick={togglePlay} class="play-button" disabled={isLoading} aria-label={isPlaying ? 'Pause' : 'Play'}>
 							{#if isLoading}
 								<Icon icon="mdi:loading" width={32} height={32} class="animate-spin" />
 							{:else}
-								<Icon icon={isPlaying ? 'mdi:pause' : 'mdi:play'} width={32} height={32} />
+								<Icon icon={isPlaying ? 'mdi:pause' : 'mdi:play'} width={40} height={40} />
 							{/if}
 						</button>
-
-						<div class="time-display">
-							<span>{currentTime}</span>
-							<span>/</span>
-							<span>{duration}</span>
+						<div class="waveform-wrapper">
+							<div bind:this={waveformContainer} class="waveform-container"></div>
+							<div class="time-display">
+								<span>{currentTime}</span>
+								<span>{duration}</span>
+							</div>
+						</div>
+						<!-- Vertical Volume Control -->
+						<div class="volume-control">
+							<input
+								type="range"
+								min="0"
+								max="1"
+								step="0.01"
+								value={volume}
+								oninput={handleVolumeChange}
+								class="volume-slider"
+								orient="vertical"
+								aria-label="Volume"
+							/>
+							<button onclick={toggleMute} class="volume-button" aria-label="Volume">
+								<Icon icon={volumeIcon} width={22} height={22} />
+							</button>
 						</div>
 					</div>
 				</div>
@@ -691,9 +732,17 @@
 		color: white;
 	}
 
+	/* Player Controls */
+	.player-controls {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
 	/* Waveform Styles */
 	.waveform-wrapper {
-		margin-bottom: 1.5rem;
+		flex: 1;
+		min-width: 0;
 		border-radius: 12px;
 		overflow: hidden;
 		background: rgba(0, 0, 0, 0.2);
@@ -708,16 +757,10 @@
 		overflow: hidden !important;
 	}
 
-	.playback-row {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1.5rem;
-	}
-
 	.play-button {
 		width: 60px;
 		height: 60px;
+		flex-shrink: 0;
 		border-radius: 50%;
 		background: linear-gradient(135deg, rgba(139, 92, 246, 0.6) 0%, rgba(168, 85, 247, 0.6) 100%);
 		backdrop-filter: blur(10px);
@@ -743,11 +786,81 @@
 
 	.time-display {
 		display: flex;
+		justify-content: space-between;
+		color: rgba(255, 255, 255, 0.7);
+		font-size: 0.8rem;
+		margin-top: 0.5rem;
+	}
+
+	/* Volume Control — always visible vertical slider with mute button below */
+	.volume-control {
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: 0.5rem;
-		color: rgba(255, 255, 255, 0.8);
-		font-size: 1rem;
-		font-family: monospace;
+		gap: 6px;
+	}
+
+	.volume-slider {
+		-webkit-appearance: none;
+		appearance: none;
+		writing-mode: vertical-lr;
+		direction: rtl;
+		width: 6px;
+		height: 80px;
+		background: linear-gradient(to top, rgba(139, 92, 246, 0.8), rgba(139, 92, 246, 0.3));
+		border-radius: 3px;
+		outline: none;
+		cursor: pointer;
+	}
+
+	.volume-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		background: rgb(139, 92, 246);
+		border: 2px solid rgba(255, 255, 255, 0.5);
+		cursor: pointer;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+	}
+
+	.volume-slider::-moz-range-thumb {
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		background: rgb(139, 92, 246);
+		border: 2px solid rgba(255, 255, 255, 0.5);
+		cursor: pointer;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+	}
+
+	.volume-slider::-webkit-slider-runnable-track {
+		background: transparent;
+	}
+
+	.volume-slider::-moz-range-track {
+		background: transparent;
+		border: none;
+	}
+
+	.volume-button {
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.volume-button:hover {
+		background: rgba(255, 255, 255, 0.25);
 	}
 
 	.external-links {

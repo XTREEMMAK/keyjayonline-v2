@@ -31,7 +31,6 @@
 	let currentTime = $state('0:00');
 	let duration = $state('0:00');
 	let volume = $state(1);
-	let showVolume = $state(false);
 
 	// Share functionality
 	let shareSuccess = $state(false);
@@ -377,26 +376,18 @@
 							</div>
 						</div>
 						<!-- Vertical Volume Control -->
-						<div
-							class="volume-control"
-							onmouseenter={() => showVolume = true}
-							onmouseleave={() => showVolume = false}
-						>
-							{#if showVolume}
-								<div class="volume-slider-popup">
-									<input
-										type="range"
-										min="0"
-										max="1"
-										step="0.01"
-										value={volume}
-										oninput={handleVolumeChange}
-										class="volume-slider"
-										orient="vertical"
-										aria-label="Volume"
-									/>
-								</div>
-							{/if}
+						<div class="volume-control">
+							<input
+								type="range"
+								min="0"
+								max="1"
+								step="0.01"
+								value={volume}
+								oninput={handleVolumeChange}
+								class="volume-slider"
+								orient="vertical"
+								aria-label="Volume"
+							/>
 							<button onclick={toggleMute} class="volume-button" aria-label="Volume">
 								<Icon icon={volumeIcon} width={22} height={22} />
 							</button>
@@ -706,21 +697,65 @@
 		margin-top: 0.5rem;
 	}
 
-	/* Volume Control */
+	/* Volume Control — always visible vertical slider with mute button below */
 	.volume-control {
-		position: relative;
 		flex-shrink: 0;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		gap: 6px;
+	}
+
+	.volume-slider {
+		-webkit-appearance: none;
+		appearance: none;
+		writing-mode: vertical-lr;
+		direction: rtl;
+		width: 6px;
+		height: 80px;
+		background: linear-gradient(to top, rgba(236, 72, 153, 0.8), rgba(236, 72, 153, 0.3));
+		border-radius: 3px;
+		outline: none;
+		cursor: pointer;
+	}
+
+	.volume-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		background: rgb(236, 72, 153);
+		border: 2px solid rgba(255, 255, 255, 0.5);
+		cursor: pointer;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+	}
+
+	.volume-slider::-moz-range-thumb {
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		background: rgb(236, 72, 153);
+		border: 2px solid rgba(255, 255, 255, 0.5);
+		cursor: pointer;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+	}
+
+	.volume-slider::-webkit-slider-runnable-track {
+		background: transparent;
+	}
+
+	.volume-slider::-moz-range-track {
+		background: transparent;
+		border: none;
 	}
 
 	.volume-button {
-		width: 40px;
-		height: 40px;
+		width: 32px;
+		height: 32px;
 		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.15);
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.15);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -731,75 +766,6 @@
 
 	.volume-button:hover {
 		background: rgba(255, 255, 255, 0.25);
-	}
-
-	.volume-slider-popup {
-		position: absolute;
-		bottom: 100%;
-		left: 50%;
-		transform: translateX(-50%);
-		padding: 12px 8px 16px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.volume-slider-popup::before {
-		content: '';
-		position: absolute;
-		inset: 0 0 8px;
-		background: rgba(30, 30, 50, 0.95);
-		backdrop-filter: blur(10px);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 12px;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-		z-index: -1;
-	}
-
-	.volume-slider {
-		-webkit-appearance: none;
-		appearance: none;
-		writing-mode: vertical-lr;
-		direction: rtl;
-		width: 6px;
-		height: 100px;
-		background: rgba(255, 255, 255, 0.15);
-		border-radius: 3px;
-		outline: none;
-		cursor: pointer;
-	}
-
-	.volume-slider::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		appearance: none;
-		width: 16px;
-		height: 16px;
-		border-radius: 50%;
-		background: rgb(236, 72, 153);
-		border: 2px solid rgba(255, 255, 255, 0.5);
-		cursor: pointer;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-	}
-
-	.volume-slider::-moz-range-thumb {
-		width: 16px;
-		height: 16px;
-		border-radius: 50%;
-		background: rgb(236, 72, 153);
-		border: 2px solid rgba(255, 255, 255, 0.5);
-		cursor: pointer;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-	}
-
-	.volume-slider::-webkit-slider-runnable-track {
-		background: linear-gradient(to top, rgba(236, 72, 153, 0.8), rgba(236, 72, 153, 0.3));
-		border-radius: 3px;
-	}
-
-	.volume-slider::-moz-range-track {
-		background: linear-gradient(to top, rgba(236, 72, 153, 0.8), rgba(236, 72, 153, 0.3));
-		border-radius: 3px;
-		border: none;
 	}
 
 	/* Description section */
@@ -920,8 +886,8 @@
 		}
 
 		.volume-button {
-			width: 36px;
-			height: 36px;
+			width: 28px;
+			height: 28px;
 		}
 	}
 

@@ -3,10 +3,12 @@
 	import { browser } from '$app/environment';
 	import AudioPlayer from '$lib/components/music/AudioPlayer.svelte';
 	import Icon from '@iconify/svelte';
-	import { navigateTo } from '$lib/stores/navigation.js';
+	import { navigateTo, activeSection } from '$lib/stores/navigation.js';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import { letterPulse } from '$lib/actions/letterAnimation.js';
 	import { sectionData, loadSection } from '$lib/stores/sectionData.js';
+	import { showSectionSubNav, hideSectionSubNav, voiceActiveFilter, portalScrollLock, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
+	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { copyShareUrl, generateShareUrl } from '$lib/utils/shareLinks.js';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
@@ -20,6 +22,12 @@
 	let activeCategory = $state('all');
 	let openDropdownId = $state(null);
 	let shareSuccessId = $state(null);
+
+	// Sticky nav sentinel state
+	let subNavSentinelRef = $state();
+	let bottomSentinelRef = $state();
+	let topSentinelAbove = $state(false);
+	let bottomSentinelReached = $state(false);
 
 	// Handle share button click - uses Directus slug directly
 	async function handleShare(project, e) {
@@ -92,6 +100,82 @@
 	onDestroy(() => {
 		if (mixer) {
 			mixer.destroy();
+		}
+		hideSectionSubNav();
+		unsubFilter();
+	});
+
+	// Top sentinel observer (140px offset so sticky nav persists longer when scrolling up)
+	$effect(() => {
+		if (browser && subNavSentinelRef) {
+			const cleanup = createIntersectionObserver(
+				subNavSentinelRef,
+				(isVisible, entry) => {
+					if (portalScrollLock) return;
+					topSentinelAbove = !isVisible && entry.boundingClientRect.bottom <= 140;
+				},
+				{ threshold: 0, rootMargin: '-140px 0px 0px 0px' }
+			);
+			return cleanup;
+		}
+	});
+
+	// Bottom sentinel observer — hides portal when user scrolls past content into CTAs
+	$effect(() => {
+		if (browser && bottomSentinelRef) {
+			const cleanup = createIntersectionObserver(
+				bottomSentinelRef,
+				(isVisible, entry) => {
+					if (portalScrollLock) return;
+					bottomSentinelReached = entry.boundingClientRect.top <= 0;
+				},
+				{ threshold: 0, rootMargin: '0px' }
+			);
+			return cleanup;
+		}
+	});
+
+	// Reactive portal state: show when top sentinel above AND still in content area
+	$effect(() => {
+		if ($activeSection !== 'voice') return;
+		if (topSentinelAbove && !bottomSentinelReached) {
+			showSectionSubNav('voice');
+		} else {
+			hideSectionSubNav();
+		}
+	});
+
+	// Manual sentinel recheck — triggered via store after scroll lock releases or content changes
+	$effect(() => {
+		$sentinelRecheck;
+		if (!browser) return;
+		requestAnimationFrame(() => {
+			if (portalScrollLock) return;
+			if (subNavSentinelRef) {
+				const rect = subNavSentinelRef.getBoundingClientRect();
+				topSentinelAbove = !!(rect.bottom <= 140);
+			}
+			if (bottomSentinelRef) {
+				const rect = bottomSentinelRef.getBoundingClientRect();
+				bottomSentinelReached = !!(rect.top <= 0);
+			}
+		});
+	});
+
+	// Sync activeCategory with sticky nav store (bidirectional)
+	$effect(() => {
+		voiceActiveFilter.set(activeCategory);
+	});
+	const unsubFilter = voiceActiveFilter.subscribe(f => {
+		if (f !== activeCategory) {
+			activeCategory = f;
+			if (mixer) {
+				if (f === 'all') {
+					mixer.filter('all');
+				} else {
+					mixer.filter(`.${f}`);
+				}
+			}
 		}
 	});
 
@@ -202,6 +286,9 @@
 						{/each}
 					</div>
 				</div>
+
+				<!-- Sentinel for sticky sub-nav detection (below filters so portal only triggers after they exit viewport) -->
+				<div bind:this={subNavSentinelRef} class="sub-nav-sentinel h-px w-full"></div>
 
 				<!-- Voice Samples with MixItUp -->
 				<div class="w-full px-4">
@@ -340,6 +427,9 @@
 			{/if}
 		</div>
 	</section>
+
+	<!-- Bottom sentinel: hides sticky nav when scrolling past voice samples content -->
+	<div bind:this={bottomSentinelRef} class="sub-nav-bottom-sentinel h-px w-full"></div>
 
 	<!-- Services Section -->
 	<section class="subsection-gradient-dark subsection-accent-blue relative py-20">
@@ -484,17 +574,12 @@
 				quality, quick turnaround, and competitive rates.
 			</p>
 
-			<div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+			<div class="flex justify-center items-center">
 				<button
 					onclick={handleContactClick}
 					class="neu-button-primary px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300"
 				>
 					Get a Quote
-				</button>
-				<button
-					class="neu-button px-8 py-4 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105"
-				>
-					Listen to More Samples
 				</button>
 			</div>
 

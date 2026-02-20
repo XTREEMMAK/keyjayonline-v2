@@ -37,6 +37,7 @@
 		musicActiveFilter,
 		techActiveTab,
 		productionsActiveFilter,
+		voiceActiveFilter,
 		setPortalScrollLock,
 		recheckSentinels
 	} from '$lib/stores/stickyNav.js';
@@ -131,6 +132,29 @@
 			slug: cat.slug
 		}))
 	]);
+
+	// Voice section categories (dynamic from Directus)
+	const voiceData = $derived($sectionData.voice?.data || {});
+	const voiceCategories = $derived(voiceData.categories || []);
+	const voiceCategoryLabel = $derived(
+		$voiceActiveFilter === 'all'
+			? 'All'
+			: voiceCategories.find(c => c.slug === $voiceActiveFilter)?.name || 'All'
+	);
+
+	// Category icons for voice filters (matches VoiceSection)
+	const voiceCategoryIcons = {
+		'animation': 'mdi:animation',
+		'commercial': 'mdi:bullhorn',
+		'narration': 'mdi:book-open-variant',
+		'character': 'lucide:drama',
+		'audiobook': 'mdi:book-open-page-variant',
+		'gaming': 'mdi:gamepad-variant',
+		'documentary': 'mdi:movie-open',
+		'corporate': 'mdi:domain',
+		'singing': 'streamline-freehand:voice-id-user',
+		'default': 'mdi:microphone'
+	};
 
 	// Get active filter label for the toggle button
 	const activeFilterLabel = $derived(
@@ -408,6 +432,38 @@
 				>
 					<Icon icon={category.icon} class="text-base" />
 					{category.label}
+				</button>
+			{/each}
+		</div>
+	</SectionStickyNav>
+{/if}
+
+<!-- Voice Section Sticky Sub-Nav Portal (Mobile Only) -->
+{#if $activeSection === 'voice'}
+	<SectionStickyNav section="voice" mobileOnly filterLabel={voiceCategoryLabel}>
+		<div class="flex gap-2 flex-wrap justify-center">
+			<button
+				onclick={() => { voiceActiveFilter.set('all'); scrollToSectionContent(); }}
+				class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+					$voiceActiveFilter === 'all'
+						? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+						: 'text-gray-300 hover:text-white hover:bg-white/10'
+				}"
+			>
+				<Icon icon="mdi:view-grid" class="text-base" />
+				All
+			</button>
+			{#each voiceCategories as category}
+				<button
+					onclick={() => { voiceActiveFilter.set(category.slug); scrollToSectionContent(); }}
+					class="px-4 py-1.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-1.5 {
+						$voiceActiveFilter === category.slug
+							? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+							: 'text-gray-300 hover:text-white hover:bg-white/10'
+					}"
+				>
+					<Icon icon={voiceCategoryIcons[category.slug] || voiceCategoryIcons['default']} class="text-base" />
+					{category.name}
 				</button>
 			{/each}
 		</div>

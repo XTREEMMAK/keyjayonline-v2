@@ -12,7 +12,7 @@
 	import { navigateTo, enabledSections, sectionMeta } from '$lib/stores/navigation.js';
 	import { mobileMenuOpen } from '$lib/stores/mobileNav.js';
 
-	let { section, children, filterLabel = 'Filters' } = $props();
+	let { section, children, filterLabel = 'Filters', mobileOnly = false } = $props();
 
 	const isActive = $derived($activeStickySection === section && !$sectionModalOpen && !$mobileMenuOpen);
 
@@ -40,7 +40,7 @@
 {#if isActive}
 	<!-- Section Sub-Nav Portal (fixed at top, neumorphic style) -->
 	<div
-		class="section-sticky-nav"
+		class="section-sticky-nav {mobileOnly ? 'md:hidden' : ''}"
 		transition:fly={{ y: -60, duration: 250 }}
 	>
 		<div class="container mx-auto px-4">

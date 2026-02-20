@@ -738,20 +738,26 @@
 		};
 	});
 
-	// Collapse caption when zooming in; hide overlays
+	// Collapse caption when zooming in; hide overlays (touch only — desktop keeps header visible)
 	$effect(() => {
 		if (zoomLevel > 1) {
 			captionExpanded = false;
-			overlaysVisible = false;
-			clearInactivityTimer();
-			// Show zoom hint only once per zoom-in session
-			if (isTouchDevice && !zoomHintShown) {
-				zoomHintShown = true;
-				showHint();
+			if (isTouchDevice) {
+				overlaysVisible = false;
+				clearInactivityTimer();
+				// Show zoom hint only once per zoom-in session
+				if (!zoomHintShown) {
+					zoomHintShown = true;
+					showHint();
+				}
 			}
 		} else {
 			// Reset so hint can show again on next zoom-in
 			zoomHintShown = false;
+			// On desktop, restore overlays when zooming back to 1x
+			if (!isTouchDevice) {
+				overlaysVisible = true;
+			}
 		}
 	});
 

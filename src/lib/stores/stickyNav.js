@@ -53,6 +53,7 @@ export const musicActiveView = writable('albums');
 export const musicActiveFilter = writable('all');
 export const techActiveTab = writable('stack');
 export const productionsActiveFilter = writable('all');
+export const voiceActiveFilter = writable('all');
 
 /**
  * Show the sticky nav portal (About section)

@@ -36,6 +36,7 @@
 	import { formatTime } from '$lib/utils/time.js';
 	import PlaylistBrowser from '$lib/components/music/PlaylistBrowser.svelte';
 	import { sectionModalOpen } from '$lib/stores/stickyNav.js';
+	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { browser } from '$app/environment';
 
 	let container = $state();
@@ -315,15 +316,18 @@
 
 	// Scroll lock: prevent body scrolling when library browser or playlist panel is open
 	// Release when player is closed, minimized, or panels are collapsed
+	// Guard: don't reset overflow when gallery viewer (ContentViewerModal) has its own scroll lock
 	$effect(() => {
 		if (!browser) return;
 		if ($playerVisible && !$playerMinimized && (showBrowser || showPlaylist)) {
 			document.body.style.overflow = 'hidden';
-		} else {
+		} else if (!$contentViewerOpen) {
 			document.body.style.overflow = '';
 		}
 		return () => {
-			document.body.style.overflow = '';
+			if (!$contentViewerOpen) {
+				document.body.style.overflow = '';
+			}
 		};
 	});
 
@@ -512,6 +516,7 @@
 	<div
 		class="music-player fixed bottom-0 left-0 right-0 {$sectionModalOpen ? 'z-[60]' : 'z-50'} bg-gray-900/95 backdrop-blur-md border-t border-white/10 shadow-2xl"
 		class:minimized={$playerMinimized}
+		class:modal-visible={$playerMinimized && $sectionModalOpen}
 		transition:slide={{ duration: 300 }}>
 		
 		<!-- Persistent waveform container - always present -->
@@ -929,6 +934,12 @@
 			transform: translateY(100%);
 			opacity: 0;
 			pointer-events: none;
+		}
+
+		.music-player.minimized.modal-visible {
+			transform: translateY(0);
+			opacity: 1;
+			pointer-events: auto;
 		}
 	}
 </style>
