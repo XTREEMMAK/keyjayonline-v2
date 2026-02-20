@@ -47,20 +47,24 @@
 
 	// Button handlers
 	function handleMusicClick() {
-		// If player is not visible: show it (prefer dynamic playlist, then existing track, then random)
+		// If player is not visible: restore if track exists, otherwise fresh start
 		// If player is visible and minimized: expand it
 		// If player is visible and expanded: minimize it (don't pause music)
 		if (!$playerVisible) {
-			const dynTracks = get(dynamicPlaylist);
-			if (dynTracks.length > 0) {
-				playDynamicPlaylist(0);
-				expandPlayer();
-			} else {
-				if (!$currentTrack) {
-					loadRandomTrack();
-				}
+			if ($currentTrack) {
+				// Restore hidden player without changing playlist
 				showPlayer();
-				expandPlayer();
+			} else {
+				// Fresh start
+				const dynTracks = get(dynamicPlaylist);
+				if (dynTracks.length > 0) {
+					playDynamicPlaylist(0);
+					expandPlayer();
+				} else {
+					loadRandomTrack();
+					showPlayer();
+					expandPlayer();
+				}
 			}
 		} else if ($playerMinimized) {
 			// Player is visible but minimized - expand it

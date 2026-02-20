@@ -105,8 +105,6 @@
 	// Reset state when modal opens
 	$effect(() => {
 		if (isOpen) {
-			contentViewerOpen.set(true);
-
 			// Reset to first available tab
 			const tabs = availableTabs();
 			if (tabs.length > 0) {
@@ -134,8 +132,6 @@
 				};
 			}
 		} else {
-			contentViewerOpen.set(false);
-
 			// Remove keyboard listener
 			if (browser) {
 				window.removeEventListener('keydown', handleKeydown);

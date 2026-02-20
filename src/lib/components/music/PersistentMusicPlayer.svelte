@@ -512,12 +512,12 @@
 	});
 </script>
 
-{#if $playerVisible && !$radioMode}
+{#if !$radioMode}
 	<div
 		class="music-player fixed bottom-0 left-0 right-0 {$sectionModalOpen ? 'z-[60]' : 'z-50'} bg-gray-900/95 backdrop-blur-md border-t border-white/10 shadow-2xl"
 		class:minimized={$playerMinimized}
-		class:modal-visible={$playerMinimized && $sectionModalOpen}
-		transition:slide={{ duration: 300 }}>
+		class:modal-visible={$playerMinimized && $sectionModalOpen && $playerVisible}
+		class:player-hidden={!$playerVisible}>
 		
 		<!-- Persistent waveform container - always present -->
 		<div bind:this={container} class="waveform-container" style="position: absolute; top: -1000px; width: 300px; height: 50px; visibility: hidden;"></div>
@@ -810,11 +810,11 @@
 					</button>
 
 					<button
-						onclick={closePlayer}
+						onclick={() => hidePlayer()}
 						class="p-2 hover:bg-white/10 rounded-full transition-colors"
-						title="Close player"
+						title="Hide player"
 					>
-						<Icon icon="mdi:close" width={16} height={16} class="text-gray-400" />
+						<Icon icon="mdi:chevron-down" width={16} height={16} class="text-gray-400" />
 					</button>
 				</div>
 			</div>
@@ -924,12 +924,20 @@
 		transition: opacity 0.3s ease-in-out;
 	}
 
-	/* Mobile: Animate player sliding out when minimized (keeps DOM alive so music continues) */
-	@media (max-width: 768px) {
-		.music-player {
-			transition: transform 0.3s ease, opacity 0.3s ease;
-		}
+	/* Animate player sliding in/out */
+	.music-player {
+		transition: transform 0.3s ease, opacity 0.3s ease;
+	}
 
+	/* Hidden state: player slides off-screen but stays in DOM so audio continues */
+	.music-player.player-hidden {
+		transform: translateY(100%);
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	/* Mobile: slide out when minimized (keeps DOM alive so music continues) */
+	@media (max-width: 768px) {
 		.music-player.minimized {
 			transform: translateY(100%);
 			opacity: 0;

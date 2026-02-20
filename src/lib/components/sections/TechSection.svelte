@@ -14,6 +14,7 @@
 	import TechStackCard from '$lib/components/tech/TechStackCard.svelte';
 	import VideoEmbed from '$lib/components/media/VideoEmbed.svelte';
 	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
+	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import SkeletonImage from '$lib/components/ui/SkeletonImage.svelte';
 
 	const titleLetters = 'Tech'.split('');
@@ -242,6 +243,10 @@
 	function handleKeydown(event) {
 		if (!detailModalOpen) return;
 		if (event.key === 'Escape') {
+			// Don't close if ContentViewerModal is open on top
+			let viewerOpen = false;
+			contentViewerOpen.subscribe(v => viewerOpen = v)();
+			if (viewerOpen) return;
 			handleModalClose();
 		}
 	}
@@ -467,8 +472,8 @@
 								{#if selectedProject.description}
 									<div class="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed">
 										{@html sanitizeHtml(selectedProject.description, {
-											ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h3', 'h4', 'code', 'pre'],
-											ALLOWED_ATTR: ['href', 'target', 'rel']
+											ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'code', 'pre', 'div', 'span'],
+											ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'dir', 'id']
 										})}
 									</div>
 								{/if}
@@ -1031,5 +1036,45 @@
 	@keyframes tech-tab-fadein {
 		from { opacity: 0; }
 		to { opacity: 1; }
+	}
+
+	/* Rich content styling for project descriptions */
+	.prose :global(ul) {
+		padding-left: 1.5rem;
+		margin-bottom: 0.75rem;
+		list-style-type: disc;
+	}
+
+	.prose :global(ol) {
+		padding-left: 1.5rem;
+		margin-bottom: 0.75rem;
+		list-style-type: decimal;
+	}
+
+	.prose :global(li) {
+		margin-bottom: 0.25rem;
+	}
+
+	.prose :global(p) {
+		margin-bottom: 0.75rem;
+	}
+
+	.prose :global(p:last-child) {
+		margin-bottom: 0;
+	}
+
+	.prose :global(strong),
+	.prose :global(b) {
+		font-weight: 600;
+		color: #fff;
+	}
+
+	.prose :global(a) {
+		color: #22d3ee;
+		text-decoration: underline;
+	}
+
+	.prose :global(a:hover) {
+		color: #67e8f9;
 	}
 </style>

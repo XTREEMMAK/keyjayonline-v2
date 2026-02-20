@@ -4,7 +4,7 @@
 	import Hero from '$lib/components/layout/Hero.svelte';
 	import NeumorphicNavbar from '$lib/components/ui/NeumorphicNavbar.svelte';
 	import SpinningPlayButton from '$lib/components/music/SpinningPlayButton.svelte';
-	import { showPlayer, loadRandomTrack, playerVisible, isPlaying, dynamicPlaylist, playDynamicPlaylist } from '$lib/stores/musicPlayer.js';
+	import { showPlayer, loadRandomTrack, playerVisible, isPlaying, currentTrack, dynamicPlaylist, playDynamicPlaylist } from '$lib/stores/musicPlayer.js';
 	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import {
@@ -191,8 +191,10 @@
 
 	const pageDescription = $derived(sectionDescriptions[$activeSection] || sectionDescriptions.home);
 
-	// Show play button when on music section AND player is not visible (desktop only)
-	const showPlayButton = $derived($activeSection === 'music' && !$playerVisible);
+	// Show play button when on music section AND player is not visible AND no active track (desktop only)
+	const showPlayButton = $derived($activeSection === 'music' && !$playerVisible && !$currentTrack);
+	// Show restore button when player is hidden but has an active track (any section, desktop only)
+	const showRestoreButton = $derived(!$playerVisible && !!$currentTrack);
 
 	function handlePlayButtonClick() {
 		const dynTracks = get(dynamicPlaylist);
@@ -202,6 +204,10 @@
 			loadRandomTrack();
 			showPlayer();
 		}
+	}
+
+	function handleRestorePlayer() {
+		showPlayer();
 	}
 
 	// Show scroll button when scrolled down (desktop only), hidden when modals are open
@@ -482,11 +488,26 @@
 	</div>
 {/if}
 
+<!-- Restore Player Button (Desktop Only) - Shows when player is hidden but has an active track -->
+{#if showRestoreButton}
+	<button
+		class="fixed-restore-button desktop-only"
+		class:playing={$isPlaying}
+		onclick={handleRestorePlayer}
+		aria-label="Show player"
+		title="Show player"
+		in:fade={{ duration: 300 }}
+		out:fade={{ duration: 200 }}
+	>
+		<Icon icon="mdi:music-circle" width={28} height={28} class="text-white" />
+	</button>
+{/if}
+
 <!-- Fixed Scroll to Top Button (Desktop Only) - Above play button -->
 {#if showScrollButton}
 	<button
 		class="fixed-scroll-button desktop-only"
-		style="bottom: {$activeSection === 'music' ? ($playerVisible ? '76px' : '188px') : '76px'}; right: {$activeSection === 'music' && !$playerVisible ? '76px' : '44px'};"
+		style="bottom: {showRestoreButton ? '120px' : $activeSection === 'music' ? ($playerVisible ? '76px' : '188px') : '76px'}; right: {$activeSection === 'music' && !$playerVisible && !showRestoreButton ? '76px' : '44px'};"
 		onclick={handleScrollToTop}
 		aria-label="Scroll to top"
 		in:fade={{ duration: 300 }}
@@ -558,6 +579,67 @@
 			}
 			50% {
 				filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
+			}
+		}
+
+		/* Fixed Restore Player Button */
+		.fixed-restore-button {
+			position: fixed;
+			bottom: 56px;
+			right: 44px;
+			z-index: 35;
+			width: 48px;
+			height: 48px;
+			border-radius: 50%;
+			background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
+			border: none;
+			display: grid;
+			place-items: center;
+			cursor: pointer;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		.fixed-restore-button:hover {
+			transform: scale(1.1);
+			box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4),
+			           0 0 20px rgba(124, 58, 237, 0.5);
+		}
+
+		.fixed-restore-button:active {
+			transform: scale(0.95);
+		}
+
+		.fixed-restore-button.playing {
+			animation: restore-ring 2s ease-out infinite;
+		}
+
+		.fixed-restore-button.playing::before {
+			content: '';
+			position: absolute;
+			inset: -4px;
+			border-radius: 50%;
+			border: 2px solid rgba(124, 58, 237, 0.6);
+			animation: restore-expand 2s ease-out infinite;
+		}
+
+		@keyframes restore-ring {
+			0%, 100% {
+				box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.5);
+			}
+			50% {
+				box-shadow: 0 0 0 8px rgba(124, 58, 237, 0);
+			}
+		}
+
+		@keyframes restore-expand {
+			0% {
+				transform: scale(1);
+				opacity: 1;
+			}
+			100% {
+				transform: scale(1.5);
+				opacity: 0;
 			}
 		}
 

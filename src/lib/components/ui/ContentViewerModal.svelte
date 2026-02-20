@@ -28,7 +28,6 @@
 		title = '',
 		onClose = () => {},
 		loading = false,
-		manageOverlayStore = true,
 		canDownload = false
 	} = $props();
 
@@ -655,7 +654,7 @@
 			resetInactivityTimer();
 
 			// Update store to hide navbar and scroll button (skip if parent modal handles it)
-			if (manageOverlayStore) contentViewerOpen.set(true);
+			contentViewerOpen.set(true);
 
 			// Lock body scroll when modal is open
 			if (browser) {
@@ -712,7 +711,7 @@
 			}
 		} else {
 			// Update store to show navbar and scroll button again (skip if parent modal handles it)
-			if (manageOverlayStore) contentViewerOpen.set(false);
+			contentViewerOpen.set(false);
 
 			// Remove keyboard listener
 			if (browser) {

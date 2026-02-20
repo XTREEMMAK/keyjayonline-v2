@@ -327,7 +327,6 @@
 	title={viewerTitle}
 	loading={viewerLoading}
 	onClose={closeContentViewer}
-	manageOverlayStore={!detailModalOpen}
 	canDownload={true}
 />
 
