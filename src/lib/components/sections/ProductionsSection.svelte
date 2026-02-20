@@ -428,23 +428,25 @@
 										{/if}
 									</div>
 
-									<div class="flex flex-col items-center gap-4">
+									<div class="w-full flex flex-wrap justify-center items-center gap-4">
 										{#each (featuredProduction.actions || []).filter(a => a.isPrimary) as action}
 											{#if action.actionType === 'external_link'}
-												<a href={action.url} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<a href={action.url} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-8 py-3 bg-gradient-to-r {action.actionType === 'audio_player' ? 'from-green-600 to-emerald-600' : 'from-orange-600 to-red-600'} text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
 													<Icon icon={action.icon} class="text-xl" />
 													{action.label}
 												</a>
 											{:else}
-												<button onclick={() => handleFeaturedAction(action)} class="neu-button-primary px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<button onclick={() => handleFeaturedAction(action)} class="neu-button-primary px-8 py-3 bg-gradient-to-r {action.actionType === 'audio_player' ? 'from-green-600 to-emerald-600' : 'from-orange-600 to-red-600'} text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
 													<Icon icon={action.icon} class="text-xl" />
 													{action.label}
 												</button>
 											{/if}
 										{/each}
-										{#if (featuredProduction.actions || []).filter(a => !a.isPrimary).length > 0}
-											<p class="text-xs text-gray-400 uppercase tracking-wider">Additional Links</p>
-											<div class="w-full flex flex-wrap justify-center gap-3">
+									</div>
+									{#if (featuredProduction.actions || []).filter(a => !a.isPrimary).length > 0}
+										<div class="w-full text-center mt-4">
+											<p class="text-xs text-gray-400 uppercase tracking-wider mb-3">Additional Links</p>
+											<div class="flex flex-wrap justify-center gap-3">
 												{#each (featuredProduction.actions || []).filter(a => !a.isPrimary) as action}
 													{#if action.actionType === 'external_link'}
 														<a href={action.url} target="_blank" rel="noopener noreferrer" class="neu-button px-5 py-2.5 text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2 text-sm">
@@ -459,8 +461,8 @@
 													{/if}
 												{/each}
 											</div>
-										{/if}
-									</div>
+										</div>
+									{/if}
 								</div>
 							</div>
 						</div>
