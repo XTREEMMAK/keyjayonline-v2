@@ -1,10 +1,12 @@
 <script>
 	import { onMount, onDestroy, tick } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import Icon from '@iconify/svelte';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
 	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
 	import ProductionDetailModal from '$lib/components/ui/ProductionDetailModal.svelte';
+	import ActionPickerModal from '$lib/components/ui/ActionPickerModal.svelte';
 	import { activeSection, navbarVisible } from '$lib/stores/navigation.js';
 	import { showSectionSubNav, hideSectionSubNav, productionsActiveFilter, portalScrollLock, sectionModalOpen, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
@@ -38,6 +40,13 @@
 	let detailModalOpen = $state(false);
 	let selectedProduction = $state(null);
 
+	// Action picker modal state (for grouped actions)
+	let actionPickerOpen = $state(false);
+	let actionPickerTitle = $state('');
+	let actionPickerActions = $state([]);
+	let actionPickerColor = $state('orange');
+	let actionPickerHandler = $state(null);
+
 	// Derived state from store
 	const sectionState = $derived($sectionData.productions);
 	const productionsData = $derived(sectionState.data || {});
@@ -67,6 +76,32 @@
 		productions[0] ||
 		null
 	);
+
+	// Group featured primary actions by type for dropdown condensing
+	const featuredViewerActions = $derived(
+		(featuredProduction?.actions || []).filter(a => a.actionType === 'viewer')
+	);
+	const featuredAudioActions = $derived(
+		(featuredProduction?.actions || []).filter(a => a.actionType === 'audio_player')
+	);
+
+	function openActionPicker(title, actions, color, handler) {
+		actionPickerTitle = title;
+		actionPickerActions = actions;
+		actionPickerColor = color;
+		actionPickerHandler = () => handler;
+	    actionPickerOpen = true;
+	}
+
+	function closeActionPicker() {
+		actionPickerOpen = false;
+	}
+
+	function handlePickerSelect(action) {
+		if (actionPickerHandler) {
+			actionPickerHandler()(action);
+		}
+	}
 
 	// Filter productions with MixItUp
 	function filterProductions(category) {
@@ -320,6 +355,16 @@
 	onAction={handleProductionAction}
 />
 
+<!-- Action Picker Modal (for grouped galleries/playlists) -->
+<ActionPickerModal
+	isOpen={actionPickerOpen}
+	title={actionPickerTitle}
+	actions={actionPickerActions}
+	accentColor={actionPickerColor}
+	onSelect={handlePickerSelect}
+	onClose={closeActionPicker}
+/>
+
 <!-- Gallery Viewer Modal -->
 <ContentViewerModal
 	isOpen={viewerOpen}
@@ -429,19 +474,30 @@
 									</div>
 
 									<div class="w-full flex flex-wrap justify-center items-center gap-4">
-										{#each (featuredProduction.actions || []).filter(a => a.isPrimary) as action}
-											{#if action.actionType === 'external_link'}
-												<a href={action.url} target="_blank" rel="noopener noreferrer" class="neu-button-primary px-8 py-3 bg-gradient-to-r {action.actionType === 'audio_player' ? 'from-green-600 to-emerald-600' : 'from-orange-600 to-red-600'} text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
-													<Icon icon={action.icon} class="text-xl" />
-													{action.label}
-												</a>
-											{:else}
-												<button onclick={() => handleFeaturedAction(action)} class="neu-button-primary px-8 py-3 bg-gradient-to-r {action.actionType === 'audio_player' ? 'from-green-600 to-emerald-600' : 'from-orange-600 to-red-600'} text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
-													<Icon icon={action.icon} class="text-xl" />
-													{action.label}
-												</button>
-											{/if}
-										{/each}
+										<!-- Audio actions: single button or picker -->
+										{#if featuredAudioActions.length === 1}
+											<button onclick={() => handleFeaturedAction(featuredAudioActions[0])} class="neu-button-primary px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<Icon icon={featuredAudioActions[0].icon} class="text-xl" />
+												{featuredAudioActions[0].label}
+											</button>
+										{:else if featuredAudioActions.length > 1}
+											<button onclick={() => openActionPicker('Listen', featuredAudioActions, 'green', handleFeaturedAction)} class="neu-button-primary px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<Icon icon="mdi:headphones" class="text-xl" />
+												Listen
+											</button>
+										{/if}
+										<!-- Viewer actions: single button or picker -->
+										{#if featuredViewerActions.length === 1}
+											<button onclick={() => handleFeaturedAction(featuredViewerActions[0])} class="neu-button-primary px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<Icon icon={featuredViewerActions[0].icon} class="text-xl" />
+												{featuredViewerActions[0].label}
+											</button>
+										{:else if featuredViewerActions.length > 1}
+											<button onclick={() => openActionPicker('View', featuredViewerActions, 'orange', handleFeaturedAction)} class="neu-button-primary px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<Icon icon="mdi:image-multiple" class="text-xl" />
+												View
+											</button>
+										{/if}
 									</div>
 									{#if (featuredProduction.actions || []).filter(a => !a.isPrimary).length > 0}
 										<div class="w-full text-center mt-4">
@@ -852,4 +908,5 @@
 	.testimonial-content :global(a:hover) {
 		color: #fdba74;
 	}
+
 </style>

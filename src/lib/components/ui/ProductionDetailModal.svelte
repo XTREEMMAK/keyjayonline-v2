@@ -23,6 +23,7 @@
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { getExternalLinkIcon } from '$lib/utils/externalLinks.js';
 	import SkeletonImage from '$lib/components/ui/SkeletonImage.svelte';
+	import ActionPickerModal from '$lib/components/ui/ActionPickerModal.svelte';
 	// Props
 	let {
 		isOpen = false,
@@ -64,8 +65,34 @@
 	const secondaryActions = $derived(actions.filter(a => !a.isPrimary));
 	const hasActions = $derived(actions.length > 0);
 
+	// Group primary actions by type for dropdown condensing
+	const viewerActions = $derived(primaryActions.filter(a => a.actionType === 'viewer'));
+	const audioActions = $derived(primaryActions.filter(a => a.actionType === 'audio_player'));
+
+	// Action picker modal state
+	let actionPickerOpen = $state(false);
+	let actionPickerTitle = $state('');
+	let actionPickerActions = $state([]);
+	let actionPickerColor = $state('orange');
+
+	function openActionPicker(title, actions, color) {
+		actionPickerTitle = title;
+		actionPickerActions = actions;
+		actionPickerColor = color;
+		actionPickerOpen = true;
+	}
+
+	function closeActionPicker() {
+		actionPickerOpen = false;
+	}
+
+	function handlePickerSelect(action) {
+		onAction(action);
+	}
+
 	// Close modal
 	function handleClose() {
+		closeActionPicker();
 		popModalState(); // Go back in history if we pushed a state
 		onClose();
 	}
@@ -80,6 +107,8 @@
 		if (!isOpen) return;
 
 		if (event.key === 'Escape') {
+			// Don't close if ActionPickerModal is open on top
+			if (actionPickerOpen) return;
 			// Don't close if ContentViewerModal is open on top
 			let viewerOpen = false;
 			contentViewerOpen.subscribe(v => viewerOpen = v)();
@@ -167,6 +196,16 @@
 	}
 
 </script>
+
+<!-- Action Picker Modal (for grouped galleries/playlists) -->
+<ActionPickerModal
+	isOpen={actionPickerOpen}
+	title={actionPickerTitle}
+	actions={actionPickerActions}
+	accentColor={actionPickerColor}
+	onSelect={handlePickerSelect}
+	onClose={closeActionPicker}
+/>
 
 {#if isOpen && production}
 	<!-- Backdrop -->
@@ -485,29 +524,56 @@
 						<!-- Action Footer -->
 						{#if hasActions}
 							<div class="border-t border-white/10 pt-6 mt-8">
-								<!-- Primary Actions -->
+								<!-- Primary Actions (grouped by type) -->
 								{#if primaryActions.length > 0}
 									<div class="flex flex-wrap justify-center gap-4 mb-6">
-										{#each primaryActions as action}
-											{#if action.actionType === 'external_link'}
-												<a
-													href={action.url}
-													target="_blank"
-													rel="noopener noreferrer"
-													class="px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-900/30"
-												>
-													<Icon icon={action.icon} class="text-xl" />
-													{action.label}
-												</a>
-											{:else}
-												<button
-													onclick={() => onAction(action)}
-													class="px-10 py-4 bg-gradient-to-r {action.actionType === 'audio_player' ? 'from-green-600 to-emerald-600 shadow-green-900/30' : 'from-orange-600 to-red-600 shadow-orange-900/30'} text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
-												>
-													<Icon icon={action.icon} class="text-xl" />
-													{action.label}
-												</button>
-											{/if}
+										<!-- Audio actions: single button or picker -->
+										{#if audioActions.length === 1}
+											<button
+												onclick={() => onAction(audioActions[0])}
+												class="px-10 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-green-900/30"
+											>
+												<Icon icon={audioActions[0].icon} class="text-xl" />
+												{audioActions[0].label}
+											</button>
+										{:else if audioActions.length > 1}
+											<button
+												onclick={() => openActionPicker('Listen', audioActions, 'green')}
+												class="px-10 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-green-900/30"
+											>
+												<Icon icon="mdi:headphones" class="text-xl" />
+												Listen
+											</button>
+										{/if}
+										<!-- Viewer actions: single button or picker -->
+										{#if viewerActions.length === 1}
+											<button
+												onclick={() => onAction(viewerActions[0])}
+												class="px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-900/30"
+											>
+												<Icon icon={viewerActions[0].icon} class="text-xl" />
+												{viewerActions[0].label}
+											</button>
+										{:else if viewerActions.length > 1}
+											<button
+												onclick={() => openActionPicker('View', viewerActions, 'orange')}
+												class="px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-900/30"
+											>
+												<Icon icon="mdi:image-multiple" class="text-xl" />
+												View
+											</button>
+										{/if}
+										<!-- Primary external links (rendered directly) -->
+										{#each primaryActions.filter(a => a.actionType === 'external_link') as action}
+											<a
+												href={action.url}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-900/30"
+											>
+												<Icon icon={action.icon} class="text-xl" />
+												{action.label}
+											</a>
 										{/each}
 									</div>
 								{/if}
@@ -648,4 +714,5 @@
 		-ms-overflow-style: none;
 		scrollbar-width: none;
 	}
+
 </style>
