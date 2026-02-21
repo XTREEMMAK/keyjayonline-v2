@@ -156,10 +156,8 @@
 		return groups;
 	});
 
-	// Whether selected project has media content (embeds or gallery)
-	const hasMedia = $derived(
-		(selectedProject?.embeds?.length > 0) || !!selectedProject?.gallery
-	);
+	// Whether selected project has media embeds (gallery is a separate action button)
+	const hasMedia = $derived(selectedProject?.embeds?.length > 0);
 
 	// Whether selected project has tech stack data (relational or legacy)
 	const hasTechStack = $derived(
@@ -569,7 +567,7 @@
 								class="px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base neu-button text-white rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
 							>
 								<Icon icon="mdi:view-gallery" class="text-xl" />
-								Gallery{#if selectedProject.gallery.title}: {selectedProject.gallery.title}{/if}
+								{selectedProject.gallery.title || 'Gallery'}
 							</button>
 						{/if}
 					</div>
@@ -841,10 +839,10 @@
 									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
 										{#each gridProjects as project (project.id)}
 											<button
-												class="neu-card overflow-hidden hover:scale-[1.02] transition-transform duration-300 group cursor-pointer text-left w-full border-none bg-transparent p-0"
+												class="neu-card overflow-hidden hover:scale-[1.02] transition-transform duration-300 group cursor-pointer text-left w-full h-full border-none bg-transparent p-0 flex flex-col"
 												onclick={() => handleCardClick(project)}
 											>
-												<div class="aspect-video relative">
+												<div class="aspect-video relative overflow-hidden">
 													{#if project.cover_image}
 														<div class="w-full h-full group-hover:scale-110 transition-transform duration-500">
 															<SkeletonImage
@@ -873,7 +871,7 @@
 													</div>
 												</div>
 
-												<div class="p-6">
+												<div class="p-6 flex-1">
 													<h3 class="text-lg font-semibold text-white mb-1 line-clamp-1">{project.name}</h3>
 													{#if project.tagline}
 														<p class="text-gray-400 text-sm mb-4 line-clamp-2">{project.tagline}</p>

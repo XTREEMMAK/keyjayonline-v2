@@ -56,6 +56,9 @@
 			if (data.testimonials && data.testimonials.length > 0) {
 				testimonials = data.testimonials;
 			}
+			if (data.biography) {
+				biographyContent = data.biography;
+			}
 		} catch (error) {
 			console.error('Error fetching about data:', error);
 			// Keep fallback data if fetch fails
@@ -197,23 +200,12 @@
 	// CONTENT DATA
 	// ============================================================================
 
-	// Biography content for the general bio tab
-	const biography = {
+	// Biography content — fetched from Directus, with static image
+	let biographyContent = $state('');
+	const biography = $derived({
 		image: '/img/KJ_Bio.jpg',
-		content: `
-			Jamaal "Key Jay" Ephriam's journey into the world of music and entertainment began before he could even walk. Born into a family where music wasn't just appreciated but lived and breathed, he was surrounded by the rhythms, melodies, and harmonies that would shape his future. His parents, both accomplished musicians, recognized their son's innate musical ability early on and began nurturing his gift at the tender age of five.
-
-			What started as formal piano lessons quickly evolved into something much greater. Young Jamaal didn't just learn to play notes; he learned to speak the language of music fluently. By his teenage years, he had expanded beyond classical piano to master keyboards, vocals, and guitar, developing a versatility that would become his signature. His musical palette grew to encompass jazz, R&B, hip hop, rock, gospel, and electronic music – each genre adding new colors to his creative canvas.
-
-			But Jamaal's talents weren't confined to just performance. His curiosity led him to the technical side of music, where he discovered a passion for production, composition, and arrangement. College years at Florida International University saw him diving deep into professional audio recording, but also unexpectedly opening doors to the world of technology and programming. This unique combination of artistic creativity and technical expertise would set him apart in an increasingly digital creative landscape.
-
-			The evolution from musician to multi-disciplinary creative was organic. Web development skills acquired during a high school competition – where he became a finalist in a 5-hour live website design challenge – merged with his audio expertise to create innovative digital experiences. He composed music for video games like "Dies Irae," developed websites for creative projects, and even ventured into creating his own intellectual properties with KJC Comix and the audio drama series "FLUR: Blades of the Universe."
-
-			Today, as the force behind KEY JAY ONLINE and a key player at 4 Media Central, LLC, Jamaal continues to push boundaries across multiple creative frontiers. His performances at venues like the Miami Music Festival, Hard Rock, and Transit Lounge showcase his dynamic stage presence, while his work in voice acting, video production, and creative direction demonstrates his range as a complete creative professional.
-
-			What sets Jamaal apart isn't just his technical skill or creative vision – it's his philosophy of authentic expression and genuine connection. Whether he's producing a track, developing a website, voicing a character, or directing a creative project, he brings the same passion and dedication that first drew him to that piano as a five-year-old child. His motto, "Don't think, just play," isn't just about music; it's about approaching all creative endeavors with spontaneity, trust in one's instincts, and joy in the process.
-		`
-	};
+		content: biographyContent
+	});
 
 	// Professional journey milestones by category - fetched from API
 	let milestones = $state({
@@ -477,20 +469,8 @@
 									</div>
 								</div>
 								<div class="lg:w-1/2 lg:flex-grow prose prose-xl prose-invert max-w-none">
-									<div class="text-gray-100 leading-relaxed space-y-6 text-lg">
-										{#each biography.content.trim().split('\n\n') as paragraph, i}
-											{#if paragraph.trim()}
-												<p
-													use:observeElement={`bio-p-${i}`}
-													class="mb-6 transition-all duration-700 transform {
-														visibleElements.has(`bio-p-${i}`) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-													}"
-													style="transition-delay: {i * 100}ms"
-												>
-													{paragraph.trim()}
-												</p>
-											{/if}
-										{/each}
+									<div class="text-gray-100 leading-relaxed space-y-6 text-lg bio-content">
+										{@html biography.content}
 									</div>
 								</div>
 							</div>
