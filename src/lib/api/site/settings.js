@@ -45,7 +45,8 @@ export async function getSiteSettings() {
             'tech_page_disabled',
             'voice_page_disabled',
             'production_page_disabled',
-            'kj_radio_on'
+            'kj_radio_on',
+            'ga_measurement_id'
           ],
           limit: 1
         })
@@ -159,9 +160,14 @@ export async function getSiteSettings() {
       display_order: platform.display_order || 0
     }));
 
+    // Validate GA measurement ID format (defense-in-depth for {@html} injection)
+    const gaId = siteConfig.ga_measurement_id;
+    const validGaId = gaId && /^G-[A-Z0-9]+$/.test(gaId) ? gaId : null;
+
     const result = {
       status: siteConfig.status?.toLowerCase() || 'live', // Normalize to lowercase: 'live' or 'maintenance'
       radioEnabled: siteConfig.kj_radio_on || false,
+      gaMeasurementId: validGaId,
       featuredWorks,
       socialLinks,
       supportPlatforms: processedSupportPlatforms,
@@ -203,6 +209,7 @@ export async function getSiteSettings() {
     const fallbackResult = {
       status: 'live',
       radioEnabled: false,
+      gaMeasurementId: null,
       featuredWorks: [], // Empty array if database is unavailable
       socialLinks: [], // Empty array if database is unavailable
       supportPlatforms: [], // Empty array if database is unavailable

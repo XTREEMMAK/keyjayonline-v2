@@ -50,10 +50,14 @@
 		return () => clearTimeout(timer);
 	});
 
-	// Scroll to top after navigation (except for hash links)
-	afterNavigate(() => {
+	// Scroll to top after navigation (except for hash links) + GA4 page view tracking
+	afterNavigate(({ to }) => {
 		if (!window.location.hash) {
 			window.scrollTo(0, 0);
+		}
+		// Track page view in GA4 for SPA navigation (e.g. /share/* routes)
+		if (typeof gtag === 'function' && to?.url) {
+			gtag('event', 'page_view', { page_path: to.url.pathname });
 		}
 	});
 </script>
@@ -109,6 +113,16 @@
 		"knowsAbout": ["Music Production", "Voice Acting", "Web Development", "Game Development"]
 	}
 	</script>`}
+	<!-- Google Analytics 4 -->
+	{#if data?.siteSettings?.gaMeasurementId}
+		{@html `<script async src="https://www.googletagmanager.com/gtag/js?id=${data.siteSettings.gaMeasurementId}"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', '${data.siteSettings.gaMeasurementId}');
+		</script>`}
+	{/if}
 	<!-- Iconify web component (v2.1.0 adds noobserver attribute for modal scroll fix) -->
 	<script async src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </svelte:head>

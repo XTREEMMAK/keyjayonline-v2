@@ -1,5 +1,6 @@
 <script>
   import { browser } from '$app/environment';
+  import { deserialize } from '$app/forms';
   import { onMount, onDestroy } from 'svelte';
   import { writable } from 'svelte/store';
   import { step1Schema, step2Schema, step3Schema } from '$lib/schemas/contactForm.js';
@@ -218,7 +219,9 @@
         body: formData
       });
 
-      if (response.ok) {
+      const result = deserialize(await response.text());
+
+      if (result.type === 'success') {
         // Show success toast
         const Swal = await import('sweetalert2');
         Swal.default.fire({
@@ -239,13 +242,13 @@
           origin: { y: 0.6 },
           colors: ['#14b8a6', '#0891b2', '#10b981']
         });
-        
+
         // Reset form to step 1
         currentStep = 1;
         // Reset ReCaptcha
         recaptchaToken = null;
         recaptchaComponent?.reset();
-        
+
         // Reset form values
         formValues = {
           name: '',
@@ -259,15 +262,29 @@
           honeypot: '',
           recaptchaToken: ''
         };
-        
+
         // Clear any errors
         formErrors = {};
+      } else if (result.type === 'failure') {
+        const Swal = await import('sweetalert2');
+        Swal.default.fire({
+          icon: 'error',
+          title: 'Message Failed to Send',
+          text: result.data?.error || 'Sorry, there was an error. Please try again later.',
+          background: '#1f2937',
+          color: '#f3f4f6',
+          confirmButtonColor: '#14b8a6'
+        });
+
+        // Reset ReCaptcha on failure
+        recaptchaComponent?.reset();
+        recaptchaToken = null;
       } else {
-        throw new Error('Form submission failed');
+        throw new Error('Unexpected response');
       }
     } catch (error) {
       console.error('Form submission error:', error);
-      
+
       // Show error toast
       const Swal = await import('sweetalert2');
       Swal.default.fire({
@@ -278,7 +295,7 @@
         color: '#f3f4f6',
         confirmButtonColor: '#14b8a6'
       });
-      
+
       // Reset ReCaptcha on error
       recaptchaComponent?.reset();
       recaptchaToken = null;

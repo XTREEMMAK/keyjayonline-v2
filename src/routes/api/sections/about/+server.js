@@ -16,7 +16,8 @@ async function getBiography() {
       limit: 1
     })
   );
-  return results?.[0]?.biography || null;
+  const record = Array.isArray(results) ? results[0] : results;
+  return record?.biography || null;
 }
 
 export async function GET() {
