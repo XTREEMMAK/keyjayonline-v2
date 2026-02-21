@@ -96,7 +96,7 @@ services:
       CORS_ORIGIN: "true"
 
       # Assets
-      ASSETS_TRANSFORM_IMAGE_MAX_DIMENSION: "7500"
+      ASSETS_TRANSFORM_IMAGE_MAX_DIMENSION: "12000"
 
       # Storage Configuration
       # Default: local storage for development

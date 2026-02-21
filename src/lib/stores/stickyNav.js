@@ -51,7 +51,7 @@ export const sectionModalOpen = writable(false);
 // Section-specific active tab/filter stores (synced bidirectionally with section components)
 export const musicActiveView = writable('albums');
 export const musicActiveFilter = writable('all');
-export const techActiveTab = writable('stack');
+export const techActiveTab = writable('projects');
 export const productionsActiveFilter = writable('all');
 export const voiceActiveFilter = writable('all');
 
