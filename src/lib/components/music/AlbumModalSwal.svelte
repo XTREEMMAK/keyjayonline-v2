@@ -701,7 +701,7 @@ import {
 				const duration = document.getElementById(`duration-${trackId}`);
 				
 				// Setup standard event listeners using shared helper
-				setupTrackPlayerEvents(wavesurfer, { playBtn, currentTime, duration }, trackId);
+				setupTrackPlayerEvents(wavesurfer, { playBtn, currentTime, duration }, trackId, { title: trackTitle, artist: album.artist || 'Key Jay' });
 				
 			} catch (error) {
 				console.error('Error initializing WaveSurfer for track:', trackId, error);
@@ -763,7 +763,7 @@ import {
 				const duration = document.getElementById(`duration-mobile-${trackId}`);
 				
 				// Setup standard event listeners using shared helper with mobile prefix
-				setupTrackPlayerEvents(wavesurfer, { playBtn, currentTime, duration }, `mobile-${trackId}`);
+				setupTrackPlayerEvents(wavesurfer, { playBtn, currentTime, duration }, `mobile-${trackId}`, { title: trackTitle, artist: album.artist || 'Key Jay' });
 				
 			} catch (error) {
 				console.error('Error initializing WaveSurfer for mobile track:', trackId, error);

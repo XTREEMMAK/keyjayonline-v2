@@ -54,6 +54,44 @@ export function setupMediaSessionHandlers(wavesurfer) {
 }
 
 /**
+ * Setup Media Session action handlers bound directly to a media element.
+ * Use during background playback when WaveSurfer's internal state may be desynced
+ * (e.g. after setting mediaEl.src directly instead of wavesurfer.load()).
+ * @param {HTMLMediaElement} mediaEl - The audio/video element to control
+ */
+export function setupMediaSessionForElement(mediaEl) {
+	if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+
+	navigator.mediaSession.setActionHandler('play', () => {
+		pauseAllTrackPlayers();
+		mediaEl.play().catch(() => {});
+	});
+
+	navigator.mediaSession.setActionHandler('pause', () => {
+		mediaEl.pause();
+	});
+
+	navigator.mediaSession.setActionHandler('seekbackward', () => {
+		mediaEl.currentTime = Math.max(0, mediaEl.currentTime - 10);
+	});
+
+	navigator.mediaSession.setActionHandler('seekforward', () => {
+		const dur = mediaEl.duration;
+		if (Number.isFinite(dur)) {
+			mediaEl.currentTime = Math.min(dur, mediaEl.currentTime + 10);
+		}
+	});
+
+	navigator.mediaSession.setActionHandler('previoustrack', () => {
+		previousTrack();
+	});
+
+	navigator.mediaSession.setActionHandler('nexttrack', () => {
+		nextTrack();
+	});
+}
+
+/**
  * Update Media Session metadata for the current track.
  * Call whenever the track changes.
  * @param {Object} track - Track object with title, artist
@@ -96,7 +134,9 @@ export function updateMediaSessionPlaybackState(state) {
  */
 export function updateMediaSessionPosition(duration, position) {
 	if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
-	if (!navigator.mediaSession.setPositionState || duration <= 0) return;
+	if (!navigator.mediaSession.setPositionState) return;
+	if (!Number.isFinite(duration) || duration <= 0) return;
+	if (!Number.isFinite(position) || position < 0) position = 0;
 
 	try {
 		navigator.mediaSession.setPositionState({

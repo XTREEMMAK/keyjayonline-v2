@@ -8,6 +8,7 @@
 	import * as THREE from 'three';
 	import WaveSurfer from 'wavesurfer.js';
 	import { formatTime } from '$lib/utils/time.js';
+	import { setupMediaSessionForElement, updateMediaSessionMetadata, updateMediaSessionPlaybackState, updateMediaSessionPosition } from '$lib/utils/mediaSession.js';
 
 	let { data } = $props();
 	const { project, meta, siteSettings, socialLinks } = data;
@@ -190,6 +191,12 @@
 
 		function syncTime() {
 			currentTime = formatTime(mediaEl.currentTime);
+			if (!mediaEl.paused) {
+				const dur = mediaEl.duration;
+				if (Number.isFinite(dur) && dur > 0) {
+					updateMediaSessionPosition(dur, mediaEl.currentTime);
+				}
+			}
 		}
 
 		mediaEl.addEventListener('timeupdate', syncTime);
@@ -197,12 +204,16 @@
 		wavesurfer.on('play', () => {
 			isPlaying = true;
 			playbackInterval = setInterval(syncTime, 100);
+			setupMediaSessionForElement(mediaEl);
+			updateMediaSessionMetadata({ title: currentClip?.title || project.title, artist: project.clientName || 'Key Jay' }, null);
+			updateMediaSessionPlaybackState('playing');
 		});
 
 		wavesurfer.on('pause', () => {
 			isPlaying = false;
 			clearInterval(playbackInterval);
 			syncTime();
+			updateMediaSessionPlaybackState('paused');
 		});
 
 		wavesurfer.on('finish', () => {

@@ -5,7 +5,7 @@
 	import Icon from '@iconify/svelte';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { getPersistentPlayerConfig, pauseAllTrackPlayers } from '$lib/utils/wavesurfer-helpers.js';
-	import { setupMediaSessionHandlers, updateMediaSessionMetadata, updateMediaSessionPlaybackState } from '$lib/utils/mediaSession.js';
+	import { setupMediaSessionHandlers, setupMediaSessionForElement, updateMediaSessionMetadata, updateMediaSessionPlaybackState, updateMediaSessionPosition } from '$lib/utils/mediaSession.js';
 	import { activeSection } from '$lib/stores/navigation.js';
 	import {
 		playerVisible,
@@ -52,7 +52,179 @@
 	let wavesurferReady = $state(false);
 	let visualWavesurferReady = $state(false);
 	let thumbnailError = $state(false);
-	let isLoadingTrack = false; // Guard: ignore spurious 'finish' events during wavesurfer.load()
+	let isLoadingTrack = false; // Guard: ignore spurious ended events during load
+	let needsWavesurferResync = false; // Flag: background track advancement bypassed WaveSurfer load
+	let preloadedNext = null; // { httpUrl, blobUrl } — pre-fetched next track audio
+	let preloadingInProgress = false;
+	let loopPendingAdvance = false; // Loop Bridge: armed when near track end
+	let lastSyncedTime = 0; // Loop Bridge: last known playhead position
+	let showDebugLog = $state(false); // Toggle for debug log viewer
+	let debugLogEntries = $state([]); // Reactive copy for UI
+
+	// ── Dedicated Background Audio Element ──────────────────────────────────
+	// Completely separate from WaveSurfer to avoid interference during
+	// lock-screen track transitions. WaveSurfer's internal <audio> element
+	// fires its own events when src changes, which can corrupt playback state.
+	let bgAudioEl = null;
+	let bgSyncInterval = null;
+	let bgLoopArmed = false;
+	let bgLastTime = 0;
+
+	// Debug log for background playback diagnostics (survives lock screen)
+	function bgLog(msg) {
+		console.log('[BG]', msg);
+		try {
+			const log = JSON.parse(sessionStorage.getItem('kjo_bg_log') || '[]');
+			log.push(`${new Date().toISOString().slice(11,19)} ${msg}`);
+			if (log.length > 50) log.shift();
+			sessionStorage.setItem('kjo_bg_log', JSON.stringify(log));
+		} catch {}
+	}
+
+	/**
+	 * Create a FRESH background Audio element for each track transition.
+	 * Each handler checks `el === bgAudioEl` so stale elements (from the
+	 * previous track) don't corrupt state. The overlap between new element
+	 * starting and old element stopping keeps Chrome's audio focus alive.
+	 */
+	function createBgAudio() {
+		const el = document.createElement('audio');
+		el.preload = 'auto';
+
+		el.addEventListener('playing', () => {
+			if (el !== bgAudioEl) return;
+			if (el.paused) return;  // Spurious event guard (Bluetooth devices)
+			bgLog('bgEl: playing event');
+			isPlaying.set(true);
+			updateMediaSessionPlaybackState('playing');
+			if (!bgSyncInterval) {
+				bgSyncInterval = setInterval(bgSyncPlayhead, 100);
+			}
+		});
+
+		el.addEventListener('pause', () => {
+			if (el !== bgAudioEl) return;
+			if (!isLoadingTrack && !el.ended) {
+				bgLog('bgEl: pause event');
+				isPlaying.set(false);
+				clearInterval(bgSyncInterval);
+				bgSyncInterval = null;
+				bgSyncPlayhead();
+				updateMediaSessionPlaybackState('paused');
+			}
+		});
+
+		el.addEventListener('ended', () => {
+			if (el !== bgAudioEl) return;
+			if (isLoadingTrack) return;
+			bgLoopArmed = false;
+			el.loop = false;
+			clearInterval(bgSyncInterval);
+			bgSyncInterval = null;
+			bgLog('bgEl: ended→advance');
+			nextTrack();
+		});
+
+		el.addEventListener('seeked', () => {
+			if (el !== bgAudioEl) return;
+			if (!bgLoopArmed || el.currentTime > 1) return;
+			const dur = el.duration;
+			if (!Number.isFinite(dur) || bgLastTime < dur - 2) return;
+			bgLoopArmed = false;
+			el.loop = false;
+			clearInterval(bgSyncInterval);
+			bgSyncInterval = null;
+			bgLog('bgEl: loop→advance');
+			nextTrack();
+		});
+
+		el.addEventListener('error', () => {
+			if (el !== bgAudioEl) return;
+			bgLog('bgEl: error ' + (el.error?.message || el.error?.code || 'unknown'));
+		});
+
+		return el;
+	}
+
+	/** Release an old background audio element (stop playback, free resources). */
+	function releaseBgElement(el) {
+		if (!el) return;
+		try {
+			el.pause();
+			el.removeAttribute('src');
+			el.load();
+		} catch {}
+	}
+
+	/** Stop and reset the active background audio element. */
+	function cleanupBgAudio() {
+		clearInterval(bgSyncInterval);
+		bgSyncInterval = null;
+		bgLoopArmed = false;
+		bgLastTime = 0;
+		if (bgAudioEl) {
+			releaseBgElement(bgAudioEl);
+			bgAudioEl = null;
+		}
+	}
+
+	/** Sync playhead + Loop Bridge for the background audio element. */
+	function bgSyncPlayhead() {
+		if (!bgAudioEl) return;
+		const t = bgAudioEl.currentTime;
+		const dur = bgAudioEl.duration;
+		if (!Number.isFinite(dur) || dur <= 0) return;
+
+		// Loop Bridge: detect backwards jump (loop → restart at 0)
+		if (bgLoopArmed && t < 1 && bgLastTime > dur - 2) {
+			bgLoopArmed = false;
+			bgAudioEl.loop = false;
+			clearInterval(bgSyncInterval);
+			bgSyncInterval = null;
+			bgLog('bgEl: loop→advance (sync)');
+			nextTrack();
+			return;
+		}
+
+		playerPosition.set(t);
+		if (!bgAudioEl.paused) {
+			updateMediaSessionPosition(dur, t);
+		}
+
+		// Preload next track when ~80% done
+		if (t / dur > 0.8 && !preloadedNext && !preloadingInProgress) {
+			preloadingInProgress = true;
+			let tracks, idx;
+			playlist.subscribe(v => tracks = v)();
+			currentTrackIndex.subscribe(v => idx = v)();
+			if (tracks && tracks.length > 1) {
+				const nextIdx = (idx + 1) % tracks.length;
+				const nextUrl = getAudioUrl(tracks[nextIdx].audioUrl);
+				bgLog(`preloading idx=${nextIdx}`);
+				fetch(nextUrl)
+					.then(r => r.blob())
+					.then(blob => {
+						preloadedNext = { httpUrl: nextUrl, blobUrl: URL.createObjectURL(blob) };
+						bgLog('preload OK');
+					})
+					.catch(err => {
+						bgLog('preload FAIL ' + err.message);
+						preloadedNext = null;
+					})
+					.finally(() => { preloadingInProgress = false; });
+			} else {
+				preloadingInProgress = false;
+			}
+		}
+
+		// Loop Bridge: arm loop near track end
+		bgLastTime = t;
+		if ((dur - t) < 5 && !bgLoopArmed) {
+			bgLoopArmed = true;
+			bgAudioEl.loop = true;
+			bgLog('bgEl: loop armed, remaining=' + (dur - t).toFixed(1) + 's');
+		}
+	}
 
 	// Initialize wavesurfer when container becomes available
 	$effect(() => {
@@ -97,10 +269,74 @@
 
 			function syncPlayhead() {
 				const t = mediaEl.currentTime;
+				const dur = mediaEl.duration;
+				// Skip during track transition when duration is NaN or invalid
+				if (!Number.isFinite(dur) || dur <= 0) return;
+
+				// Loop Bridge: detect backwards jump (loop triggered, track restarted at 0).
+				// Must check BEFORE updating lastSyncedTime.
+				if (loopPendingAdvance && t < 1 && lastSyncedTime > dur - 2) {
+					loopPendingAdvance = false;
+					mediaEl.loop = false;
+					clearInterval(playbackInterval);
+					bgLog('loop→advance (sync), vis=' + document.visibilityState);
+					nextTrack();
+					return;
+				}
+
 				currentTime = formatTime(t);
 				playerPosition.set(t);
-				if (visualWavesurfer && visualWavesurfer.getDuration() > 0) {
-					visualWavesurfer.seekTo(t / mediaEl.duration);
+				// Only update visual waveform and media session when actively playing.
+				// Stray timeupdate events on paused elements must not fight with
+				// another active player's media session position updates.
+				if (!mediaEl.paused) {
+					if (visualWavesurfer && visualWavesurfer.getDuration() > 0) {
+						visualWavesurfer.seekTo(t / dur);
+					}
+					updateMediaSessionPosition(dur, t);
+				}
+
+				// Preload next track when ~80% done (while page is still active).
+				// Fetches as blob so background advancement can use blob URL
+				// (no network needed when track ends on locked screen).
+				if (t / dur > 0.8 && !preloadedNext && !preloadingInProgress) {
+					preloadingInProgress = true;
+					let tracks, idx;
+					playlist.subscribe(v => tracks = v)();
+					currentTrackIndex.subscribe(v => idx = v)();
+					if (tracks && tracks.length > 1) {
+						const nextIdx = (idx + 1) % tracks.length;
+						const nextUrl = getAudioUrl(tracks[nextIdx].audioUrl);
+						bgLog(`preloading idx=${nextIdx} ${tracks[nextIdx].title}`);
+						fetch(nextUrl)
+							.then(r => r.blob())
+							.then(blob => {
+								preloadedNext = {
+									httpUrl: nextUrl,
+									blobUrl: URL.createObjectURL(blob)
+								};
+								bgLog('preload OK');
+							})
+							.catch(err => {
+								bgLog('preload FAIL ' + err.message);
+								preloadedNext = null;
+							})
+							.finally(() => { preloadingInProgress = false; });
+					} else {
+						preloadingInProgress = false;
+					}
+				}
+
+				// Loop Bridge: arm loop when within 5s of track end.
+				// When the track reaches the end with loop=true, the browser
+				// fires 'seeked' (NOT 'ended'), keeping the audio element in
+				// a playing state. Chrome Android never sees "audio stopped"
+				// so the media notification persists across track transitions.
+				lastSyncedTime = t;
+				if ((dur - t) < 5 && !loopPendingAdvance) {
+					loopPendingAdvance = true;
+					mediaEl.loop = true;
+					bgLog('loop armed, remaining=' + (dur - t).toFixed(1) + 's');
 				}
 			}
 
@@ -110,27 +346,71 @@
 				console.log('Wavesurfer play event');
 				isPlaying.set(true);
 				// Poll at 10Hz as fallback for smooth updates on Android
+				clearInterval(playbackInterval);
 				playbackInterval = setInterval(syncPlayhead, 100);
+				// Re-register handlers so Android/Bluetooth controls point to this player
+				// (a track player may have overwritten them via setupMediaSessionForElement)
+				setupMediaSessionHandlers(wavesurfer);
+				updateMediaSessionMetadata($currentTrack, $currentTrackArtwork);
+				updateMediaSessionPlaybackState('playing');
+			});
+
+			// Native 'playing' event: safety net for background track transitions.
+			// When mediaEl.src is changed directly (bypassing WaveSurfer.load()),
+			// WaveSurfer may not emit its own 'play' event. The native 'playing'
+			// event fires reliably and ensures the sync interval is running.
+			mediaEl.addEventListener('playing', () => {
+				// Guard: on some Bluetooth devices (Tesla), a spurious 'playing' event
+				// fires after pause. Check mediaEl.paused to avoid flipping state back.
+				if (mediaEl.paused) return;
+				if (!playbackInterval) {
+					bgLog('native playing event → starting sync interval');
+					playbackInterval = setInterval(syncPlayhead, 100);
+				}
+				isPlaying.set(true);
 				updateMediaSessionPlaybackState('playing');
 			});
 
 			wavesurfer.on('pause', () => {
 				console.log('Wavesurfer pause event');
-				isPlaying.set(false);
-				clearInterval(playbackInterval);
-				syncPlayhead(); // Final sync on pause
-				updateMediaSessionPlaybackState('paused');
+				// Don't update state when a track ends naturally or during loading
+				// (src change fires pause before ended, and during load transitions)
+				if (!mediaEl.ended && !isLoadingTrack) {
+					isPlaying.set(false);
+					clearInterval(playbackInterval);
+					playbackInterval = null;
+					syncPlayhead();
+					updateMediaSessionPlaybackState('paused');
+				}
 			});
-			
-			wavesurfer.on('finish', () => {
-				// Ignore spurious 'finish' events emitted by wavesurfer.load()
-				// when it cleans up the old audio that was at the end position
+
+			// Loop Bridge: catch the loop-back seeked event and advance track.
+			// When loop is armed and track reaches the end, the browser loops
+			// to position 0 and fires 'seeked'. We detect this and call nextTrack().
+			mediaEl.addEventListener('seeked', () => {
+				if (!loopPendingAdvance || mediaEl.currentTime > 1) return;
+				const dur = mediaEl.duration;
+				// Guard against false positives (user seeking to start manually)
+				if (!Number.isFinite(dur) || lastSyncedTime < dur - 2) return;
+				loopPendingAdvance = false;
+				mediaEl.loop = false;
+				clearInterval(playbackInterval);
+				playbackInterval = null;
+				bgLog('loop→advance, vis=' + document.visibilityState);
+				nextTrack();
+			});
+
+			// Fallback: 'ended' fires only if loop bridge didn't catch it.
+			mediaEl.addEventListener('ended', () => {
 				if (isLoadingTrack) {
-					console.log('Ignoring spurious finish event during track loading');
+					bgLog('ended ignored (loading)');
 					return;
 				}
-				console.log('Wavesurfer finish event — advancing');
-				isPlaying.set(false);
+				loopPendingAdvance = false;
+				mediaEl.loop = false;
+				clearInterval(playbackInterval);
+				playbackInterval = null;
+				bgLog('ended→advance (fallback), vis=' + document.visibilityState);
 				nextTrack();
 			});
 			
@@ -138,7 +418,81 @@
 				console.error('Wavesurfer error:', error);
 				isLoading = false;
 			});
-			
+
+			// Transfer from bgAudioEl → WaveSurfer when returning from background
+			function handleVisibilityChange() {
+				if (document.visibilityState !== 'visible') return;
+				mediaEl.autoplay = false;
+
+				// If bgAudioEl was handling playback, transfer back to WaveSurfer
+				if (bgAudioEl && bgAudioEl.src) {
+					const wasPlaying = !bgAudioEl.paused;
+					const pos = bgAudioEl.currentTime;
+					const dur = bgAudioEl.duration;
+					bgLog(`transfer bgEl→ws pos=${pos.toFixed(1)} dur=${Number.isFinite(dur) ? dur.toFixed(1) : 'NaN'}`);
+
+					cleanupBgAudio();
+
+					let track;
+					currentTrack.subscribe(t => track = t)();
+					if (track?.audioUrl && wavesurfer) {
+						const url = getAudioUrl(track.audioUrl);
+						setupMediaSessionHandlers(wavesurfer);
+
+						isLoadingTrack = true;
+						wavesurfer.load(url).then(() => {
+							if (Number.isFinite(dur) && dur > 0) wavesurfer.seekTo(pos / dur);
+							if (wasPlaying) {
+								pauseAllTrackPlayers();
+								wavesurfer.play();
+							}
+
+							isLoadingTrack = false;
+							duration = formatTime(dur);
+							playerDuration.set(dur);
+						}).catch(err => {
+							console.error('Transfer load error:', err);
+							isLoadingTrack = false;
+						});
+					}
+					return;
+				}
+
+				// Fallback: resync WaveSurfer's own element (if bg path used mediaEl directly)
+				if (!needsWavesurferResync || !wavesurfer) return;
+				needsWavesurferResync = false;
+
+				let track;
+				currentTrack.subscribe(t => track = t)();
+				if (track?.audioUrl) {
+					bgLog('resync WaveSurfer: ' + track.title);
+					const url = getAudioUrl(track.audioUrl);
+					const pos = mediaEl.currentTime;
+					const dur = mediaEl.duration;
+					const wasPlaying = !mediaEl.paused;
+
+					setupMediaSessionHandlers(wavesurfer);
+
+					isLoadingTrack = true;
+					wavesurfer.load(url).then(() => {
+						if (Number.isFinite(dur) && dur > 0) wavesurfer.seekTo(pos / dur);
+						if (wasPlaying) {
+							pauseAllTrackPlayers();
+							wavesurfer.play();
+						}
+						isLoadingTrack = false;
+						duration = formatTime(dur);
+						playerDuration.set(dur);
+					}).catch(err => {
+						console.error('Resync load error:', err);
+						isLoadingTrack = false;
+					});
+				}
+			}
+			document.addEventListener('visibilitychange', handleVisibilityChange);
+
+			bgLog('init OK, ws=' + !!wavesurfer);
+
 			} catch (error) {
 				console.error('Failed to create wavesurfer:', error);
 			}
@@ -270,6 +624,9 @@
 		if (wavesurfer) {
 			wavesurfer.setVolume($volume);
 		}
+		if (bgAudioEl) {
+			bgAudioEl.volume = $volume;
+		}
 	});
 	
 	// Load track when wavesurfer becomes ready if track was set before
@@ -338,39 +695,140 @@
 		}
 
 		isLoading = true;
-		isLoadingTrack = true; // Block spurious 'finish' events during load
+		isLoadingTrack = true; // Block spurious ended events during load
+		loopPendingAdvance = false; // Reset loop bridge state for new track
 		const url = getAudioUrl(track.audioUrl);
-		console.log('loadTrack:', track.title, 'autoPlay:', autoPlay);
+		const isBackground = document.visibilityState === 'hidden';
+		bgLog(`loadTrack "${track.title}" auto=${autoPlay} bg=${isBackground}`);
+
+		// Clean up any stale preloaded data for a different URL
+		if (preloadedNext && preloadedNext.httpUrl !== url) {
+			URL.revokeObjectURL(preloadedNext.blobUrl);
+			preloadedNext = null;
+		}
 
 		try {
-			if (wavesurfer.isPlaying()) {
-				wavesurfer.pause();
-			}
+			if (isBackground) {
+				// ── Background: create a FRESH Audio element for each transition ──
+				// Changing src on an existing playing element causes a playback gap
+				// that Chrome sees as "audio stopped" → drops media notification.
+				// By creating a new element, we start it BEFORE stopping the old one
+				// (overlap), so Chrome never sees a gap in audio output.
+				const oldBg = bgAudioEl;
+				const bg = createBgAudio();
+				const effectiveUrl = preloadedNext?.blobUrl || url;
+				bgLog(`loadTrack→bgEl "${track.title}" src=${preloadedNext ? 'blob' : 'http'} newEl=true`);
 
-			await wavesurfer.load(url);
-			console.log('Track loaded:', track.title);
+				// Reset loop bridge state for new track
+				bgLoopArmed = false;
+				bgLastTime = 0;
+				clearInterval(bgSyncInterval);
+				bgSyncInterval = null;
 
-			// Sync visual wavesurfer
-			if (visualWavesurfer) {
-				try {
-					visualWavesurferReady = false;
-					await visualWavesurfer.load(url);
-				} catch (err) {
-					console.error('Visual wavesurfer load error:', err);
-					visualWavesurferReady = false;
+				// Set bgAudioEl to new element BEFORE play so handlers identify correctly
+				bgAudioEl = bg;
+
+				// Register media session handlers for the new background element
+				updateMediaSessionMetadata(track, null);
+				setupMediaSessionForElement(bg);
+
+				// Load and play new element
+				bg.src = effectiveUrl;
+				bg.volume = $volume;
+
+				if (autoPlay) {
+					try {
+						await bg.play();
+						bgLog('bgEl play() OK');
+						isPlaying.set(true);
+						updateMediaSessionPlaybackState('playing');
+					} catch (err) {
+						bgLog(`bgEl play() fail: ${err.name}`);
+						await new Promise(r => setTimeout(r, 100));
+						try {
+							await bg.play();
+							bgLog('bgEl play() retry OK');
+							isPlaying.set(true);
+							updateMediaSessionPlaybackState('playing');
+						} catch {
+							bg.autoplay = true;
+							bg.load();
+							bgLog('bgEl autoplay+load fallback');
+						}
+					}
 				}
-			}
 
-			if (autoPlay) {
-				console.log('Auto-playing:', track.title);
-				pauseAllTrackPlayers();
-				await wavesurfer.play();
+				// Stop OLD element AFTER new one is playing (overlap preserves audio focus)
+				if (oldBg) {
+					releaseBgElement(oldBg);
+					bgLog('released old bgEl');
+				}
+
+				// Pause WaveSurfer's element (bgAudioEl is now the audio source)
+				try {
+					const wsEl = wavesurfer.getMediaElement();
+					if (wsEl && !wsEl.paused) {
+						wsEl.pause();
+						wsEl.loop = false;
+					}
+				} catch {}
+
+				// Start sync interval on new bgAudioEl
+				bgSyncInterval = setInterval(bgSyncPlayhead, 100);
+
+				needsWavesurferResync = true;
+
+				// Extract artwork in background (non-blocking)
+				extractCoverArt(track.audioUrl).then(art => {
+					currentTrackArtwork.set(art);
+					updateMediaSessionMetadata(track, art);
+				}).catch(() => {});
+
+				preloadedNext = null;
+				preloadingInProgress = false;
+			} else {
+				// If returning from background playback, stop bgAudioEl
+				if (bgAudioEl) {
+					cleanupBgAudio();
+				}
+
+				const mediaEl = wavesurfer.getMediaElement();
+				mediaEl.loop = false;
+				// Foreground: full WaveSurfer load (blob fetch + decode + waveform)
+				if (wavesurfer.isPlaying()) {
+					wavesurfer.pause();
+				}
+
+				await wavesurfer.load(url);
+				console.log('Track loaded:', track.title);
+
+				// Sync visual wavesurfer
+				if (visualWavesurfer) {
+					try {
+						visualWavesurferReady = false;
+						await visualWavesurfer.load(url);
+					} catch (err) {
+						console.error('Visual wavesurfer load error:', err);
+						visualWavesurferReady = false;
+					}
+				}
+
+				if (autoPlay) {
+					console.log('Auto-playing:', track.title);
+					pauseAllTrackPlayers();
+					await wavesurfer.play();
+				}
+
+				// Clear preload state for next cycle
+				preloadedNext = null;
+				preloadingInProgress = false;
 			}
 		} catch (error) {
+			bgLog(`loadTrack error: ${error.message}`);
 			console.error('loadTrack error:', error, track.audioUrl);
 			isLoading = false;
 		} finally {
-			isLoadingTrack = false; // Re-enable finish event handling
+			isLoadingTrack = false; // Re-enable ended event handling
 		}
 	}
 	
@@ -393,6 +851,31 @@
 		console.log('Toggle play/pause. Current state - playing:', wavesurfer.isPlaying(), 'loaded:', wavesurfer.getDuration() > 0);
 		
 		try {
+			// If bgAudioEl still exists (e.g. user dismissed Android lock screen controls
+			// which paused it, then tapped play in the app), clean it up and let WaveSurfer
+			// take over to avoid two audio elements conflicting.
+			if (bgAudioEl) {
+				bgLog('togglePlayPause: cleaning up stale bgAudioEl');
+				const bgPos = bgAudioEl.currentTime;
+				const bgDur = bgAudioEl.duration;
+				cleanupBgAudio();
+				needsWavesurferResync = false;
+				// Reload WaveSurfer with the current track at bgAudioEl's position
+				if ($currentTrack?.audioUrl) {
+					const url = getAudioUrl($currentTrack.audioUrl);
+					setupMediaSessionHandlers(wavesurfer);
+					isLoadingTrack = true;
+					await wavesurfer.load(url);
+					if (Number.isFinite(bgDur) && bgDur > 0) wavesurfer.seekTo(bgPos / bgDur);
+					isLoadingTrack = false;
+					duration = formatTime(bgDur);
+					playerDuration.set(bgDur);
+					pauseAllTrackPlayers();
+					await wavesurfer.play();
+					return;
+				}
+			}
+
 			if (wavesurfer.isPlaying()) {
 				console.log('Pausing playback');
 				wavesurfer.pause();
@@ -503,6 +986,11 @@
 	}
 	
 	onDestroy(() => {
+		cleanupBgAudio();
+		if (bgAudioEl) {
+			bgAudioEl.src = '';
+			bgAudioEl = null;
+		}
 		if (wavesurfer) {
 			wavesurfer.destroy();
 		}
@@ -510,6 +998,14 @@
 			visualWavesurfer.destroy();
 		}
 	});
+
+	function refreshDebugLog() {
+		try {
+			const log = JSON.parse(sessionStorage.getItem('kjo_bg_log') || '[]');
+			debugLogEntries = log;
+		} catch { debugLogEntries = []; }
+		showDebugLog = !showDebugLog;
+	}
 </script>
 
 {#if !$radioMode}
@@ -722,9 +1218,29 @@
 								Library
 							</button>
 						{/if}
+						<button
+							onclick={refreshDebugLog}
+							class="px-2 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-500 rounded-full transition-colors"
+							title="Toggle background playback debug log"
+						>
+							<Icon icon="mdi:bug" width={14} height={14} class="inline" />
+						</button>
 					</div>
 				</div>
-				
+
+				<!-- Debug Log Panel -->
+				{#if showDebugLog}
+					<div class="mt-2 max-h-40 overflow-y-auto bg-black/60 rounded-lg p-2 font-mono text-[10px] text-green-400 leading-tight" transition:slide={{ duration: 200 }}>
+						{#if debugLogEntries.length === 0}
+							<div class="text-gray-500">No log entries yet. Play a track and let it run.</div>
+						{:else}
+							{#each debugLogEntries as entry}
+								<div>{entry}</div>
+							{/each}
+						{/if}
+					</div>
+				{/if}
+
 				<!-- Playlist Panel -->
 				{#if showPlaylist && $playlist.length > 1}
 					<div class="mt-4 max-h-60 overflow-y-auto bg-gray-800/50 rounded-lg p-2" transition:slide={{ duration: 300 }}>

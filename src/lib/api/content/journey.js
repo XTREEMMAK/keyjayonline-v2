@@ -1,7 +1,7 @@
 /**
  * Professional Journey Content API
  *
- * Fetches professional journey milestones from Directus
+ * Fetches professional journey milestones, skills, and achievements from Directus
  * Supports categories: music, tech, creative, productions
  */
 
@@ -55,8 +55,8 @@ export async function getJourneyMilestones() {
 }
 
 /**
- * Fetches skills from Directus (if available)
- * @returns {Promise<Array|null>} Array of skills or null if not available
+ * Fetches skills from Directus, grouped by category
+ * @returns {Promise<Object|null>} Skills grouped by category or null if not available
  */
 export async function getSkills() {
   try {
@@ -67,19 +67,77 @@ export async function getSkills() {
         filter: {
           status: { _eq: 'published' }
         },
-        fields: ['id', 'name', 'metric', 'icon', 'display_order'],
-        sort: ['display_order']
+        fields: ['id', 'name', 'metric', 'icon', 'category', 'display_order'],
+        sort: ['category', 'display_order']
       })
     );
 
-    return skills.map(skill => ({
-      name: skill.name,
-      metric: skill.metric,
-      icon: skill.icon || 'mdi:star'
-    }));
+    const grouped = {
+      music: [],
+      tech: [],
+      creative: [],
+      productions: []
+    };
+
+    skills.forEach(skill => {
+      const category = skill.category || 'music';
+      if (grouped[category]) {
+        grouped[category].push({
+          name: skill.name,
+          metric: skill.metric,
+          icon: skill.icon || 'mdi:star'
+        });
+      }
+    });
+
+    return grouped;
 
   } catch (error) {
     console.error('Error fetching skills:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetches achievements from Directus, grouped by category
+ * @returns {Promise<Object|null>} Achievements grouped by category or null if not available
+ */
+export async function getAchievements() {
+  try {
+    const directus = getDirectusInstance();
+
+    const achievements = await directus.request(
+      readItems('kjov2_achievements', {
+        filter: {
+          status: { _eq: 'published' }
+        },
+        fields: ['id', 'title', 'description', 'icon', 'category', 'display_order'],
+        sort: ['category', 'display_order']
+      })
+    );
+
+    const grouped = {
+      music: [],
+      tech: [],
+      creative: [],
+      productions: []
+    };
+
+    achievements.forEach(achievement => {
+      const category = achievement.category || 'music';
+      if (grouped[category]) {
+        grouped[category].push({
+          title: achievement.title,
+          description: achievement.description,
+          icon: achievement.icon || 'mdi:trophy'
+        });
+      }
+    });
+
+    return grouped;
+
+  } catch (error) {
+    console.error('Error fetching achievements:', error);
     return null;
   }
 }

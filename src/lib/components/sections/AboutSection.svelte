@@ -42,7 +42,7 @@
 		}
 	});
 
-	// Fetch milestones and testimonials from API
+	// Fetch milestones, skills, achievements, and testimonials from API
 	async function fetchAboutData() {
 		try {
 			const response = await fetch('/api/sections/about');
@@ -52,6 +52,17 @@
 			const data = await response.json();
 			if (data.milestones) {
 				milestones = data.milestones;
+			}
+			if (data.skills) {
+				// Replace per-category only if API returned entries for that category
+				for (const category of ['music', 'tech', 'creative', 'productions']) {
+					if (data.skills[category]?.length > 0) {
+						skills[category] = data.skills[category];
+					}
+				}
+			}
+			if (data.achievements) {
+				achievements = data.achievements;
 			}
 			if (data.testimonials && data.testimonials.length > 0) {
 				testimonials = data.testimonials;
@@ -215,8 +226,8 @@
 		productions: []
 	});
 
-	// Skills and expertise with quantifiable metrics
-	const skills = {
+	// Skills — fetched from Directus (kjov2_skills), with hardcoded fallback
+	let skills = $state({
 		bio: [], // No skills section for bio tab
 		music: [
 			{ name: 'Music Production', metric: `${yearsOfMusicExperience}+ Years Experience`, icon: 'mdi:music-note' },
@@ -250,7 +261,15 @@
 			{ name: 'Direction', metric: 'Cast & Production', icon: 'mdi:movie-open' },
 			{ name: 'Collaboration', metric: 'Artists & Talent', icon: 'mdi:account-group' }
 		]
-	};
+	});
+
+	// Achievements — fetched from Directus (kjov2_achievements), WYSIWYG descriptions
+	let achievements = $state({
+		music: [],
+		tech: [],
+		creative: [],
+		productions: []
+	});
 
 	// Client testimonials - from Directus only (no fallback)
 	let testimonials = $state([]);
@@ -326,6 +345,9 @@
 						}
 						for (let i = 0; i < 6; i++) {
 							elementsToShow.push(`${tab}-skill-${i}`);
+						}
+						for (let i = 0; i < 6; i++) {
+							elementsToShow.push(`${tab}-achievement-${i}`);
 						}
 						for (let i = 0; i < 3; i++) {
 							elementsToShow.push(`${tab}-testimonial-${i}`);
@@ -513,16 +535,16 @@
 						</div>
 						{/if}
 
-						<!-- Skills & Metrics -->
+						<!-- Skills -->
 						{#if activeTab !== 'bio' && skills[activeTab] && skills[activeTab].length > 0}
 						<div class="mb-20">
-							<h3 class="text-2xl font-semibold text-white mb-8 text-center">Skills & Achievements</h3>
+							<h3 class="text-2xl font-semibold text-white mb-8 text-center">Skills & Expertise</h3>
 							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 								{#each skills[activeTab] as skill, index}
 									<div
 										use:observeElement={`${activeTab}-skill-${index}`}
-										class="neu-card p-6 hover:scale-[1.02] transition-all duration-700 transform {
-											visibleElements.has(`${activeTab}-skill-${index}`) ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+										class="neu-card p-6 about-card {
+											visibleElements.has(`${activeTab}-skill-${index}`) ? 'about-card-visible' : 'about-card-hidden'
 										}"
 										style="transition-delay: {index * 100}ms"
 									>
@@ -533,6 +555,34 @@
 											<h4 class="text-lg font-semibold text-white">{skill.name}</h4>
 										</div>
 										<p class="{getActiveTheme().text} font-bold text-xl">{skill.metric}</p>
+									</div>
+								{/each}
+							</div>
+						</div>
+						{/if}
+
+						<!-- Achievements -->
+						{#if activeTab !== 'bio' && achievements[activeTab] && achievements[activeTab].length > 0}
+						<div class="mb-20">
+							<h3 class="text-2xl font-semibold text-white mb-8 text-center">Achievements</h3>
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+								{#each achievements[activeTab] as achievement, index}
+									<div
+										use:observeElement={`${activeTab}-achievement-${index}`}
+										class="neu-card p-6 about-card {
+											visibleElements.has(`${activeTab}-achievement-${index}`) ? 'about-card-visible' : 'about-card-hidden'
+										}"
+										style="transition-delay: {index * 100}ms"
+									>
+										<div class="flex items-center gap-4 mb-4">
+											<div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br {getActiveTheme().accent} text-white rounded-lg">
+												<Icon icon={achievement.icon} class="text-2xl" />
+											</div>
+											<h4 class="text-xl font-semibold text-white">{achievement.title}</h4>
+										</div>
+										<div class="{getActiveTheme().text} achievement-content text-base leading-relaxed">
+											{@html achievement.description}
+										</div>
 									</div>
 								{/each}
 							</div>
@@ -711,6 +761,55 @@
 		box-shadow:
 			6px 6px 12px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
 			-6px -6px 12px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+	}
+
+	/* About card: split appear vs hover transitions for smooth interaction */
+	.about-card {
+		transition: opacity 700ms ease, transform 700ms ease;
+	}
+	.about-card-hidden {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	.about-card-visible {
+		opacity: 1;
+		transform: scale(1);
+	}
+	.about-card:hover {
+		transform: scale(1.05);
+		transition: transform 200ms ease-out;
+	}
+
+	/* Style HTML content from WYSIWYG achievement descriptions */
+	.achievement-content :global(p) {
+		margin-bottom: 0.5rem;
+	}
+	.achievement-content :global(p:last-child) {
+		margin-bottom: 0;
+	}
+	.achievement-content :global(strong),
+	.achievement-content :global(b) {
+		font-weight: 600;
+		color: #fff;
+	}
+	.achievement-content :global(em),
+	.achievement-content :global(i) {
+		font-style: italic;
+	}
+	.achievement-content :global(a) {
+		color: #818cf8;
+		text-decoration: underline;
+	}
+	.achievement-content :global(a:hover) {
+		color: #a5b4fc;
+	}
+	.achievement-content :global(ul),
+	.achievement-content :global(ol) {
+		margin-left: 1.25rem;
+		margin-bottom: 0.5rem;
+	}
+	.achievement-content :global(li) {
+		margin-bottom: 0.25rem;
 	}
 
 	/* Style HTML content from WYSIWYG editor */

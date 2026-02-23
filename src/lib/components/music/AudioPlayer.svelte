@@ -5,6 +5,7 @@
 	import { formatTime } from '$lib/utils/time.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { getAudioPlayerConfig, pauseOthersAndToggle, cleanupTrackPlayer, registerTrackPlayer } from '$lib/utils/wavesurfer-helpers.js';
+	import { setupMediaSessionForElement, updateMediaSessionMetadata, updateMediaSessionPlaybackState, updateMediaSessionPosition } from '$lib/utils/mediaSession.js';
 	import { addToDynamicPlaylist, removeFromDynamicPlaylist, playDynamicPlaylist, dynamicPlaylist, playlistSource, radioModalOpen, radioEnabled } from '$lib/stores/musicPlayer.js';
 	import { copyShareUrl } from '$lib/utils/shareLinks.js';
 
@@ -66,6 +67,14 @@
 
 		function syncTime() {
 			currentTime = formatTime(mediaEl.currentTime);
+			// Only update media session when actively playing — stray timeupdate
+			// events on paused elements fight with another player's position
+			if (!mediaEl.paused) {
+				const dur = mediaEl.duration;
+				if (Number.isFinite(dur) && dur > 0) {
+					updateMediaSessionPosition(dur, mediaEl.currentTime);
+				}
+			}
 		}
 
 		mediaEl.addEventListener('timeupdate', syncTime);
@@ -73,12 +82,17 @@
 		wavesurfer.on('play', () => {
 			isPlaying = true;
 			playbackInterval = setInterval(syncTime, 100);
+			// Update Bluetooth/lock screen controls with this track's info
+			setupMediaSessionForElement(mediaEl);
+			updateMediaSessionMetadata({ title: trackTitle, artist }, null);
+			updateMediaSessionPlaybackState('playing');
 		});
 
 		wavesurfer.on('pause', () => {
 			isPlaying = false;
 			clearInterval(playbackInterval);
 			syncTime();
+			updateMediaSessionPlaybackState('paused');
 		});
 
 		wavesurfer.on('finish', () => {

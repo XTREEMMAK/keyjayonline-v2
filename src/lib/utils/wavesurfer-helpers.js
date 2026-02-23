@@ -7,6 +7,7 @@
 
 import { formatTime } from './time.js';
 import { pauseMusic } from '$lib/stores/musicPlayer.js';
+import { setupMediaSessionForElement, updateMediaSessionMetadata, updateMediaSessionPlaybackState, updateMediaSessionPosition } from './mediaSession.js';
 
 /** @type {Map<string, WaveSurfer>} Registry of active track player instances */
 const trackPlayerRegistry = new Map();
@@ -113,21 +114,32 @@ export const PLAYER_ICONS = {
  * @param {HTMLElement} [elements.currentTime] - Current time display
  * @param {HTMLElement} [elements.duration] - Duration display
  * @param {string} trackId - Track identifier for global management
+ * @param {Object} [trackInfo] - Optional track metadata for Media Session (Bluetooth/lock screen)
+ * @param {string} [trackInfo.title] - Track title
+ * @param {string} [trackInfo.artist] - Artist name
  */
-export function setupTrackPlayerEvents(wavesurfer, elements, trackId) {
+export function setupTrackPlayerEvents(wavesurfer, elements, trackId, trackInfo) {
   const { playBtn, currentTime, duration } = elements;
-  
+
   // Standard event listeners
   wavesurfer.on('ready', () => {
     if (duration) duration.textContent = formatTime(wavesurfer.getDuration());
   });
-  
+
   // Use native media element events for reliable Android playback
   const mediaEl = wavesurfer.getMediaElement();
   let playbackInterval = null;
 
   function syncTime() {
     if (currentTime) currentTime.textContent = formatTime(mediaEl.currentTime);
+    // Only update media session when actively playing — stray timeupdate
+    // events on paused elements fight with another player's position
+    if (trackInfo && !mediaEl.paused) {
+      const dur = mediaEl.duration;
+      if (Number.isFinite(dur) && dur > 0) {
+        updateMediaSessionPosition(dur, mediaEl.currentTime);
+      }
+    }
   }
 
   mediaEl.addEventListener('timeupdate', syncTime);
@@ -135,22 +147,31 @@ export function setupTrackPlayerEvents(wavesurfer, elements, trackId) {
   wavesurfer.on('play', () => {
     if (playBtn) playBtn.innerHTML = PLAYER_ICONS.pause;
     playbackInterval = setInterval(syncTime, 100);
+    // Update Bluetooth/lock screen controls
+    if (trackInfo) {
+      setupMediaSessionForElement(mediaEl);
+      updateMediaSessionMetadata(trackInfo, null);
+      updateMediaSessionPlaybackState('playing');
+    }
   });
 
   wavesurfer.on('pause', () => {
     if (playBtn) playBtn.innerHTML = PLAYER_ICONS.play;
     clearInterval(playbackInterval);
     syncTime();
+    if (trackInfo) {
+      updateMediaSessionPlaybackState('paused');
+    }
   });
 
   wavesurfer.on('finish', () => {
     if (playBtn) playBtn.innerHTML = PLAYER_ICONS.play;
     clearInterval(playbackInterval);
   });
-  
+
   // Register instance for cross-player management
   trackPlayerRegistry.set(trackId, wavesurfer);
-  
+
   // Setup play button with global player management
   if (playBtn) {
     playBtn.onclick = () => pauseOthersAndToggle(wavesurfer, trackId);
