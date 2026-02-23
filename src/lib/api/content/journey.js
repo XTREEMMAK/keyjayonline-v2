@@ -76,7 +76,7 @@ export async function getSkills() {
           status: { _eq: 'published' }
         },
         fields: ['id', 'name', 'metric', 'icon', 'category', 'display_order'],
-        sort: ['category', 'display_order']
+        sort: ['display_order', 'category']
       })
     );
 

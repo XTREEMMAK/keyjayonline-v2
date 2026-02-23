@@ -512,7 +512,7 @@
 								{#each milestones[activeTab] || [] as milestone, index}
 									<div
 										use:observeElement={`${activeTab}-milestone-${index}`}
-										class="flex items-start gap-6 transition-all duration-700 transform {
+										class="flex items-start gap-6 transition-[opacity,transform] duration-700 transform {
 											visibleElements.has(`${activeTab}-milestone-${index}`) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
 										}"
 										style="transition-delay: {index * 150}ms"
@@ -522,7 +522,7 @@
 												<Icon icon={milestone.icon} class="text-2xl" />
 											</div>
 										</div>
-										<div class="flex-1 neu-card p-6 hover:scale-[1.02] transition-all duration-300">
+										<div class="flex-1 neu-card p-6 hover:scale-[1.02] transition-transform duration-200 ease-out">
 											<div class="flex items-center gap-3 mb-2">
 												<span class="{getActiveTheme().text} font-bold text-lg">{milestone.year}</span>
 											</div>
@@ -543,11 +543,12 @@
 								{#each skills[activeTab] as skill, index}
 									<div
 										use:observeElement={`${activeTab}-skill-${index}`}
-										class="neu-card p-6 about-card {
+										class="about-card {
 											visibleElements.has(`${activeTab}-skill-${index}`) ? 'about-card-visible' : 'about-card-hidden'
 										}"
 										style="transition-delay: {index * 100}ms"
 									>
+									<div class="neu-card p-6 h-full hover:scale-[1.05] transition-transform duration-200 ease-out">
 										<div class="flex items-center gap-4 mb-3">
 											<div class="flex items-center justify-center w-10 h-10 bg-gradient-to-br {getActiveTheme().accent} text-white rounded-lg">
 												<Icon icon={skill.icon} class="text-xl" />
@@ -555,6 +556,7 @@
 											<h4 class="text-lg font-semibold text-white">{skill.name}</h4>
 										</div>
 										<p class="{getActiveTheme().text} font-bold text-xl">{skill.metric}</p>
+									</div>
 									</div>
 								{/each}
 							</div>
@@ -569,11 +571,12 @@
 								{#each achievements[activeTab] as achievement, index}
 									<div
 										use:observeElement={`${activeTab}-achievement-${index}`}
-										class="neu-card p-6 about-card {
+										class="about-card {
 											visibleElements.has(`${activeTab}-achievement-${index}`) ? 'about-card-visible' : 'about-card-hidden'
 										}"
 										style="transition-delay: {index * 100}ms"
 									>
+									<div class="neu-card p-6 h-full hover:scale-[1.05] transition-transform duration-200 ease-out">
 										<div class="flex items-center gap-4 mb-4">
 											<div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br {getActiveTheme().accent} text-white rounded-lg">
 												<Icon icon={achievement.icon} class="text-2xl" />
@@ -583,6 +586,7 @@
 										<div class="{getActiveTheme().text} achievement-content text-base leading-relaxed">
 											{@html achievement.description}
 										</div>
+									</div>
 									</div>
 								{/each}
 							</div>
@@ -597,11 +601,12 @@
 								{#each testimonials.filter(t => activeTab === 'bio' || (t.serviceTypes && t.serviceTypes.includes(activeTab)) || (t.categories && t.categories.includes(activeTab))) as testimonial, index}
 									<div
 										use:observeElement={`${activeTab}-testimonial-${index}`}
-										class="neu-card p-8 hover:scale-[1.02] transition-all duration-700 transform {
+										class="transition-[opacity,transform] duration-700 {
 											visibleElements.has(`${activeTab}-testimonial-${index}`) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
 										}"
 										style="transition-delay: {index * 200}ms"
 									>
+									<div class="neu-card p-8 hover:scale-[1.02] transition-transform duration-200 ease-out h-full">
 										<div class="flex items-center mb-4">
 											{#each Array(testimonial.rating) as _}
 												<Icon icon="mdi:star" class="text-yellow-400 text-xl" />
@@ -640,6 +645,7 @@
 												</div>
 											</div>
 										</div>
+									</div>
 									</div>
 								{/each}
 							</div>
@@ -774,10 +780,6 @@
 	.about-card-visible {
 		opacity: 1;
 		transform: scale(1);
-	}
-	.about-card:hover {
-		transform: scale(1.05);
-		transition: transform 200ms ease-out;
 	}
 
 	/* Style HTML content from WYSIWYG achievement descriptions */
