@@ -2,10 +2,18 @@
  * Professional Journey Content API
  *
  * Fetches professional journey milestones, skills, and achievements from Directus
- * Supports categories: music, tech, creative, productions
+ * Supports categories: music, tech, voice, productions
  */
 
 import { getDirectusInstance, readItems } from '../core/client.js';
+
+/** Normalize Directus category values to match frontend keys */
+function normalizeCategory(category) {
+  const cat = (category || 'music').toLowerCase();
+  if (cat === 'creative') return 'voice';
+  if (cat === 'production') return 'productions';
+  return cat;
+}
 
 /**
  * Fetches all published journey milestones from Directus
@@ -29,12 +37,12 @@ export async function getJourneyMilestones() {
     const grouped = {
       music: [],
       tech: [],
-      creative: [],
+      voice: [],
       productions: []
     };
 
     milestones.forEach(milestone => {
-      const category = milestone.category || 'music';
+      const category = normalizeCategory(milestone.category);
       if (grouped[category]) {
         grouped[category].push({
           year: milestone.year_display || milestone.year, // Use year_display if available, fallback to year
@@ -75,12 +83,12 @@ export async function getSkills() {
     const grouped = {
       music: [],
       tech: [],
-      creative: [],
+      voice: [],
       productions: []
     };
 
     skills.forEach(skill => {
-      const category = skill.category || 'music';
+      const category = normalizeCategory(skill.category);
       if (grouped[category]) {
         grouped[category].push({
           name: skill.name,
@@ -119,12 +127,12 @@ export async function getAchievements() {
     const grouped = {
       music: [],
       tech: [],
-      creative: [],
+      voice: [],
       productions: []
     };
 
     achievements.forEach(achievement => {
-      const category = achievement.category || 'music';
+      const category = normalizeCategory(achievement.category);
       if (grouped[category]) {
         grouped[category].push({
           title: achievement.title,

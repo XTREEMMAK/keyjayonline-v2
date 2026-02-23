@@ -7,7 +7,7 @@
 		bio: { accent: 'from-emerald-600 to-blue-600' },
 		music: { accent: 'from-blue-600 to-purple-600' },
 		tech: { accent: 'from-cyan-600 to-green-600' },
-		creative: { accent: 'from-purple-600 to-pink-600' },
+		voice: { accent: 'from-purple-600 to-pink-600' },
 		productions: { accent: 'from-orange-600 to-amber-600' }
 	};
 
@@ -39,8 +39,8 @@
 									: 'text-gray-400 hover:text-white'
 							}"
 						>
-							<span class="hidden md:inline">{tab === 'bio' ? 'Biography' : tab === 'music' ? 'Music & Audio' : tab === 'tech' ? 'Technology' : tab === 'creative' ? 'Voice Acting' : 'Productions'}</span>
-							<span class="md:hidden">{tab === 'bio' ? 'Bio' : tab === 'music' ? 'Music' : tab === 'tech' ? 'Tech' : tab === 'creative' ? 'Voice' : 'Prods'}</span>
+							<span class="hidden md:inline">{tab === 'bio' ? 'Biography' : tab === 'music' ? 'Music & Audio' : tab === 'tech' ? 'Technology' : tab === 'voice' ? 'Voice Acting' : 'Productions'}</span>
+							<span class="md:hidden">{tab === 'bio' ? 'Bio' : tab === 'music' ? 'Music' : tab === 'tech' ? 'Tech' : tab === 'voice' ? 'Voice' : 'Prods'}</span>
 						</button>
 					{/each}
 				</div>

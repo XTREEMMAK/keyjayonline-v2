@@ -55,7 +55,7 @@
 			}
 			if (data.skills) {
 				// Replace per-category only if API returned entries for that category
-				for (const category of ['music', 'tech', 'creative', 'productions']) {
+				for (const category of ['music', 'tech', 'voice', 'productions']) {
 					if (data.skills[category]?.length > 0) {
 						skills[category] = data.skills[category];
 					}
@@ -191,7 +191,7 @@
 			text: 'text-cyan-400',
 			bg: 'bg-cyan-600/20'
 		},
-		creative: {
+		voice: {
 			gradient: 'from-purple-900 via-pink-900/20 to-gray-900',
 			accent: 'from-purple-600 to-pink-600',
 			border: 'border-purple-600',
@@ -222,13 +222,13 @@
 	let milestones = $state({
 		music: [],
 		tech: [],
-		creative: [],
+		voice: [],
 		productions: []
 	});
 
 	// Skills — fetched from Directus (kjov2_skills), with hardcoded fallback
 	let skills = $state({
-		bio: [], // No skills section for bio tab
+		bio: [],
 		music: [
 			{ name: 'Music Production', metric: `${yearsOfMusicExperience}+ Years Experience`, icon: 'mdi:music-note' },
 			{ name: 'Live Performance', metric: '10+ Venues', icon: 'mdi:microphone-variant' },
@@ -245,7 +245,7 @@
 			{ name: 'Audio Programming', metric: 'VST Plugins, MIDI Tools', icon: 'mdi:waveform' },
 			{ name: 'Database Systems', metric: 'SQL, MongoDB, Firebase', icon: 'mdi:database' }
 		],
-		creative: [
+		voice: [
 			{ name: 'Voice Acting', metric: '15+ Years Experience', icon: 'mdi:microphone' },
 			{ name: 'Character Range', metric: 'Heroes to Villains', icon: 'mdi:drama-masks' },
 			{ name: 'Video Games', metric: 'Multiple Titles', icon: 'mdi:gamepad-variant' },
@@ -267,7 +267,7 @@
 	let achievements = $state({
 		music: [],
 		tech: [],
-		creative: [],
+		voice: [],
 		productions: []
 	});
 
@@ -291,7 +291,7 @@
 			subtitle: 'Building Digital Experiences',
 			description: 'A decade of web development experience combined with audio engineering expertise allows me to create unique digital solutions. From VST plugin development to full-stack web applications, I bridge the gap between creative vision and technical implementation.'
 		},
-		creative: {
+		voice: {
 			title: 'Voice Acting',
 			subtitle: 'Bringing Characters to Life',
 			description: 'As a voice actor with credits spanning video games, animations, radio dramas, and commercial work, I bring authenticity and range to every character. From heroic protagonists to sinister villains, I deliver performances that connect with audiences.'
@@ -435,8 +435,8 @@
 									: 'text-gray-400 hover:text-white'
 							}"
 						>
-							<span class="hidden md:inline">{tab === 'bio' ? 'Biography' : tab === 'music' ? 'Music & Audio' : tab === 'tech' ? 'Technology' : tab === 'creative' ? 'Voice Acting' : 'Productions'}</span>
-							<span class="md:hidden">{tab === 'bio' ? 'Bio' : tab === 'music' ? 'Music' : tab === 'tech' ? 'Tech' : tab === 'creative' ? 'Voice' : 'Prods'}</span>
+							<span class="hidden md:inline">{tab === 'bio' ? 'Biography' : tab === 'music' ? 'Music & Audio' : tab === 'tech' ? 'Technology' : tab === 'voice' ? 'Voice Acting' : 'Productions'}</span>
+							<span class="md:hidden">{tab === 'bio' ? 'Bio' : tab === 'music' ? 'Music' : tab === 'tech' ? 'Tech' : tab === 'voice' ? 'Voice' : 'Prods'}</span>
 						</button>
 					{/each}
 				</div>
