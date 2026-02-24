@@ -93,7 +93,7 @@ services:
 
       # CORS
       CORS_ENABLED: "true"
-      CORS_ORIGIN: "true"
+      CORS_ORIGIN: ${DIRECTUS_CORS_ORIGIN:-true}
 
       # Assets
       ASSETS_TRANSFORM_IMAGE_MAX_DIMENSION: "12000"
@@ -146,17 +146,10 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        DIRECTUS_URL: http://kjo2_directus:8055
-        DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:-}
         PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://example.com}
         CDN_BASE_URL: ${CDN_BASE_URL:-}
         S3_BUCKET_URL: ${S3_BUCKET_URL:-}
-        USE_CDN_FOR_ASSETS: ${USE_CDN_FOR_ASSETS:-true}
         NODE_ENV: production
-        IGDB_CLIENT_ID: ${IGDB_CLIENT_ID:-placeholder}
-        IGDB_ACCESS_TOKEN: ${IGDB_ACCESS_TOKEN:-placeholder}
-        DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-placeholder}
-        DISCORD_USER_ID: ${DISCORD_USER_ID:-placeholder}
         PUBLIC_CONTACT_EMAIL: ${PUBLIC_CONTACT_EMAIL:-contact@example.com}
     image: ${REGISTRY_IMAGE:-kjo2_app}:${APP_VERSION:-latest}
     container_name: kjo2_app

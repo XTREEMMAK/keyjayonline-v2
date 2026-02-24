@@ -15,13 +15,7 @@ import {
 	getLegacySamples,
 	getStudioPhoto
 } from '$lib/api/index.js';
-
-// Helper to wrap promises with error handling
-const safePromise = (promise, name = 'Promise') =>
-	promise.catch((err) => {
-		console.error(`${name} failed:`, err);
-		return null;
-	});
+import { safePromise } from '$lib/utils/api.js';
 
 export async function GET() {
 	try {

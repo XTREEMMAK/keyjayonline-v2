@@ -24,10 +24,13 @@
 
 ## Sections
 
-- **About** - Bio, social links, featured work
+- **About** - Bio, social links, featured work, skills & achievements
 - **Music** - Albums, latest projects, new releases, legacy works, studio gear
+- **Voice** - Voice acting projects with audio clips and category filtering
 - **Tech** - Technical projects and showcases
 - **Productions** - Films, comics, games, and creative productions with embeds, credits, galleries, and audio playlists
+- **Contact** - Contact form with reCAPTCHA Enterprise, honeypot, rate limiting, and N8N webhook
+- **Maintenance** - CMS-controlled maintenance mode with PIN-based admin bypass
 
 ## Quick Start
 
@@ -63,6 +66,13 @@ This project uses Vite's auto-loading for environment files:
 **Required in `.env.local`:**
 - `DIRECTUS_TOKEN` - API token for Directus
 - `DEV_ADMIN_PASSWORD` - Directus admin password (for `schema:snapshot`)
+- `MAINTENANCE_BYPASS_PIN` - PIN for admin maintenance bypass
+- `MAINTENANCE_BYPASS_SECRET` - HMAC secret for bypass cookie signing
+- `CONTACT_FORM_WEBHOOK_URL` - N8N webhook URL for contact form
+- `CONTACT_FORM_WEBHOOK_SECRET` - Shared secret for webhook auth header
+- `PUBLIC_RECAPTCHA_SITE_KEY` - reCAPTCHA Enterprise site key (public)
+- `RECAPTCHA_API_KEY` - reCAPTCHA Enterprise API key (server-side)
+- `RECAPTCHA_PROJECT_ID` - Google Cloud project ID for reCAPTCHA
 
 **Required in `.env.development`:**
 - `DIRECTUS_URL` - Directus instance URL (internal/server-side)
@@ -96,6 +106,7 @@ npm run preview          # Preview production build
 # Content & Schema
 npm run cdn:sync         # Upload local videos/audio to CDN
 npm run schema:snapshot  # Export Directus schema from dev to docker/directus/schema.json
+npm run icons:generate   # Generate icon reference data
 
 # Docker
 npm run docker:init      # First-time: start Directus + Postgres only

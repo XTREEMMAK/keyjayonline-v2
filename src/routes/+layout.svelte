@@ -175,7 +175,7 @@
 {/if}
 
 <!-- Persistent Music Player -->
-<PersistentMusicPlayer />
+<PersistentMusicPlayer maintenanceBypass={data.maintenanceBypass ?? false} />
 
 <!-- Global Radio Launch Modal -->
 <RadioLaunchModal />

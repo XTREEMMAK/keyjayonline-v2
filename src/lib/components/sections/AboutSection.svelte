@@ -8,6 +8,7 @@
 	import { showStickyNav, hideStickyNav, aboutActiveTab } from '$lib/stores/stickyNav.js';
 	import { get } from 'svelte/store';
 	import SectionBackground from '$lib/components/ui/SectionBackground.svelte';
+	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 
 	// ============================================================================
 	// DYNAMIC CALCULATIONS
@@ -492,7 +493,7 @@
 								</div>
 								<div class="lg:w-1/2 lg:flex-grow prose prose-xl prose-invert max-w-none">
 									<div class="text-gray-100 leading-relaxed space-y-6 text-lg bio-content">
-										{@html biography.content}
+										{@html sanitizeHtml(biography.content, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'blockquote'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] })}
 									</div>
 								</div>
 							</div>
@@ -584,7 +585,7 @@
 											<h4 class="text-xl font-semibold text-white">{achievement.title}</h4>
 										</div>
 										<div class="{getActiveTheme().text} achievement-content text-base leading-relaxed">
-											{@html achievement.description}
+											{@html sanitizeHtml(achievement.description)}
 										</div>
 									</div>
 									</div>
@@ -613,7 +614,7 @@
 											{/each}
 										</div>
 										<blockquote class="text-gray-100 mb-6 italic text-lg testimonial-content">
-											{@html testimonial.quote}
+											{@html sanitizeHtml(testimonial.quote)}
 										</blockquote>
 										<div class="border-t border-gray-700 pt-4 flex items-center gap-4">
 											{#if testimonial.avatarUrl}

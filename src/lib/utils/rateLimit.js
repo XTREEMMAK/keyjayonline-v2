@@ -36,7 +36,7 @@ function cleanupOldEntries() {
  * @param {Request} request - The request object
  * @returns {string} Client IP address
  */
-function getClientIp(request) {
+export function getClientIp(request) {
   // Check various headers for the real IP
   const headers = request.headers;
   

@@ -12,6 +12,7 @@
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { copyShareUrl, generateShareUrl } from '$lib/utils/shareLinks.js';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
+	import { sanitizeHtml } from '$lib/utils/sanitize.js';
 
 	// Title letters for animation
 	const titleLetters = 'Voice'.split('');
@@ -524,7 +525,7 @@
 								{/each}
 							</div>
 							<blockquote class="text-gray-300 mb-6 italic testimonial-content">
-								{@html testimonial.quote}
+								{@html sanitizeHtml(testimonial.quote)}
 							</blockquote>
 							<div class="border-t border-gray-700 pt-4 flex items-center gap-4">
 								{#if testimonial.avatarUrl}

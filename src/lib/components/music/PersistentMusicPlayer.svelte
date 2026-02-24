@@ -42,6 +42,8 @@
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { browser } from '$app/environment';
 
+	let { maintenanceBypass = false } = $props();
+
 	let container = $state();
 	let visualContainer = $state();
 	let wavesurfer = $state(null);
@@ -1398,6 +1400,7 @@
 								Library
 							</button>
 						{/if}
+						{#if maintenanceBypass}
 						<button
 							onclick={refreshDebugLog}
 							class="px-2 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-500 rounded-full transition-colors"
@@ -1405,11 +1408,12 @@
 						>
 							<Icon icon="mdi:bug" width={14} height={14} class="inline" />
 						</button>
+						{/if}
 					</div>
 				</div>
 
 				<!-- Debug Log Panel -->
-				{#if showDebugLog}
+				{#if showDebugLog && maintenanceBypass}
 					<div class="mt-2 max-h-40 overflow-y-auto bg-black/60 rounded-lg p-2 font-mono text-[10px] text-green-400 leading-tight" transition:slide={{ duration: 200 }}>
 						{#if debugLogEntries.length === 0}
 							<div class="text-gray-500">No log entries yet. Play a track and let it run.</div>

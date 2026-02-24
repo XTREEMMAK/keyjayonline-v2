@@ -6,6 +6,7 @@
  */
 
 import { createHmac, timingSafeEqual, scryptSync, randomBytes } from 'node:crypto';
+import { getClientIp } from '$lib/utils/rateLimit.js';
 
 // ---------------------------------------------------------------------------
 // Cookie & Duration Constants
@@ -168,16 +169,6 @@ const PIN_RATE_CONFIG = {
 	windowMs: 15 * 60 * 1000, // 15 minutes
 	maxAttempts: 3
 };
-
-function getClientIp(request) {
-	const headers = request.headers;
-	return (
-		headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-		headers.get('x-real-ip') ||
-		headers.get('cf-connecting-ip') ||
-		'unknown'
-	);
-}
 
 /**
  * Check if a PIN verification request should be rate limited.

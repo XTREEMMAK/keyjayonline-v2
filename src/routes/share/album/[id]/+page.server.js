@@ -8,6 +8,8 @@
 
 import { getDirectusInstance, readItems } from '$lib/api/core/client.js';
 import { buildAssetUrl } from '$lib/api/core/assets.js';
+import { transformCredit } from '$lib/api/core/creditTransform.js';
+import { extractYouTubeId } from '$lib/utils/youtube.js';
 import { error } from '@sveltejs/kit';
 import { PUBLIC_SITE_URL } from '$env/static/public';
 
@@ -117,56 +119,7 @@ export async function load({ params, fetch }) {
  * Transform Directus release data to frontend format
  */
 function transformRelease(release) {
-	// Parse credits with role normalization
-	const credits = (release.credits || []).map(credit => {
-		let roles = [];
-		if (credit.role) {
-			if (typeof credit.role === 'string') {
-				try {
-					const parsed = JSON.parse(credit.role);
-					if (Array.isArray(parsed)) {
-						roles = parsed;
-					} else if (parsed.roles && Array.isArray(parsed.roles)) {
-						roles = parsed.roles;
-					} else if (typeof parsed === 'object') {
-						roles = [parsed];
-					}
-				} catch {
-					roles = [{ title: credit.role, category: credit.role }];
-				}
-			} else if (Array.isArray(credit.role)) {
-				roles = credit.role;
-			} else if (typeof credit.role === 'object') {
-				roles = [credit.role];
-			}
-		}
-
-		const normalizedRoles = roles.map(role => {
-			if (typeof role === 'string') {
-				return { title: role, category: role };
-			}
-			const title = role.title || role.name || role.role || 'Unknown Role';
-			const category = role.category || role.group || title;
-			return { title, category };
-		});
-
-		return {
-			roles: normalizedRoles,
-			role: normalizedRoles[0]?.title || 'Unknown Role',
-			name: credit.person_id?.name || 'Unknown',
-			additional_info: credit.additional_info,
-			bio: credit.person_id?.bio,
-			website_url: credit.person_id?.website_url,
-			display_order: credit.display_order,
-			profile_image: credit.person_id?.profile_image
-				? buildAssetUrl(
-						typeof credit.person_id.profile_image === 'object'
-							? credit.person_id.profile_image.filename_disk
-							: credit.person_id.profile_image
-					)
-				: null
-		};
-	});
+	const credits = (release.credits || []).map(transformCredit);
 
 	return {
 		id: release.id,
@@ -201,11 +154,7 @@ function transformRelease(release) {
 		youtube_videos: (release.videos || [])
 			.filter(video => video.video_type === 'youtube')
 			.map(video => ({
-				id: video.video_url.includes('youtube.com/watch?v=')
-					? video.video_url.split('v=')[1]?.split('&')[0]
-					: video.video_url.includes('youtu.be/')
-						? video.video_url.split('youtu.be/')[1]?.split('?')[0]
-						: video.video_url,
+				id: extractYouTubeId(video.video_url) || video.video_url,
 				title: video.title,
 				description: video.description,
 				thumbnail_url: video.thumbnail_url ? buildAssetUrl(video.thumbnail_url) : null,

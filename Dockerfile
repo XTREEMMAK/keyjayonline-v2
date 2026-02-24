@@ -23,32 +23,20 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build arguments for environment variables during build
-ARG DIRECTUS_URL
-ARG DIRECTUS_TOKEN
+# Build arguments — only values needed at build time
+# PUBLIC_* vars are inlined by SvelteKit via $env/static/public
+# CDN_BASE_URL is used in svelte.config.js paths.assets
+# All private vars (DIRECTUS_TOKEN, etc.) are runtime-only via $env/dynamic/private
 ARG PUBLIC_SITE_URL
 ARG CDN_BASE_URL
 ARG S3_BUCKET_URL
-ARG USE_CDN_FOR_ASSETS=true
 ARG NODE_ENV=production
-ARG IGDB_CLIENT_ID=placeholder
-ARG IGDB_ACCESS_TOKEN=placeholder
-ARG DISCORD_BOT_TOKEN=placeholder
-ARG DISCORD_USER_ID=placeholder
 ARG PUBLIC_CONTACT_EMAIL=contact@keyjayonline.com
 
-# Set build-time environment variables
-ENV DIRECTUS_URL=$DIRECTUS_URL
-ENV DIRECTUS_TOKEN=$DIRECTUS_TOKEN
 ENV PUBLIC_SITE_URL=$PUBLIC_SITE_URL
 ENV CDN_BASE_URL=$CDN_BASE_URL
 ENV S3_BUCKET_URL=$S3_BUCKET_URL
-ENV USE_CDN_FOR_ASSETS=$USE_CDN_FOR_ASSETS
 ENV NODE_ENV=$NODE_ENV
-ENV IGDB_CLIENT_ID=$IGDB_CLIENT_ID
-ENV IGDB_ACCESS_TOKEN=$IGDB_ACCESS_TOKEN
-ENV DISCORD_BOT_TOKEN=$DISCORD_BOT_TOKEN
-ENV DISCORD_USER_ID=$DISCORD_USER_ID
 ENV PUBLIC_CONTACT_EMAIL=$PUBLIC_CONTACT_EMAIL
 
 # Build the application (skip if pre-built via CI artifact)

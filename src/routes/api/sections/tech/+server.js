@@ -6,12 +6,7 @@
 import { json } from '@sveltejs/kit';
 import { getTechPageHeader } from '$lib/api/content/pages.js';
 import { getTechProjects, getTechStack, getTechShowcase } from '$lib/api/content/tech.js';
-
-const safePromise = (promise, name = 'Promise') =>
-	promise.catch((err) => {
-		console.error(`${name} failed:`, err);
-		return null;
-	});
+import { safePromise } from '$lib/utils/api.js';
 
 export async function GET() {
 	try {
