@@ -5,6 +5,7 @@
 
 import { fail } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { env as publicEnv } from '$env/dynamic/public';
 import { contactFormSchema } from '$lib/schemas/contactForm.js';
 import * as v from 'valibot';
 
@@ -86,40 +87,57 @@ export const actions = {
 			return fail(400, { error: 'Please fix the form errors and try again.', issues });
 		}
 
-		// 4. reCAPTCHA server-side verification
-		const recaptchaSecretKey = env.RECAPTCHA_SECRET_KEY;
+		// 4. reCAPTCHA Enterprise server-side verification
+		const recaptchaApiKey = env.RECAPTCHA_API_KEY;
+		const recaptchaProjectId = env.RECAPTCHA_PROJECT_ID;
+		const recaptchaSiteKey = publicEnv.PUBLIC_RECAPTCHA_SITE_KEY;
 
-		if (recaptchaSecretKey) {
+		if (recaptchaApiKey && recaptchaProjectId) {
 			const recaptchaToken = data.recaptchaToken;
 
 			if (!recaptchaToken) {
-				return fail(400, { error: 'Please complete the reCAPTCHA verification.' });
+				return fail(400, { error: 'Please try again — reCAPTCHA verification is required.' });
 			}
 
 			try {
-				const verifyResponse = await fetch(
-					'https://www.google.com/recaptcha/api/siteverify',
-					{
-						method: 'POST',
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-						body: new URLSearchParams({
-							secret: recaptchaSecretKey,
-							response: recaptchaToken
-						}),
-						signal: AbortSignal.timeout(5000)
-					}
-				);
+				const assessmentUrl = `https://recaptchaenterprise.googleapis.com/v1/projects/${recaptchaProjectId}/assessments?key=${recaptchaApiKey}`;
 
-				const verifyResult = await verifyResponse.json();
+				const assessmentResponse = await fetch(assessmentUrl, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						event: {
+							token: recaptchaToken,
+							siteKey: recaptchaSiteKey,
+							expectedAction: 'contact_submit'
+						}
+					}),
+					signal: AbortSignal.timeout(5000)
+				});
 
-				if (!verifyResult.success) {
-					console.warn('reCAPTCHA verification failed:', verifyResult['error-codes']);
+				const assessment = await assessmentResponse.json();
+
+				if (!assessment.tokenProperties?.valid) {
+					console.warn('reCAPTCHA token invalid:', assessment.tokenProperties?.invalidReason);
 					return fail(400, { error: 'reCAPTCHA verification failed. Please try again.' });
+				}
+
+				if (assessment.tokenProperties.action !== 'contact_submit') {
+					console.warn('reCAPTCHA action mismatch:', assessment.tokenProperties.action);
+					return fail(400, { error: 'reCAPTCHA verification failed. Please try again.' });
+				}
+
+				const scoreThreshold = parseFloat(env.RECAPTCHA_SCORE_THRESHOLD || '0.5');
+				const score = assessment.riskAnalysis?.score ?? 0;
+
+				if (score < scoreThreshold) {
+					console.warn(`reCAPTCHA score too low: ${score} < ${scoreThreshold}`);
+					return fail(400, { error: 'Unable to verify your request. Please try again.' });
 				}
 			} catch (error) {
 				// On network error to Google, allow submission through
 				// Honeypot + time validation still provide baseline protection
-				console.error('reCAPTCHA verification error:', error);
+				console.error('reCAPTCHA Enterprise verification error:', error);
 			}
 		}
 

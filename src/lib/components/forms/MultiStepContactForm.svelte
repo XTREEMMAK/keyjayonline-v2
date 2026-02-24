@@ -19,7 +19,6 @@
   let currentStep = $state(1);
   let totalSteps = $state(3);
   let isSubmitting = $state(false);
-  let recaptchaToken = $state(null);
   let recaptchaComponent = $state(null);
   let formStartTime = $state(Date.now()); // For time-based validation
   
@@ -58,8 +57,6 @@
       
       // Reset form state
       currentStep = 1;
-      recaptchaToken = null;
-      recaptchaComponent?.reset();
     }
   };
 
@@ -209,7 +206,8 @@
       // Use the FormData we already created and fixed above
       // (formData is already defined above with form_start_time set)
       
-      // Add ReCaptcha token if available
+      // Get reCAPTCHA Enterprise token (invisible, score-based)
+      const recaptchaToken = await recaptchaComponent?.execute('contact_submit');
       if (recaptchaToken) {
         formData.set('recaptchaToken', recaptchaToken);
       }
@@ -245,9 +243,6 @@
 
         // Reset form to step 1
         currentStep = 1;
-        // Reset ReCaptcha
-        recaptchaToken = null;
-        recaptchaComponent?.reset();
 
         // Reset form values
         formValues = {
@@ -259,8 +254,7 @@
           timeline: '',
           projectDetails: '',
           generalMessage: '',
-          honeypot: '',
-          recaptchaToken: ''
+          honeypot: ''
         };
 
         // Clear any errors
@@ -275,10 +269,6 @@
           color: '#f3f4f6',
           confirmButtonColor: '#14b8a6'
         });
-
-        // Reset ReCaptcha on failure
-        recaptchaComponent?.reset();
-        recaptchaToken = null;
       } else {
         throw new Error('Unexpected response');
       }
@@ -296,9 +286,6 @@
         confirmButtonColor: '#14b8a6'
       });
 
-      // Reset ReCaptcha on error
-      recaptchaComponent?.reset();
-      recaptchaToken = null;
     } finally {
       isSubmitting = false;
     }
@@ -314,8 +301,7 @@
     timeline: '',
     projectDetails: '',
     generalMessage: '',
-    honeypot: '',
-    recaptchaToken: ''
+    honeypot: ''
   });
 
   // Form errors state
@@ -441,11 +427,6 @@
     }
   };
 
-  // ReCaptcha handlers
-  const handleRecaptchaVerify = (token) => {
-    recaptchaToken = token;
-  };
-
   // Real-time field validation on blur
   const handleFieldBlur = (fieldName) => {
     const error = validateField(fieldName);
@@ -468,24 +449,14 @@
     }
   };
 
-  // Check if we need ReCaptcha for this step
-  const needsRecaptcha = (step, inquiryType) => {
-    return (step === 2 && inquiryType === 'service') || 
-           (step === 3 && inquiryType === 'general');
-  };
-
   // Reactive step validation using $derived
   const canProceed = $derived(() => {
     if (currentStep === 1) {
       return formValues.name && formValues.email && formValues.inquiryType;
     } else if (currentStep === 2) {
-      const hasRequiredFields = formValues.serviceNeeded && formValues.budgetRange && formValues.timeline && formValues.projectDetails;
-      const hasRecaptcha = !needsRecaptcha(currentStep, formValues.inquiryType) || recaptchaToken;
-      return hasRequiredFields && hasRecaptcha;
+      return formValues.serviceNeeded && formValues.budgetRange && formValues.timeline && formValues.projectDetails;
     } else if (currentStep === 3) {
-      const hasMessage = formValues.generalMessage;
-      const hasRecaptcha = !needsRecaptcha(currentStep, formValues.inquiryType) || recaptchaToken;
-      return hasMessage && hasRecaptcha;
+      return formValues.generalMessage;
     }
     return false;
   });
@@ -579,32 +550,20 @@
         onFieldBlur={handleFieldBlur}
         onFieldInput={handleFieldInput}
       />
-      <!-- ReCaptcha for service requests -->
-      {#if needsRecaptcha(currentStep, formValues.inquiryType)}
-        <ReCaptcha 
-          bind:this={recaptchaComponent}
-          siteKey={env.PUBLIC_RECAPTCHA_SITE_KEY}
-          onVerify={handleRecaptchaVerify}
-          theme="dark"
-        />
-      {/if}
     {:else if currentStep === 3 && formValues.inquiryType === 'general'}
-      <FormStep3 
-        bind:formValues 
-        {formErrors} 
+      <FormStep3
+        bind:formValues
+        {formErrors}
         onFieldBlur={handleFieldBlur}
         onFieldInput={handleFieldInput}
       />
-      <!-- ReCaptcha for general messages -->
-      {#if needsRecaptcha(currentStep, formValues.inquiryType)}
-        <ReCaptcha 
-          bind:this={recaptchaComponent}
-          siteKey={env.PUBLIC_RECAPTCHA_SITE_KEY}
-          onVerify={handleRecaptchaVerify}
-          theme="dark"
-        />
-      {/if}
     {/if}
+
+    <!-- reCAPTCHA Enterprise (invisible, score-based) — loads script, no visible widget -->
+    <ReCaptcha
+      bind:this={recaptchaComponent}
+      siteKey={env.PUBLIC_RECAPTCHA_SITE_KEY}
+    />
 
     <!-- Anti-spam honeypot (multiple techniques) -->
     <div class="honeypot-container">
@@ -671,6 +630,15 @@
         {/if}
       </div>
     </div>
+
+    <!-- reCAPTCHA Enterprise branding (required by Google ToS when badge is hidden) -->
+    {#if env.PUBLIC_RECAPTCHA_SITE_KEY}
+      <p class="recaptcha-branding">
+        This site is protected by reCAPTCHA and the Google
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and
+        <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> apply.
+      </p>
+    {/if}
   </form>
 </div>
 
@@ -791,6 +759,29 @@
       width: 100%;
       justify-content: center;
     }
+  }
+
+  /* Hide reCAPTCHA Enterprise badge (branding text shown instead per Google ToS) */
+  :global(.grecaptcha-badge) {
+    visibility: hidden !important;
+  }
+
+  .recaptcha-branding {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.5;
+  }
+
+  .recaptcha-branding a {
+    color: #9ca3af;
+    text-decoration: underline;
+    transition: color 0.2s;
+  }
+
+  .recaptcha-branding a:hover {
+    color: #d1d5db;
   }
 
   /* Honeypot protection styles */

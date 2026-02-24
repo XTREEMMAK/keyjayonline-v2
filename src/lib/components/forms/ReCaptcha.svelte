@@ -1,181 +1,51 @@
 <script>
   import { onMount } from 'svelte';
-  
-  let { onVerify, siteKey, theme = 'dark' } = $props();
-  
-  let recaptchaContainer = $state(null);
-  let widgetId;
-  let isLoaded = $state(false);
 
-  // ReCaptcha callback functions
-  const verifyCallback = (token) => {
-    onVerify?.(token);
-  };
+  let { siteKey } = $props();
+  let ready = $state(false);
 
-  const expiredCallback = () => {
-    onVerify?.(null);
-  };
-
-  const errorCallback = () => {
-    console.error('ReCaptcha error occurred');
-    onVerify?.(null);
-  };
-
-  // Load ReCaptcha script and render widget
   onMount(() => {
-    // Skip if no site key provided
-    if (!siteKey) {
-      console.warn('ReCaptcha site key not provided');
+    if (!siteKey) return;
+
+    // Check if Enterprise script already loaded
+    if (window.grecaptcha?.enterprise) {
+      window.grecaptcha.enterprise.ready(() => { ready = true; });
       return;
     }
 
-    // Check if script already loaded
-    if (window.grecaptcha) {
-      renderRecaptcha();
-      return;
-    }
-
-    // Load ReCaptcha script
+    // Load reCAPTCHA Enterprise script (score-based, invisible)
     const script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
+    script.src = `https://www.google.com/recaptcha/enterprise.js?render=${siteKey}`;
     script.async = true;
-    script.defer = true;
 
-    // Global callback for when ReCaptcha loads
-    window.onRecaptchaLoad = () => {
-      isLoaded = true;
-      renderRecaptcha();
+    script.onload = () => {
+      window.grecaptcha.enterprise.ready(() => { ready = true; });
+    };
+
+    script.onerror = () => {
+      console.error('Failed to load reCAPTCHA Enterprise script');
     };
 
     document.head.appendChild(script);
-
-    return () => {
-      // Cleanup
-      if (widgetId !== undefined && window.grecaptcha) {
-        try {
-          window.grecaptcha.reset(widgetId);
-        } catch (error) {
-          console.warn('Error resetting ReCaptcha:', error);
-        }
-      }
-    };
   });
 
-  const renderRecaptcha = () => {
-    if (!recaptchaContainer || !window.grecaptcha || !siteKey) return;
-
+  /**
+   * Execute reCAPTCHA Enterprise and return a token.
+   * Call this on form submit — invisible, no user interaction.
+   * @param {string} action - The action name (must match server-side expectedAction)
+   * @returns {Promise<string|null>} The reCAPTCHA token, or null on error
+   */
+  async function execute(action = 'contact_submit') {
+    if (!ready || !window.grecaptcha?.enterprise) return null;
     try {
-      widgetId = window.grecaptcha.render(recaptchaContainer, {
-        sitekey: siteKey,
-        theme: theme,
-        callback: verifyCallback,
-        'expired-callback': expiredCallback,
-        'error-callback': errorCallback
-      });
+      return await window.grecaptcha.enterprise.execute(siteKey, { action });
     } catch (error) {
-      console.error('Error rendering ReCaptcha:', error);
+      console.error('reCAPTCHA Enterprise execute error:', error);
+      return null;
     }
-  };
+  }
 
-  // Public methods
-  const reset = () => {
-    if (widgetId !== undefined && window.grecaptcha) {
-      try {
-        window.grecaptcha.reset(widgetId);
-      } catch (error) {
-        console.warn('Error resetting ReCaptcha:', error);
-      }
-    }
-  };
-
-  const execute = () => {
-    if (widgetId !== undefined && window.grecaptcha) {
-      try {
-        window.grecaptcha.execute(widgetId);
-      } catch (error) {
-        console.warn('Error executing ReCaptcha:', error);
-      }
-    }
-  };
-
-  // Export methods for parent component
-  export { reset, execute };
+  export { execute };
 </script>
 
-{#if siteKey}
-  <div class="recaptcha-wrapper">
-    <div bind:this={recaptchaContainer} class="recaptcha-container"></div>
-    {#if !isLoaded}
-      <div class="recaptcha-loading">
-        <iconify-icon icon="mdi:loading" class="loading-icon"></iconify-icon>
-        <span>Loading ReCaptcha...</span>
-      </div>
-    {/if}
-  </div>
-{:else}
-  <div class="recaptcha-disabled">
-    <p class="text-sm text-gray-400">
-      ReCaptcha is not configured for this environment
-    </p>
-  </div>
-{/if}
-
-<style>
-  .recaptcha-wrapper {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    margin: 1rem 0;
-  }
-
-  .recaptcha-container {
-    min-height: 78px; /* Standard ReCaptcha height */
-  }
-
-  .recaptcha-loading {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    background-color: rgba(31, 41, 55, 0.8);
-    border-radius: 0.25rem;
-    color: #9ca3af;
-    font-size: 0.875rem;
-  }
-
-  .loading-icon {
-    animation: spin 1s linear infinite;
-    font-size: 1rem;
-  }
-
-  .recaptcha-disabled {
-    display: flex;
-    justify-content: center;
-    padding: 1rem;
-    margin: 1rem 0;
-    background-color: rgba(75, 85, 99, 0.1);
-    border: 1px dashed rgba(75, 85, 99, 0.3);
-    border-radius: 0.5rem;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  /* Mobile responsiveness */
-  @media (max-width: 640px) {
-    .recaptcha-wrapper {
-      margin: 0.75rem 0;
-    }
-  }
-</style>
+<!-- No visible UI — score-based reCAPTCHA Enterprise is invisible -->
