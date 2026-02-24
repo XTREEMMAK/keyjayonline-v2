@@ -115,24 +115,31 @@ export const actions = {
 					signal: AbortSignal.timeout(5000)
 				});
 
-				const assessment = await assessmentResponse.json();
+				if (!assessmentResponse.ok) {
+					// API auth error (wrong key, restrictions, API not enabled) — fall through
+					// Honeypot + time validation still provide baseline protection
+					const errorBody = await assessmentResponse.text();
+					console.error(`reCAPTCHA Enterprise API error (${assessmentResponse.status}):`, errorBody);
+				} else {
+					const assessment = await assessmentResponse.json();
 
-				if (!assessment.tokenProperties?.valid) {
-					console.warn('reCAPTCHA token invalid:', assessment.tokenProperties?.invalidReason);
-					return fail(400, { error: 'reCAPTCHA verification failed. Please try again.' });
-				}
+					if (!assessment.tokenProperties?.valid) {
+						console.warn('reCAPTCHA token invalid:', assessment.tokenProperties?.invalidReason);
+						return fail(400, { error: 'reCAPTCHA verification failed. Please try again.' });
+					}
 
-				if (assessment.tokenProperties.action !== 'contact_submit') {
-					console.warn('reCAPTCHA action mismatch:', assessment.tokenProperties.action);
-					return fail(400, { error: 'reCAPTCHA verification failed. Please try again.' });
-				}
+					if (assessment.tokenProperties.action !== 'contact_submit') {
+						console.warn('reCAPTCHA action mismatch:', assessment.tokenProperties.action);
+						return fail(400, { error: 'reCAPTCHA verification failed. Please try again.' });
+					}
 
-				const scoreThreshold = parseFloat(env.RECAPTCHA_SCORE_THRESHOLD || '0.5');
-				const score = assessment.riskAnalysis?.score ?? 0;
+					const scoreThreshold = parseFloat(env.RECAPTCHA_SCORE_THRESHOLD || '0.5');
+					const score = assessment.riskAnalysis?.score ?? 0;
 
-				if (score < scoreThreshold) {
-					console.warn(`reCAPTCHA score too low: ${score} < ${scoreThreshold}`);
-					return fail(400, { error: 'Unable to verify your request. Please try again.' });
+					if (score < scoreThreshold) {
+						console.warn(`reCAPTCHA score too low: ${score} < ${scoreThreshold}`);
+						return fail(400, { error: 'Unable to verify your request. Please try again.' });
+					}
 				}
 			} catch (error) {
 				// On network error to Google, allow submission through
