@@ -187,6 +187,10 @@ services:
       # Contact Form Webhook
       CONTACT_FORM_WEBHOOK_URL: ${CONTACT_FORM_WEBHOOK_URL:-}
       CONTACT_FORM_WEBHOOK_SECRET: ${CONTACT_FORM_WEBHOOK_SECRET:-}
+
+      # Maintenance Mode Admin Bypass
+      MAINTENANCE_BYPASS_PIN: ${MAINTENANCE_BYPASS_PIN:-}
+      MAINTENANCE_BYPASS_SECRET: ${MAINTENANCE_BYPASS_SECRET:-}
     networks:
       - kjo2_network
     ports:

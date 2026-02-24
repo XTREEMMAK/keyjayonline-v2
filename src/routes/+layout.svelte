@@ -127,6 +127,13 @@
 	<script async src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </svelte:head>
 
+<!-- Maintenance Preview Banner -->
+{#if data.maintenanceBypass}
+	<div class="fixed top-0 left-0 right-0 z-[9999] bg-amber-600/90 text-white text-center text-xs py-1 pointer-events-none">
+		Maintenance Preview Mode
+	</div>
+{/if}
+
 <!-- Page Content -->
 <main class="min-h-screen">
 	{@render children?.()}

@@ -9,6 +9,83 @@
 	let currentTime = $state('');
 	let timezoneLabel = $state('ET');
 
+	// Hidden admin bypass trigger (triple-click on wrench icon)
+	let clickCount = $state(0);
+	let clickTimer = null;
+
+	function handleIconClick() {
+		clickCount++;
+		clearTimeout(clickTimer);
+		if (clickCount >= 3) {
+			clickCount = 0;
+			showPinModal();
+		} else {
+			clickTimer = setTimeout(() => { clickCount = 0; }, 600);
+		}
+	}
+
+	async function showPinModal() {
+		const Swal = (await import('sweetalert2')).default;
+		const { value: pin } = await Swal.fire({
+			title: 'Admin Access',
+			input: 'password',
+			inputLabel: 'Enter bypass PIN',
+			inputPlaceholder: 'PIN',
+			inputAttributes: {
+				maxlength: '64',
+				autocapitalize: 'off',
+				autocorrect: 'off'
+			},
+			background: '#1f2937',
+			color: '#f3f4f6',
+			confirmButtonColor: '#14b8a6',
+			confirmButtonText: 'Verify',
+			showCancelButton: true,
+			cancelButtonColor: '#6b7280',
+			inputValidator: (value) => {
+				if (!value) return 'Please enter a PIN';
+			}
+		});
+
+		if (pin) {
+			await submitPin(pin);
+		}
+	}
+
+	async function submitPin(pin) {
+		const Swal = (await import('sweetalert2')).default;
+		try {
+			const response = await fetch('/maintenance/verify', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ pin })
+			});
+
+			if (response.ok) {
+				window.location.href = '/';
+			} else {
+				const data = await response.json();
+				Swal.fire({
+					icon: 'error',
+					title: 'Access Denied',
+					text: data.message || 'Invalid PIN',
+					background: '#1f2937',
+					color: '#f3f4f6',
+					confirmButtonColor: '#14b8a6'
+				});
+			}
+		} catch {
+			Swal.fire({
+				icon: 'error',
+				title: 'Error',
+				text: 'Unable to verify. Please try again.',
+				background: '#1f2937',
+				color: '#f3f4f6',
+				confirmButtonColor: '#14b8a6'
+			});
+		}
+	}
+
 	onMount(() => {
 		// Detect user's timezone, default to America/New_York (ET)
 		let userTimezone;
@@ -58,7 +135,8 @@
 		
 		<!-- Logo/Icon -->
 		<div class="mb-8" in:fly={{ y: -30, duration: 800, delay: 200 }}>
-			<div class="w-24 h-24 mx-auto bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mb-4">
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="w-24 h-24 mx-auto bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mb-4 cursor-default select-none" onclick={handleIconClick} role="presentation">
 				<iconify-icon icon="mdi:wrench" class="text-white text-4xl"></iconify-icon>
 			</div>
 		</div>
