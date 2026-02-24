@@ -32,6 +32,114 @@ export const radioEnabled = writable(false);
 export const shuffleMode = writable(false);
 export const shuffleHistory = writable([]); // Last N played track indices (no repeats)
 
+// Session restore flag — set true when state is hydrated from storage
+// after a Chrome tab discard/kill. Components check this to suppress autoPlay.
+export const restoredFromSession = writable(false);
+
+// ─── Player State Persistence (survives Chrome tab discard/kill) ────────────
+// Uses localStorage (not sessionStorage) because Chrome Android's OOM killer
+// destroys sessionStorage along with the renderer process.
+const PLAYER_STATE_KEY = 'kjo_player_state';
+const PLAYER_STATE_MAX_AGE = 24 * 60 * 60 * 1000; // Expire after 24 hours
+
+/** Collect current store values into a serialisable object. */
+function collectPlayerState() {
+	return {
+		ts: Date.now(),
+		currentTrack: get(currentTrack),
+		currentTrackIndex: get(currentTrackIndex),
+		playlist: get(playlist),
+		playerPosition: get(playerPosition),
+		playerDuration: get(playerDuration),
+		playerVisible: get(playerVisible),
+		playerMinimized: get(playerMinimized),
+		volume: get(volume),
+		playlistSource: get(playlistSource),
+		radioMode: get(radioMode),
+		shuffleMode: get(shuffleMode),
+	};
+}
+
+/** Save player state to localStorage. */
+export function savePlayerState() {
+	if (typeof localStorage === 'undefined') return;
+	try {
+		localStorage.setItem(PLAYER_STATE_KEY, JSON.stringify(collectPlayerState()));
+	} catch { /* quota exceeded or private browsing */ }
+}
+
+/** Hydrate stores from localStorage. Returns true if state was restored. */
+function restorePlayerState() {
+	if (typeof localStorage === 'undefined') return false;
+	try {
+		const raw = localStorage.getItem(PLAYER_STATE_KEY);
+		if (!raw) return false;
+		const s = JSON.parse(raw);
+		if (!s.currentTrack) return false; // Nothing meaningful to restore
+
+		// Expire stale state (e.g. user returns days later)
+		if (s.ts && Date.now() - s.ts > PLAYER_STATE_MAX_AGE) {
+			localStorage.removeItem(PLAYER_STATE_KEY);
+			return false;
+		}
+
+		currentTrack.set(s.currentTrack);
+		if (Array.isArray(s.playlist)) playlist.set(s.playlist);
+		if (typeof s.currentTrackIndex === 'number') currentTrackIndex.set(s.currentTrackIndex);
+		if (typeof s.playerPosition === 'number') playerPosition.set(s.playerPosition);
+		if (typeof s.playerDuration === 'number') playerDuration.set(s.playerDuration);
+		if (typeof s.playerVisible === 'boolean') playerVisible.set(s.playerVisible);
+		if (typeof s.playerMinimized === 'boolean') playerMinimized.set(s.playerMinimized);
+		if (typeof s.volume === 'number') volume.set(s.volume);
+		if (s.playlistSource) playlistSource.set(s.playlistSource);
+		if (typeof s.radioMode === 'boolean') radioMode.set(s.radioMode);
+		if (typeof s.shuffleMode === 'boolean') shuffleMode.set(s.shuffleMode);
+		// isPlaying is intentionally NOT restored — always resume paused
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/** Clear persisted player state (called when player is explicitly closed). */
+export function clearPlayerState() {
+	if (typeof localStorage === 'undefined') return;
+	try { localStorage.removeItem(PLAYER_STATE_KEY); } catch {}
+}
+
+// Hydrate on module load (browser only) — must happen before subscriptions
+if (typeof localStorage !== 'undefined') {
+	if (typeof document !== 'undefined' && document.wasDiscarded) {
+		console.log('[Player] Tab was discarded by Chrome, restoring from localStorage');
+	}
+	if (restorePlayerState()) {
+		restoredFromSession.set(true);
+	}
+}
+
+// Auto-save on store changes (immediate for key state, throttled for position)
+if (typeof localStorage !== 'undefined') {
+	// Immediate saves for discrete state changes
+	currentTrack.subscribe(() => savePlayerState());
+	playlist.subscribe(() => savePlayerState());
+	playerVisible.subscribe(() => savePlayerState());
+	playerMinimized.subscribe(() => savePlayerState());
+	volume.subscribe(() => savePlayerState());
+	playlistSource.subscribe(() => savePlayerState());
+	radioMode.subscribe(() => savePlayerState());
+	shuffleMode.subscribe(() => savePlayerState());
+
+	// Throttled save for position (every 5s during playback)
+	let lastPositionSave = 0;
+	playerPosition.subscribe(() => {
+		const now = Date.now();
+		if (now - lastPositionSave > 5000) {
+			lastPositionSave = now;
+			savePlayerState();
+		}
+	});
+}
+
 // Player instance (for sharing across components)
 export const wavesurferInstance = writable(null);
 
@@ -58,6 +166,7 @@ export function closePlayerCompletely() {
 	playerPosition.set(0);
 	playerDuration.set(0);
 	playlistSource.set('library');
+	clearPlayerState(); // Don't restore a closed player after tab discard
 }
 
 export function togglePlayer() {
@@ -410,7 +519,15 @@ export function getUpcomingQueue(count = 10) {
 	return upcoming;
 }
 
+let lastAdvanceTime = 0; // Debounce guard for auto-advance
+
 export function nextTrack() {
+	// Prevent double-advance from concurrent detection paths
+	// (e.g. seeked handler + syncPlayhead both detecting the same loop-back)
+	const now = Date.now();
+	if (now - lastAdvanceTime < 500) return null;
+	lastAdvanceTime = now;
+
 	let tracks, currentIndex;
 	playlist.subscribe(val => tracks = val)();
 	currentTrackIndex.subscribe(val => currentIndex = val)();

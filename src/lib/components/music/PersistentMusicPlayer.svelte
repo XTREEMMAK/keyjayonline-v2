@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy, tick } from 'svelte';
+	import { get } from 'svelte/store';
 	import { fly, slide } from 'svelte/transition';
 	import WaveSurfer from 'wavesurfer.js';
 	import Icon from '@iconify/svelte';
@@ -30,7 +31,9 @@
 		clearDynamicPlaylist,
 		playDynamicPlaylist,
 		radioModalOpen,
-		radioEnabled
+		radioEnabled,
+		restoredFromSession,
+		savePlayerState
 	} from '$lib/stores/musicPlayer.js';
 	import { extractCoverArt } from '$lib/utils/coverArtExtractor.js';
 	import { formatTime } from '$lib/utils/time.js';
@@ -60,6 +63,29 @@
 	let lastSyncedTime = 0; // Loop Bridge: last known playhead position
 	let showDebugLog = $state(false); // Toggle for debug log viewer
 	let debugLogEntries = $state([]); // Reactive copy for UI
+	let memoryFreed = false; // True after freeIdleMemory() releases audio buffers
+	let bgCleanupTimer = null; // Delayed cleanup timer for background pause
+	let webLockAbort = null; // AbortController for the Web Lock keepalive
+
+	// ── Web Lock: Prevent Chrome from freezing/discarding the tab ──────────
+	// Chromium opts pages holding a Web Lock out of its freeze mechanism,
+	// which is the mandatory step before tab discard. Held whenever the
+	// player has a loaded track; released when the player is closed.
+	function acquireKeepAliveLock() {
+		if (webLockAbort || typeof navigator === 'undefined' || !navigator.locks) return;
+		webLockAbort = new AbortController();
+		navigator.locks.request('kjo-player-keepalive', { signal: webLockAbort.signal }, () => {
+			// Return a promise that never resolves — holds the lock until aborted
+			return new Promise(() => {});
+		}).catch(() => {}); // AbortError when released — expected
+	}
+
+	function releaseKeepAliveLock() {
+		if (webLockAbort) {
+			webLockAbort.abort();
+			webLockAbort = null;
+		}
+	}
 
 	// ── Dedicated Background Audio Element ──────────────────────────────────
 	// Completely separate from WaveSurfer to avoid interference during
@@ -69,6 +95,7 @@
 	let bgSyncInterval = null;
 	let bgLoopArmed = false;
 	let bgLastTime = 0;
+	let bgActive = false; // True when bgAudioEl is handling playback
 
 	// Debug log for background playback diagnostics (survives lock screen)
 	function bgLog(msg) {
@@ -95,6 +122,7 @@
 			if (el !== bgAudioEl) return;
 			if (el.paused) return;  // Spurious event guard (Bluetooth devices)
 			bgLog('bgEl: playing event');
+			cancelBgCleanup(); // Cancel any pending memory cleanup
 			isPlaying.set(true);
 			updateMediaSessionPlaybackState('playing');
 			if (!bgSyncInterval) {
@@ -111,6 +139,10 @@
 				bgSyncInterval = null;
 				bgSyncPlayhead();
 				updateMediaSessionPlaybackState('paused');
+				// Schedule memory cleanup if tab is in background
+				if (document.visibilityState === 'hidden') {
+					scheduleBgCleanup();
+				}
 			}
 		});
 
@@ -129,7 +161,7 @@
 			if (el !== bgAudioEl) return;
 			if (!bgLoopArmed || el.currentTime > 1) return;
 			const dur = el.duration;
-			if (!Number.isFinite(dur) || bgLastTime < dur - 2) return;
+			if (!Number.isFinite(dur) || bgLastTime < dur - 6) return;
 			bgLoopArmed = false;
 			el.loop = false;
 			clearInterval(bgSyncInterval);
@@ -162,10 +194,63 @@
 		bgSyncInterval = null;
 		bgLoopArmed = false;
 		bgLastTime = 0;
+		bgActive = false;
 		if (bgAudioEl) {
 			releaseBgElement(bgAudioEl);
 			bgAudioEl = null;
 		}
+	}
+
+	/**
+	 * Free memory when idle in background to prevent Chrome Android tab discard.
+	 * Releases ~130MB+ of decoded audio buffers. State is preserved in stores
+	 * and localStorage; WaveSurfer is reloaded when the tab returns.
+	 */
+	function freeIdleMemory() {
+		if (memoryFreed) return;
+		bgLog('freeIdleMemory: releasing audio buffers');
+		memoryFreed = true;
+
+		// 1. Destroy visual wavesurfer (~63MB AudioBuffer freed)
+		// The reactive $effect will recreate it when the player becomes visible again
+		if (visualWavesurfer) {
+			visualWavesurfer.destroy();
+			visualWavesurfer = null;
+			visualWavesurferReady = false;
+		}
+
+		// 2. Revoke preloaded next-track blob (~5-10MB freed)
+		if (preloadedNext) {
+			URL.revokeObjectURL(preloadedNext.blobUrl);
+			preloadedNext = null;
+		}
+
+		// 3. Empty main wavesurfer's decoded audio buffer (~63MB freed)
+		// wavesurfer.empty() loads a tiny placeholder, releasing the AudioBuffer
+		// but keeping the WaveSurfer instance alive for event handlers
+		if (wavesurfer) {
+			wavesurfer.empty();
+		}
+
+		// 4. Save state as safety net before potential discard
+		savePlayerState();
+	}
+
+	function cancelBgCleanup() {
+		if (bgCleanupTimer) {
+			clearTimeout(bgCleanupTimer);
+			bgCleanupTimer = null;
+		}
+	}
+
+	function scheduleBgCleanup() {
+		cancelBgCleanup();
+		bgCleanupTimer = setTimeout(() => {
+			bgCleanupTimer = null;
+			if (document.visibilityState === 'hidden' && !get(isPlaying)) {
+				freeIdleMemory();
+			}
+		}, 5 * 60 * 1000); // 5 min — Web Lock is primary protection; this is a belt-and-suspenders measure
 	}
 
 	/** Sync playhead + Loop Bridge for the background audio element. */
@@ -176,7 +261,7 @@
 		if (!Number.isFinite(dur) || dur <= 0) return;
 
 		// Loop Bridge: detect backwards jump (loop → restart at 0)
-		if (bgLoopArmed && t < 1 && bgLastTime > dur - 2) {
+		if (bgLoopArmed && t < 1 && bgLastTime > dur - 6) {
 			bgLoopArmed = false;
 			bgAudioEl.loop = false;
 			clearInterval(bgSyncInterval);
@@ -257,6 +342,8 @@
 			wavesurfer.on('ready', () => {
 				console.log('Wavesurfer ready event fired');
 				isLoading = false;
+				// Guard: empty() fires 'ready' with tiny duration — don't corrupt saved state
+				if (memoryFreed) return;
 				const dur = wavesurfer.getDuration();
 				duration = formatTime(dur);
 				playerDuration.set(dur);
@@ -268,6 +355,7 @@
 			let playbackInterval = null;
 
 			function syncPlayhead() {
+				if (bgActive) return; // Background element is handling playback
 				const t = mediaEl.currentTime;
 				const dur = mediaEl.duration;
 				// Skip during track transition when duration is NaN or invalid
@@ -275,7 +363,7 @@
 
 				// Loop Bridge: detect backwards jump (loop triggered, track restarted at 0).
 				// Must check BEFORE updating lastSyncedTime.
-				if (loopPendingAdvance && t < 1 && lastSyncedTime > dur - 2) {
+				if (loopPendingAdvance && t < 1 && lastSyncedTime > dur - 6) {
 					loopPendingAdvance = false;
 					mediaEl.loop = false;
 					clearInterval(playbackInterval);
@@ -391,7 +479,7 @@
 				if (!loopPendingAdvance || mediaEl.currentTime > 1) return;
 				const dur = mediaEl.duration;
 				// Guard against false positives (user seeking to start manually)
-				if (!Number.isFinite(dur) || lastSyncedTime < dur - 2) return;
+				if (!Number.isFinite(dur) || lastSyncedTime < dur - 6) return;
 				loopPendingAdvance = false;
 				mediaEl.loop = false;
 				clearInterval(playbackInterval);
@@ -419,10 +507,49 @@
 				isLoading = false;
 			});
 
-			// Transfer from bgAudioEl → WaveSurfer when returning from background
+			// Handle background memory cleanup and foreground restoration
 			function handleVisibilityChange() {
-				if (document.visibilityState !== 'visible') return;
+				// ── Tab going to background ──────────────────────────────
+				if (document.visibilityState === 'hidden') {
+					const audioPlaying = !mediaEl.paused || (bgAudioEl && !bgAudioEl.paused);
+					if (!audioPlaying) {
+						// No audio playing — free memory immediately to reduce discard risk
+						freeIdleMemory();
+					}
+					return;
+				}
+
+				// ── Tab returning to foreground ──────────────────────────
+				cancelBgCleanup(); // Cancel any pending delayed cleanup
 				mediaEl.autoplay = false;
+
+				// If memory was freed while in background, reload the track
+				if (memoryFreed && wavesurfer) {
+					memoryFreed = false;
+					let track;
+					currentTrack.subscribe(t => track = t)();
+					if (track?.audioUrl) {
+						bgLog('restoring emptied ws: ' + track.title);
+						const url = getAudioUrl(track.audioUrl);
+						const savedPos = get(playerPosition);
+						setupMediaSessionHandlers(wavesurfer);
+						isLoadingTrack = true;
+						wavesurfer.load(url).then(() => {
+							if (savedPos > 0) {
+								const dur = wavesurfer.getDuration();
+								if (dur > 0) wavesurfer.seekTo(savedPos / dur);
+							}
+							isLoadingTrack = false;
+							const dur = wavesurfer.getDuration();
+							duration = formatTime(dur);
+							playerDuration.set(dur);
+						}).catch(err => {
+							console.error('Restore load error:', err);
+							isLoadingTrack = false;
+						});
+					}
+					return;
+				}
 
 				// If bgAudioEl was handling playback, transfer back to WaveSurfer
 				if (bgAudioEl && bgAudioEl.src) {
@@ -490,6 +617,25 @@
 				}
 			}
 			document.addEventListener('visibilitychange', handleVisibilityChange);
+
+			// Last-chance save before Chrome discards the tab
+			window.addEventListener('pagehide', savePlayerState);
+
+			// Page Lifecycle: freeze fires right before Chrome freezes the tab
+			// (mandatory step before discard). Save state as last resort.
+			document.addEventListener('freeze', () => {
+				bgLog('freeze event');
+				savePlayerState();
+			});
+
+			// Page Lifecycle: resume fires if the tab is unfrozen without discard.
+			// Re-acquire the keep-alive lock if the player still has state.
+			document.addEventListener('resume', () => {
+				bgLog('resume event');
+				if (get(playerVisible) && get(currentTrack)) {
+					acquireKeepAliveLock();
+				}
+			});
 
 			bgLog('init OK, ws=' + !!wavesurfer);
 
@@ -629,6 +775,15 @@
 		}
 	});
 	
+	// Web Lock: acquire when player has a loaded track, release when closed
+	$effect(() => {
+		if ($playerVisible && $currentTrack?.audioUrl) {
+			acquireKeepAliveLock();
+		} else {
+			releaseKeepAliveLock();
+		}
+	});
+
 	// Load track when wavesurfer becomes ready if track was set before
 	$effect(() => {
 		if (wavesurferReady && wavesurfer && wavesurfer.getDuration() === 0) {
@@ -636,8 +791,25 @@
 			let track;
 			currentTrack.subscribe(t => track = t)();
 			if (track?.audioUrl) {
-				console.log('Wavesurfer became ready, loading pending track:', track.title);
-				loadTrack(track, true);
+				const isRestore = get(restoredFromSession);
+				console.log('Wavesurfer became ready, loading pending track:', track.title, isRestore ? '(restored)' : '');
+				if (isRestore) {
+					// Session restore: load track without autoPlay, seek to saved position
+					const savedPos = get(playerPosition);
+					restoredFromSession.set(false);
+					loadTrack(track, false).then(() => {
+						if (wavesurfer && savedPos > 0) {
+							const dur = wavesurfer.getDuration();
+							if (dur > 0) wavesurfer.seekTo(savedPos / dur);
+						}
+						// Re-extract artwork (not persisted across discard)
+						extractCoverArt(track.audioUrl).then(art => {
+							currentTrackArtwork.set(art);
+						}).catch(() => {});
+					});
+				} else {
+					loadTrack(track, true);
+				}
 			}
 		}
 	});
@@ -651,11 +823,13 @@
 		if (isNowVisible && !wasVisible) {
 			// Player just became visible - if we have a track and wavesurfer is ready, reload it
 			if (wavesurferReady && wavesurfer && $currentTrack?.audioUrl) {
-				console.log('Player reopened, reloading track:', $currentTrack.title);
+				const isRestore = get(restoredFromSession);
+				console.log('Player reopened, reloading track:', $currentTrack.title, isRestore ? '(restored)' : '');
 				// Use setTimeout to ensure wavesurfer is fully initialized
 				setTimeout(() => {
 					if (wavesurfer && wavesurfer.getDuration() === 0) {
-						loadTrack($currentTrack, true);
+						loadTrack($currentTrack, !isRestore);
+						if (isRestore) restoredFromSession.set(false);
 					}
 				}, 100);
 			}
@@ -715,6 +889,8 @@
 				// By creating a new element, we start it BEFORE stopping the old one
 				// (overlap), so Chrome never sees a gap in audio output.
 				const oldBg = bgAudioEl;
+				bgActive = true; // WaveSurfer's syncPlayhead should stop updating
+
 				const bg = createBgAudio();
 				const effectiveUrl = preloadedNext?.blobUrl || url;
 				bgLog(`loadTrack→bgEl "${track.title}" src=${preloadedNext ? 'blob' : 'http'} newEl=true`);
@@ -774,6 +950,8 @@
 				} catch {}
 
 				// Start sync interval on new bgAudioEl
+				// Clear first: the 'playing' event handler may have already started one
+				clearInterval(bgSyncInterval);
 				bgSyncInterval = setInterval(bgSyncPlayhead, 100);
 
 				needsWavesurferResync = true;
@@ -986,6 +1164,8 @@
 	}
 	
 	onDestroy(() => {
+		releaseKeepAliveLock();
+		cancelBgCleanup();
 		cleanupBgAudio();
 		if (bgAudioEl) {
 			bgAudioEl.src = '';
