@@ -179,7 +179,7 @@ export const actions = {
 			const headers = { 'Content-Type': 'application/json' };
 
 			if (webhookSecret) {
-				headers['Authorization'] = `Bearer ${webhookSecret}`;
+				headers['KJOv2-Contact-Auth'] = `Bearer ${webhookSecret}`;
 			}
 
 			const webhookResponse = await fetch(webhookUrl, {
