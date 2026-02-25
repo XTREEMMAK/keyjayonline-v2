@@ -68,6 +68,7 @@
 	// Group primary actions by type for dropdown condensing
 	const viewerActions = $derived(primaryActions.filter(a => a.actionType === 'viewer'));
 	const audioActions = $derived(primaryActions.filter(a => a.actionType === 'audio_player'));
+	const videoActions = $derived(primaryActions.filter(a => a.actionType === 'video_player'));
 
 	// Action picker modal state
 	let actionPickerOpen = $state(false);
@@ -561,6 +562,16 @@
 											>
 												<Icon icon="mdi:image-multiple" class="text-xl" />
 												View
+											</button>
+										{/if}
+										<!-- Video actions: single button -->
+										{#if videoActions.length >= 1}
+											<button
+												onclick={() => onAction(videoActions[0])}
+												class="px-10 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-purple-900/30"
+											>
+												<Icon icon={videoActions[0].icon} class="text-xl" />
+												{videoActions[0].label}
 											</button>
 										{/if}
 										<!-- Primary external links (rendered directly) -->

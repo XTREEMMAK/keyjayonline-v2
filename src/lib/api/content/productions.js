@@ -134,7 +134,8 @@ const ACTION_FIELDS = [
   'link_type',
   { icon: ['id', 'icon_reference_id'] },
   { gallery_id: ['id', 'status'] },
-  'audio_playlist_id'
+  'audio_playlist_id',
+  { video_file: ['id', 'filename_disk'] }
 ];
 
 /**
@@ -166,6 +167,20 @@ function buildProductionActions(production, rawActions) {
         isPrimary: true,
         sortOrder: i,
         playlistId: raw.audio_playlist_id,
+        linkType: raw.link_type,
+        openInNewTab: false
+      });
+    } else if (actionType === 'video_player') {
+      // Prefer uploaded file (via file picker), fall back to URL (for YouTube/Vimeo embeds)
+      const videoFileUrl = raw.video_file ? buildAssetUrl(raw.video_file) : null;
+      actions.push({
+        id: raw.id,
+        actionType: 'video_player',
+        label: label || 'Watch',
+        icon: icon || 'mdi:play-circle',
+        isPrimary: true,
+        sortOrder: i,
+        videoUrl: videoFileUrl || raw.url,
         linkType: raw.link_type,
         openInNewTab: false
       });

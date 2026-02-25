@@ -7,6 +7,7 @@
 	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
 	import ProductionDetailModal from '$lib/components/ui/ProductionDetailModal.svelte';
 	import ActionPickerModal from '$lib/components/ui/ActionPickerModal.svelte';
+	import VideoPlayerModal from '$lib/components/ui/VideoPlayerModal.svelte';
 	import { activeSection, navbarVisible } from '$lib/stores/navigation.js';
 	import { showSectionSubNav, hideSectionSubNav, productionsActiveFilter, portalScrollLock, sectionModalOpen, sentinelRecheck, recheckSentinels } from '$lib/stores/stickyNav.js';
 	import { createIntersectionObserver } from '$lib/utils/intersectionObserver.js';
@@ -35,6 +36,11 @@
 	let viewerPages = $state([]);
 	let viewerTitle = $state('');
 	let viewerLoading = $state(false);
+
+	// Video player modal state
+	let videoPlayerOpen = $state(false);
+	let videoPlayerUrl = $state('');
+	let videoPlayerTitle = $state('');
 
 	// Production detail modal state
 	let detailModalOpen = $state(false);
@@ -83,6 +89,9 @@
 	);
 	const featuredAudioActions = $derived(
 		(featuredProduction?.actions || []).filter(a => a.actionType === 'audio_player')
+	);
+	const featuredVideoActions = $derived(
+		(featuredProduction?.actions || []).filter(a => a.actionType === 'video_player')
 	);
 
 	function openActionPicker(title, actions, color, handler) {
@@ -156,7 +165,7 @@
 	// Hide sticky nav portal when modal is open (only when this section is active)
 	$effect(() => {
 		if ($activeSection !== 'productions') return;
-		sectionModalOpen.set(detailModalOpen || viewerOpen);
+		sectionModalOpen.set(detailModalOpen || viewerOpen || videoPlayerOpen);
 	});
 
 	// Top sentinel observer (140px offset so sticky nav persists longer when scrolling up)
@@ -263,6 +272,19 @@
 		viewerTitle = '';
 	}
 
+	// Open/close video player modal
+	function openVideoPlayer(videoUrl, title = '') {
+		videoPlayerUrl = videoUrl;
+		videoPlayerTitle = title;
+		videoPlayerOpen = true;
+	}
+
+	function closeVideoPlayer() {
+		videoPlayerOpen = false;
+		videoPlayerUrl = '';
+		videoPlayerTitle = '';
+	}
+
 	function getStatusColor(status) {
 		switch(status) {
 			case 'Released':
@@ -331,6 +353,9 @@
 			case 'audio_player':
 				playProductionPlaylist(action.playlistId);
 				break;
+			case 'video_player':
+				openVideoPlayer(action.videoUrl, selectedProduction?.title || action.label);
+				break;
 		}
 	}
 
@@ -342,6 +367,9 @@
 				break;
 			case 'audio_player':
 				playProductionPlaylist(action.playlistId);
+				break;
+			case 'video_player':
+				openVideoPlayer(action.videoUrl, featuredProduction?.title || action.label);
 				break;
 		}
 	}
@@ -373,6 +401,14 @@
 	loading={viewerLoading}
 	onClose={closeContentViewer}
 	canDownload={true}
+/>
+
+<!-- Video Player Modal -->
+<VideoPlayerModal
+	isOpen={videoPlayerOpen}
+	videoUrl={videoPlayerUrl}
+	title={videoPlayerTitle}
+	onClose={closeVideoPlayer}
 />
 
 <!-- ============================================================================ -->
@@ -496,6 +532,13 @@
 											<button onclick={() => openActionPicker('View', featuredViewerActions, 'orange', handleFeaturedAction)} class="neu-button-primary px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
 												<Icon icon="mdi:image-multiple" class="text-xl" />
 												View
+											</button>
+										{/if}
+										<!-- Video actions: single button -->
+										{#if featuredVideoActions.length >= 1}
+											<button onclick={() => handleFeaturedAction(featuredVideoActions[0])} class="neu-button-primary px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-full hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+												<Icon icon={featuredVideoActions[0].icon} class="text-xl" />
+												{featuredVideoActions[0].label}
 											</button>
 										{/if}
 									</div>

@@ -964,9 +964,9 @@
 						<h2 class="text-2xl font-bold text-white mb-8 text-center">What I Use</h2>
 						<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 							<!-- Studio Photo (slide in from left) -->
-							<div class="neu-card overflow-hidden" in:fly={{ x: -100, duration: 600 }}>
+							<div class="neu-card overflow-hidden self-start" in:fly={{ x: -100, duration: 600 }}>
 								{#if musicData.studioPhoto}
-									<img src={musicData.studioPhoto} alt="Studio setup" class="w-full h-full object-cover" loading="lazy" />
+									<img src={musicData.studioPhoto} alt="Studio setup" class="w-full object-cover" loading="lazy" />
 								{:else}
 									<div class="aspect-[4/3] bg-gradient-to-br from-blue-900/30 to-purple-900/30 flex flex-col items-center justify-center gap-4">
 										<Icon icon="mdi:music-box-multiple" class="text-blue-400/30 text-8xl" />

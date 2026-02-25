@@ -2153,19 +2153,19 @@
           "choices": [
             {
               "text": "Music",
-              "value": "Music"
+              "value": "music"
             },
             {
               "text": "Voice",
-              "value": "Voice"
+              "value": "voice"
             },
             {
               "text": "Tech",
-              "value": "Tech"
+              "value": "tech"
             },
             {
               "text": "Productions",
-              "value": "Productions"
+              "value": "productions"
             }
           ]
         },
@@ -14275,6 +14275,12 @@
               "icon": "headphones",
               "text": "Audio Player",
               "value": "Audio Player"
+            },
+            {
+              "color": "#D13DCD",
+              "icon": "missed_video_call",
+              "text": "Video Player",
+              "value": "Video Player"
             }
           ]
         },
@@ -14435,13 +14441,49 @@
         "conditions": [
           {
             "hidden": false,
-            "name": "On non App Links",
+            "name": "On non App Links or Video",
             "rule": {
               "_and": [
                 {
                   "action_type": {
                     "_eq": "External Link"
                   }
+                }
+              ]
+            }
+          },
+          {
+            "hidden": false,
+            "name": "Video Select",
+            "rule": {
+              "_and": [
+                {
+                  "action_type": {
+                    "_eq": "Video Player"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "hidden": false,
+            "name": "File Video Select",
+            "readonly": true,
+            "rule": {
+              "_and": [
+                {
+                  "action_type": {
+                    "_eq": "Video Player"
+                  }
+                },
+                {
+                  "_and": [
+                    {
+                      "video_file": {
+                        "_nnull": true
+                      }
+                    }
+                  ]
                 }
               ]
             }
@@ -14458,7 +14500,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 12,
+        "sort": 14,
         "special": null,
         "translations": null,
         "validation": null,
@@ -14566,7 +14608,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 13,
+        "sort": 15,
         "special": [
           "m2o"
         ],
@@ -14672,7 +14714,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 14,
+        "sort": 16,
         "special": [
           "m2o"
         ],
@@ -14698,6 +14740,191 @@
         "has_auto_increment": false,
         "foreign_key_table": "kjov2_audio_playlist",
         "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "kjov2_productions_actions",
+      "field": "video_file",
+      "type": "uuid",
+      "meta": {
+        "collection": "kjov2_productions_actions",
+        "conditions": [
+          {
+            "hidden": false,
+            "name": "Video Select",
+            "rule": {
+              "_and": [
+                {
+                  "action_type": {
+                    "_eq": "Video Player"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "hidden": false,
+            "name": "URL filled",
+            "readonly": true,
+            "rule": {
+              "_and": [
+                {
+                  "action_type": {
+                    "_eq": "Video Player"
+                  }
+                },
+                {
+                  "_and": [
+                    {
+                      "url": {
+                        "_nnull": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "display": null,
+        "display_options": null,
+        "field": "video_file",
+        "group": null,
+        "hidden": true,
+        "interface": "file",
+        "note": null,
+        "options": {
+          "filter": {
+            "_and": [
+              {
+                "type": {
+                  "_contains": "mp4"
+                }
+              }
+            ]
+          },
+          "folder": "c3663281-14a1-4a7b-b989-7dacbcbaf3ba"
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 17,
+        "special": [
+          "file"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "video_file",
+        "table": "kjov2_productions_actions",
+        "data_type": "uuid",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "directus_files",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "kjov2_productions_actions",
+      "field": "divider-jwxjjc",
+      "type": "alias",
+      "meta": {
+        "collection": "kjov2_productions_actions",
+        "conditions": [
+          {
+            "hidden": false,
+            "name": "Video Select",
+            "rule": {
+              "_and": [
+                {
+                  "action_type": {
+                    "_eq": "Video Player"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "display": null,
+        "display_options": null,
+        "field": "divider-jwxjjc",
+        "group": null,
+        "hidden": true,
+        "interface": "presentation-divider",
+        "note": null,
+        "options": {
+          "title": "Video"
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 12,
+        "special": [
+          "alias",
+          "no-data"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      }
+    },
+    {
+      "collection": "kjov2_productions_actions",
+      "field": "notice-dpa7hp",
+      "type": "alias",
+      "meta": {
+        "collection": "kjov2_productions_actions",
+        "conditions": [
+          {
+            "hidden": false,
+            "name": "Video Select",
+            "rule": {
+              "_and": [
+                {
+                  "action_type": {
+                    "_eq": "Video Player"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "display": null,
+        "display_options": null,
+        "field": "notice-dpa7hp",
+        "group": null,
+        "hidden": true,
+        "interface": "presentation-notice",
+        "note": null,
+        "options": {
+          "color": "info",
+          "text": "You can use either a YouTube or Vimeo URL, or use the local file browser."
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 13,
+        "special": [
+          "alias",
+          "no-data"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
       }
     },
     {
@@ -16745,7 +16972,9 @@
         "collection": "kjov2_skills",
         "conditions": null,
         "display": null,
-        "display_options": null,
+        "display_options": {
+          "choices": null
+        },
         "field": "category",
         "group": null,
         "hidden": false,
@@ -16755,19 +16984,19 @@
           "choices": [
             {
               "text": "Music",
-              "value": "Music"
+              "value": "music"
             },
             {
               "text": "Tech",
-              "value": "Tech"
+              "value": "tech"
             },
             {
               "text": "Voice",
-              "value": "Voice"
+              "value": "voice"
             },
             {
               "text": "Productions",
-              "value": "Productions"
+              "value": "productions"
             }
           ]
         },
@@ -24002,6 +24231,31 @@
         "foreign_key_table": "kjov2_audio_playlist",
         "foreign_key_column": "id",
         "constraint_name": "kjov2_productions_actions_audio_playlist_id_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "kjov2_productions_actions",
+      "field": "video_file",
+      "related_collection": "directus_files",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "kjov2_productions_actions",
+        "many_field": "video_file",
+        "one_allowed_collections": null,
+        "one_collection": "directus_files",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "kjov2_productions_actions",
+        "column": "video_file",
+        "foreign_key_table": "directus_files",
+        "foreign_key_column": "id",
+        "constraint_name": "kjov2_productions_actions_video_file_foreign",
         "on_update": "NO ACTION",
         "on_delete": "SET NULL"
       }
