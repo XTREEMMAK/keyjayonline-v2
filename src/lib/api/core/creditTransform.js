@@ -8,6 +8,21 @@
 import { buildAssetUrl } from './assets.js';
 
 /**
+ * Normalize a URL value — detects bare email addresses and adds mailto: prefix.
+ * @param {string|undefined|null} value
+ * @returns {string|undefined|null}
+ */
+function normalizeUrl(value) {
+  if (!value || typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  // Already has a scheme (http:, https:, mailto:, tel:, etc.)
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return trimmed;
+  // Looks like an email address
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return `mailto:${trimmed}`;
+  return trimmed;
+}
+
+/**
  * Check if a value looks like M2M junction records.
  * Directus M2M returns: [{ kjov2_ip_roles_id: { id, name } }, ...]
  * or [{ kjov2_ip_roles_id: 5 }, ...] when not expanded.
@@ -101,8 +116,11 @@ export function transformCredit(credit) {
     name: credit.person_id?.name || 'Unknown',
     additional_info: credit.additional_info,
     bio: credit.person_id?.bio,
-    website_url: credit.person_id?.website_url,
-    social_links: credit.person_id?.social_links || [],
+    website_url: normalizeUrl(credit.person_id?.website_url),
+    social_links: (credit.person_id?.social_links || []).map(s => ({
+      ...s,
+      network_url: normalizeUrl(s.network_url)
+    })),
     display_order: credit.display_order,
     profile_image: buildAssetUrl(credit.person_id?.profile_image)
   };

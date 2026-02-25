@@ -103,8 +103,24 @@ import {
 			didOpen: () => {
 				// Setup back button handler
 				cleanupPopstate = setupPopstateHandler(() => {
+					// Exit credit detail first before closing modal
+					if (window._creditDetailIdPrefix) {
+						window.backToCredits();
+						pushModalState('album-modal');
+						return;
+					}
 					Swal.close();
 				});
+
+				// Escape key: exit credit detail before SweetAlert2 closes modal
+				window._creditEscHandler = (e) => {
+					if (e.key === 'Escape' && window._creditDetailIdPrefix) {
+						e.preventDefault();
+						e.stopPropagation();
+						window.backToCredits();
+					}
+				};
+				document.addEventListener('keydown', window._creditEscHandler, true);
 
 				// Initialize any components that need mounting
 				initializeModalComponents();
@@ -112,6 +128,12 @@ import {
 			willClose: () => {
 				// Cleanup popstate listener
 				if (cleanupPopstate) cleanupPopstate();
+
+				// Cleanup escape key handler for credit detail
+				if (window._creditEscHandler) {
+					document.removeEventListener('keydown', window._creditEscHandler, true);
+					delete window._creditEscHandler;
+				}
 
 				// Clean up global functions when modal closes
 				delete window.handleAlbumShare;
@@ -229,9 +251,13 @@ import {
 			'github': 'mdi:github',
 			'twitch': 'simple-icons:twitch',
 			'apple music': 'simple-icons:applemusic',
-			'tidal': 'simple-icons:tidal'
+			'tidal': 'simple-icons:tidal',
+			'email': 'mdi:email-outline'
 		};
 		if (networkIcons[key]) return networkIcons[key];
+
+		// mailto: URL detection
+		if (social.network_url && social.network_url.startsWith('mailto:')) return 'mdi:email-outline';
 
 		// Fallback: try URL domain detection
 		if (social.network_url) {
@@ -269,14 +295,20 @@ import {
 	function generateCreditSocialIconsHtml(credit, uniqueId = '') {
 		const icons = [];
 		if (credit.website_url) {
-			icons.push(`<a href="${credit.website_url}" target="_blank" rel="noopener noreferrer" title="Website" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon noobserver icon="mdi:web" width="18" height="18"></iconify-icon></a>`);
+			const isMailto = credit.website_url.startsWith('mailto:');
+			const wIcon = isMailto ? 'mdi:email-outline' : 'mdi:web';
+			const wTitle = isMailto ? 'Email' : 'Website';
+			const wTarget = isMailto ? '' : ' target="_blank" rel="noopener noreferrer"';
+			icons.push(`<a href="${credit.website_url}"${wTarget} title="${wTitle}" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon noobserver icon="${wIcon}" width="18" height="18"></iconify-icon></a>`);
 		}
 		const socialLinks = Array.isArray(credit.social_links) ? credit.social_links : [];
 		for (const social of socialLinks) {
 			if (!social.network_url) continue;
 			const icon = resolveSocialIcon(social);
 			const label = social.network || 'Link';
-			icons.push(`<a href="${social.network_url}" target="_blank" rel="noopener noreferrer" title="${label}" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon noobserver icon="${icon}" width="16" height="16"></iconify-icon></a>`);
+			const isMailto = social.network_url.startsWith('mailto:');
+			const sTarget = isMailto ? '' : ' target="_blank" rel="noopener noreferrer"';
+			icons.push(`<a href="${social.network_url}"${sTarget} title="${label}" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon noobserver icon="${icon}" width="16" height="16"></iconify-icon></a>`);
 		}
 		if (icons.length === 0) return '';
 
@@ -330,22 +362,29 @@ import {
 		if (hasWebsite || hasSocials) {
 			const rows = [];
 			if (credit.website_url) {
-				const displayUrl = credit.website_url.replace(/^https?:\/\//, '');
-				rows.push(`<a href="${credit.website_url}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #d1d5db; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-					<iconify-icon noobserver icon="mdi:web" width="20" height="20" style="color: #9ca3af; flex-shrink: 0;"></iconify-icon>
+				const isMailto = credit.website_url.startsWith('mailto:');
+				const displayUrl = credit.website_url.replace(/^(https?:\/\/|mailto:)/, '');
+				const wIcon = isMailto ? 'mdi:email-outline' : 'mdi:web';
+				const wTrailIcon = isMailto ? 'mdi:email-outline' : 'mdi:open-in-new';
+				const wTarget = isMailto ? '' : ' target="_blank" rel="noopener noreferrer"';
+				rows.push(`<a href="${credit.website_url}"${wTarget} style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #d1d5db; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+					<iconify-icon noobserver icon="${wIcon}" width="20" height="20" style="color: #9ca3af; flex-shrink: 0;"></iconify-icon>
 					<span style="flex: 1; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayUrl}</span>
-					<iconify-icon noobserver icon="mdi:open-in-new" width="14" height="14" style="color: #6b7280; flex-shrink: 0;"></iconify-icon>
+					<iconify-icon noobserver icon="${wTrailIcon}" width="14" height="14" style="color: #6b7280; flex-shrink: 0;"></iconify-icon>
 				</a>`);
 			}
 			if (Array.isArray(credit.social_links)) {
 				for (const social of credit.social_links) {
 					if (!social.network_url) continue;
 					const icon = resolveSocialIcon(social);
-					const label = social.network || social.network_url.replace(/^https?:\/\//, '');
-					rows.push(`<a href="${social.network_url}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #d1d5db; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+					const isMailto = social.network_url.startsWith('mailto:');
+					const label = social.network || social.network_url.replace(/^(https?:\/\/|mailto:)/, '');
+					const sTrailIcon = isMailto ? 'mdi:email-outline' : 'mdi:open-in-new';
+					const sTarget = isMailto ? '' : ' target="_blank" rel="noopener noreferrer"';
+					rows.push(`<a href="${social.network_url}"${sTarget} style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #d1d5db; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
 						<iconify-icon noobserver icon="${icon}" width="20" height="20" style="color: #9ca3af; flex-shrink: 0;"></iconify-icon>
 						<span style="flex: 1; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${label}</span>
-						<iconify-icon noobserver icon="mdi:open-in-new" width="14" height="14" style="color: #6b7280; flex-shrink: 0;"></iconify-icon>
+						<iconify-icon noobserver icon="${sTrailIcon}" width="14" height="14" style="color: #6b7280; flex-shrink: 0;"></iconify-icon>
 					</a>`);
 				}
 			}
@@ -720,6 +759,17 @@ import {
 			}
 		};
 
+		/**
+		 * Find the scrollable parent for the credits container.
+		 * Desktop: #content-credits tab panel; Mobile: .swal2-html-container
+		 */
+		function getScrollParent(idPrefix) {
+			if (idPrefix.startsWith('desktop')) {
+				return document.querySelector('#content-credits');
+			}
+			return document.querySelector('.swal2-html-container');
+		}
+
 		// Register global function for credit detail drill-down
 		window.showCreditDetail = function(idx, idPrefix) {
 			const credit = window._albumCredits?.[idx];
@@ -736,16 +786,27 @@ import {
 			}
 
 			if (container) {
-				window._creditDetailIdPrefix = idPrefix;
-				container.innerHTML = detailHtml;
+				// Save scroll position before navigating into detail
+				const scrollParent = getScrollParent(idPrefix);
+				window._creditScrollTop = scrollParent ? scrollParent.scrollTop : 0;
 
-				// Scroll to the detail view header
-				requestAnimationFrame(() => {
-					const detailView = document.getElementById('credit-detail-view');
-					if (detailView) {
-						detailView.scrollIntoView({ behavior: 'smooth', block: 'start' });
-					}
-				});
+				window._creditDetailIdPrefix = idPrefix;
+
+				// Fade out, swap, fade in
+				container.style.transition = 'opacity 0.2s ease';
+				container.style.opacity = '0';
+				setTimeout(() => {
+					container.innerHTML = detailHtml;
+					container.style.opacity = '1';
+
+					// Scroll to the detail view header
+					requestAnimationFrame(() => {
+						const detailView = document.getElementById('credit-detail-view');
+						if (detailView) {
+							detailView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+						}
+					});
+				}, 200);
 			}
 		};
 
@@ -765,13 +826,30 @@ import {
 			}
 
 			if (container) {
-				container.innerHTML = `
-					<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 20px; text-align: left;">Album Credits</h3>
-					${creditsHtml}
-				`;
+				const savedScroll = window._creditScrollTop || 0;
+				const scrollParent = getScrollParent(idPrefix);
+
+				// Fade out, swap, fade in, restore scroll
+				container.style.transition = 'opacity 0.2s ease';
+				container.style.opacity = '0';
+				setTimeout(() => {
+					container.innerHTML = `
+						<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 20px; text-align: left;">Album Credits</h3>
+						${creditsHtml}
+					`;
+					container.style.opacity = '1';
+
+					// Restore scroll position
+					if (scrollParent) {
+						requestAnimationFrame(() => {
+							scrollParent.scrollTop = savedScroll;
+						});
+					}
+				}, 200);
 			}
 
 			delete window._creditDetailIdPrefix;
+			delete window._creditScrollTop;
 		};
 
 		// Click-away handler for credit social overlays (store ref for cleanup)

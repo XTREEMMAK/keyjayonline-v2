@@ -53,7 +53,11 @@ export function getExternalLinkIcon(link) {
 
 	if (platformIcons[key]) return platformIcons[key];
 
-	// 4. URL domain-based detection
+	// 4. Email / mailto detection
+	const url = link.url || link.network_url || '';
+	if (url.startsWith('mailto:')) return 'mdi:email-outline';
+
+	// 5. URL domain-based detection
 	if (link.url) {
 		const domainIcons = {
 			'youtube.com': 'simple-icons:youtube',

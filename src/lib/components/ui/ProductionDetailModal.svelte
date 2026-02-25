@@ -64,6 +64,23 @@
 	let expandedGroups = $state({});
 	let socialOverlayOpen = $state({});
 	let selectedCredit = $state(null);
+	let creditScrollTop = 0;
+
+	function selectCredit(credit) {
+		// Save scroll position of the modal's scrollable container
+		const scroller = document.querySelector('.custom-scrollbar');
+		if (scroller) creditScrollTop = scroller.scrollTop;
+		selectedCredit = credit;
+	}
+
+	function deselectCredit() {
+		selectedCredit = null;
+		// Restore scroll position after DOM updates
+		requestAnimationFrame(() => {
+			const scroller = document.querySelector('.custom-scrollbar');
+			if (scroller) scroller.scrollTop = creditScrollTop;
+		});
+	}
 
 	function toggleGroup(role) {
 		expandedGroups = { ...expandedGroups, [role]: expandedGroups[role] === false ? true : false };
@@ -143,6 +160,8 @@
 			let viewerOpen = false;
 			contentViewerOpen.subscribe(v => viewerOpen = v)();
 			if (viewerOpen) return;
+			// Exit credit detail first before closing modal
+			if (selectedCredit) { deselectCredit(); return; }
 			handleClose();
 		}
 	}
@@ -177,6 +196,11 @@
 
 				// Setup popstate listener for back button (modal-aware)
 				const cleanupPopstate = setupPopstateHandler('production-detail', () => {
+					if (selectedCredit) {
+						deselectCredit();
+						pushModalState('production-detail');
+						return;
+					}
 					onClose();
 				});
 
@@ -392,14 +416,14 @@
 											transition:fade={{ duration: 200 }}
 										>
 											{#if credit.website_url}
-												<a href={credit.website_url} target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-white transition-colors" title="Website">
-													<Icon icon="mdi:web" class="text-xl" />
+												<a href={credit.website_url} target={credit.website_url.startsWith('mailto:') ? undefined : '_blank'} rel={credit.website_url.startsWith('mailto:') ? undefined : 'noopener noreferrer'} class="text-gray-300 hover:text-white transition-colors" title={credit.website_url.startsWith('mailto:') ? 'Email' : 'Website'}>
+													<Icon icon={credit.website_url.startsWith('mailto:') ? 'mdi:email-outline' : 'mdi:web'} class="text-xl" />
 												</a>
 											{/if}
 											{#if credit.social_links}
 												{#each credit.social_links as social}
 													{#if social.network_url}
-														<a href={social.network_url} target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-white transition-colors" title={social.network || 'Link'}>
+														<a href={social.network_url} target={social.network_url.startsWith('mailto:') ? undefined : '_blank'} rel={social.network_url.startsWith('mailto:') ? undefined : 'noopener noreferrer'} class="text-gray-300 hover:text-white transition-colors" title={social.network || 'Link'}>
 															<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} class="text-lg" />
 														</a>
 													{/if}
@@ -418,14 +442,14 @@
 									<!-- Inline icons -->
 									<div class="flex items-center gap-1.5 flex-shrink-0 ml-auto">
 										{#if credit.website_url}
-											<a href={credit.website_url} target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" title="Website">
-												<Icon icon="mdi:web" class="text-lg" />
+											<a href={credit.website_url} target={credit.website_url.startsWith('mailto:') ? undefined : '_blank'} rel={credit.website_url.startsWith('mailto:') ? undefined : 'noopener noreferrer'} class="text-gray-400 hover:text-white transition-colors" title={credit.website_url.startsWith('mailto:') ? 'Email' : 'Website'}>
+												<Icon icon={credit.website_url.startsWith('mailto:') ? 'mdi:email-outline' : 'mdi:web'} class="text-lg" />
 											</a>
 										{/if}
 										{#if credit.social_links}
 											{#each credit.social_links as social}
 												{#if social.network_url}
-													<a href={social.network_url} target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" title={social.network || 'Link'}>
+													<a href={social.network_url} target={social.network_url.startsWith('mailto:') ? undefined : '_blank'} rel={social.network_url.startsWith('mailto:') ? undefined : 'noopener noreferrer'} class="text-gray-400 hover:text-white transition-colors" title={social.network || 'Link'}>
 														<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} class="text-base" />
 													</a>
 												{/if}
@@ -446,12 +470,12 @@
 												src={credit.profile_image}
 												alt={credit.name}
 												class="w-10 h-10 rounded-full object-cover flex-shrink-0 cursor-pointer border-2 border-transparent hover:border-blue-500/70 hover:scale-110 transition-all duration-200"
-												onclick={(e) => { e.stopPropagation(); selectedCredit = credit; }}
+												onclick={(e) => { e.stopPropagation(); selectCredit(credit); }}
 											/>
 										{:else}
 											<div
 												class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-blue-500/30 hover:scale-110 transition-all duration-200"
-												onclick={(e) => { e.stopPropagation(); selectedCredit = credit; }}
+												onclick={(e) => { e.stopPropagation(); selectCredit(credit); }}
 											>
 												<Icon icon="mdi:account" class="text-xl text-gray-400" />
 											</div>
@@ -501,12 +525,12 @@
 																src={credit.profile_image}
 																alt={credit.name}
 																class="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-blue-500/30 cursor-pointer hover:border-blue-500/70 hover:scale-110 transition-all duration-200"
-																onclick={(e) => { e.stopPropagation(); selectedCredit = credit; }}
+																onclick={(e) => { e.stopPropagation(); selectCredit(credit); }}
 															/>
 														{:else}
 															<div
 																class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-blue-500/35 hover:scale-110 transition-all duration-200"
-																onclick={(e) => { e.stopPropagation(); selectedCredit = credit; }}
+																onclick={(e) => { e.stopPropagation(); selectCredit(credit); }}
 															>
 																<Icon icon="mdi:account" class="text-xl text-blue-500" />
 															</div>
@@ -533,7 +557,7 @@
 							<div class="space-y-6" id="credit-detail-view">
 								<!-- Back button -->
 								<button
-									onclick={() => selectedCredit = null}
+									onclick={() => deselectCredit()}
 									class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm"
 								>
 									<Icon icon="mdi:arrow-left" class="text-lg" />
@@ -578,13 +602,13 @@
 											{#if credit.website_url}
 												<a
 													href={credit.website_url}
-													target="_blank"
-													rel="noopener noreferrer"
+													target={credit.website_url.startsWith('mailto:') ? undefined : '_blank'}
+													rel={credit.website_url.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
 													class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
 												>
-													<Icon icon="mdi:web" class="text-lg text-gray-400 group-hover:text-white" />
-													<span class="text-gray-300 group-hover:text-white text-sm truncate flex-1">{credit.website_url.replace(/^https?:\/\//, '')}</span>
-													<Icon icon="mdi:open-in-new" class="text-sm text-gray-500" />
+													<Icon icon={credit.website_url.startsWith('mailto:') ? 'mdi:email-outline' : 'mdi:web'} class="text-lg text-gray-400 group-hover:text-white" />
+													<span class="text-gray-300 group-hover:text-white text-sm truncate flex-1">{credit.website_url.replace(/^(https?:\/\/|mailto:)/, '')}</span>
+													<Icon icon={credit.website_url.startsWith('mailto:') ? 'mdi:email-outline' : 'mdi:open-in-new'} class="text-sm text-gray-500" />
 												</a>
 											{/if}
 											{#if credit.social_links}
@@ -592,13 +616,13 @@
 													{#if social.network_url}
 														<a
 															href={social.network_url}
-															target="_blank"
-															rel="noopener noreferrer"
+															target={social.network_url.startsWith('mailto:') ? undefined : '_blank'}
+															rel={social.network_url.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
 															class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
 														>
 															<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} class="text-lg text-gray-400 group-hover:text-white" />
-															<span class="text-gray-300 group-hover:text-white text-sm truncate flex-1">{social.network || social.network_url.replace(/^https?:\/\//, '')}</span>
-															<Icon icon="mdi:open-in-new" class="text-sm text-gray-500" />
+															<span class="text-gray-300 group-hover:text-white text-sm truncate flex-1">{social.network || social.network_url.replace(/^(https?:\/\/|mailto:)/, '')}</span>
+															<Icon icon={social.network_url.startsWith('mailto:') ? 'mdi:email-outline' : 'mdi:open-in-new'} class="text-sm text-gray-500" />
 														</a>
 													{/if}
 												{/each}
