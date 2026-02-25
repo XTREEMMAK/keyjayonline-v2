@@ -23,7 +23,7 @@ function isM2MRoleArray(value) {
 /**
  * Extract roles from M2M junction records.
  * @param {Array} junctionRecords
- * @returns {Array<{ title: string, category: string }>}
+ * @returns {Array<{ title: string, category: string, sort: number|null }>}
  */
 function extractM2MRoles(junctionRecords) {
   return junctionRecords
@@ -33,7 +33,7 @@ function extractM2MRoles(junctionRecords) {
       // Expanded object: { id, name, icon, sort }
       if (typeof role === 'object') {
         const title = role.name || 'Unknown Role';
-        return { title, category: title };
+        return { title, category: title, sort: role.sort ?? null };
       }
       // Non-expanded: just an integer ID — can't resolve name
       return null;

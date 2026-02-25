@@ -34,14 +34,15 @@ export function countSocialIcons(credit) {
 }
 
 /**
- * Group credits by role title and sort groups by priority order.
+ * Group credits by role title and sort groups by the role's sort field.
  *
  * Each credit's `roles` array (normalized by transformCredit) is iterated.
  * Each unique role title becomes a group. Credits with multiple roles appear
- * in multiple groups. Groups are sorted by the provided priority array first,
- * then alphabetically for unlisted roles.
+ * in multiple groups. Groups are sorted by the lowest `sort` value among their
+ * roles first, then by the provided priority array as fallback for legacy
+ * credits without sort values, then alphabetically.
  *
- * @param {Array<{ roles?: Array<{ title: string, category?: string }>, role?: string, [key: string]: any }>} credits
+ * @param {Array<{ roles?: Array<{ title: string, sort?: number|null }>, role?: string, [key: string]: any }>} credits
  * @param {string[]} priorityOrder
  * @returns {Array<{ role: string, credits: Array<Object> }>}
  */
@@ -50,13 +51,22 @@ export function groupCreditsByRole(credits, priorityOrder = []) {
 
 	/** @type {Record<string, Array<Object>>} */
 	const grouped = {};
+	/** @type {Record<string, number|null>} Track the lowest sort value per group */
+	const groupSort = {};
 
 	for (const credit of credits) {
 		const roleTitles = new Set();
 
 		if (credit.roles && Array.isArray(credit.roles) && credit.roles.length > 0) {
 			for (const role of credit.roles) {
-				roleTitles.add(role.title || 'Other');
+				const title = role.title || 'Other';
+				roleTitles.add(title);
+				// Track the lowest sort value for this role group
+				if (role.sort != null) {
+					if (groupSort[title] == null || role.sort < groupSort[title]) {
+						groupSort[title] = role.sort;
+					}
+				}
 			}
 		} else {
 			roleTitles.add(credit.role || 'Other');
@@ -72,6 +82,13 @@ export function groupCreditsByRole(credits, priorityOrder = []) {
 	}
 
 	const sortedRoles = Object.keys(grouped).sort((a, b) => {
+		const aSort = groupSort[a];
+		const bSort = groupSort[b];
+		// Roles with sort values come first, ordered by sort
+		if (aSort != null && bSort != null) return aSort - bSort;
+		if (aSort != null) return -1;
+		if (bSort != null) return 1;
+		// Fallback to hardcoded priority for legacy credits
 		const aIdx = priorityOrder.indexOf(a);
 		const bIdx = priorityOrder.indexOf(b);
 		if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;

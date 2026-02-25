@@ -21,7 +21,7 @@ const CREDIT_FIELDS = [
     person_id: ['name', 'bio', 'website_url', 'social_links', 'profile_image.id', 'profile_image.filename_disk']
   },
   {
-    role: [{ kjov2_ip_roles_id: ['id', 'name'] }]
+    role: [{ kjov2_ip_roles_id: ['id', 'name', 'sort'] }]
   }
 ];
 
