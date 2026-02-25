@@ -39,8 +39,12 @@
 	// Tab state
 	let activeTab = $state('details');
 
+	// Credits: separate tab if >5, otherwise inline in Details
+	const credits = $derived(production?.credits || []);
+	const creditsInSeparateTab = $derived(credits.length > 5);
+
 	const hasDetailsContent = $derived(
-		!!(production?.description || production?.roles || (production?.credits?.length > 0) || production?.toolsMedium)
+		!!(production?.description || production?.roles || (!creditsInSeparateTab && credits.length > 0) || production?.toolsMedium)
 	);
 	const hasStoryContent = $derived(
 		!!(production?.behindTheScenes || production?.outcome)
@@ -48,10 +52,12 @@
 	// Embeds (O2M array from API, already sorted featured-first)
 	const embeds = $derived(production?.embeds || []);
 	const hasMediaContent = $derived(embeds.length > 0);
+	const hasCreditsTab = $derived(creditsInSeparateTab && credits.length > 0);
 
 	const availableTabs = $derived(() => {
 		const tabs = [];
 		if (hasDetailsContent) tabs.push({ id: 'details', label: 'Details', icon: 'mdi:information-outline' });
+		if (hasCreditsTab) tabs.push({ id: 'credits', label: 'Credits', icon: 'mdi:account-group' });
 		if (hasStoryContent) tabs.push({ id: 'story', label: 'Story', icon: 'mdi:book-open-variant' });
 		if (hasMediaContent) tabs.push({ id: 'media', label: 'Media', icon: 'mdi:play-circle-outline' });
 		return tabs;
@@ -328,6 +334,63 @@
 							</div>
 						{/if}
 
+						<!-- Snippet: Credits List (reusable) -->
+						{#snippet creditsList()}
+							<div class="flex flex-col gap-3">
+								{#each credits as credit}
+									<div class="flex items-center gap-3 bg-white/5 rounded-lg p-3">
+										{#if credit.profile_image}
+											<img
+												src={credit.profile_image}
+												alt={credit.name}
+												class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+											/>
+										{:else}
+											<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+												<Icon icon="mdi:account" class="text-xl text-gray-400" />
+											</div>
+										{/if}
+										<div class="flex-1 min-w-0">
+											<p class="text-white font-medium text-sm">{credit.name}</p>
+											<p class="text-gray-400 text-xs">
+												{credit.roles ? credit.roles.map(r => r.title).join(', ') : credit.role}
+											</p>
+										</div>
+										{#if credit.website_url || (credit.social_links && credit.social_links.length > 0)}
+											<div class="flex items-center gap-1.5 flex-shrink-0 ml-auto">
+												{#if credit.website_url}
+													<a
+														href={credit.website_url}
+														target="_blank"
+														rel="noopener noreferrer"
+														class="text-gray-400 hover:text-white transition-colors"
+														title="Website"
+													>
+														<Icon icon="mdi:web" class="text-lg" />
+													</a>
+												{/if}
+												{#if credit.social_links}
+													{#each credit.social_links as social}
+														{#if social.network_url}
+															<a
+																href={social.network_url}
+																target="_blank"
+																rel="noopener noreferrer"
+																class="text-gray-400 hover:text-white transition-colors"
+																title={social.network || 'Link'}
+															>
+																<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} class="text-base" />
+															</a>
+														{/if}
+													{/each}
+												{/if}
+											</div>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						{/snippet}
+
 						<!-- Snippet: Details Panel -->
 						{#snippet detailsPanel()}
 							{#if hasDetailsContent}
@@ -352,65 +415,13 @@
 										</div>
 									{/if}
 
-									{#if production.credits && production.credits.length > 0}
+									{#if !creditsInSeparateTab && credits.length > 0}
 										<div class="border-t border-white/10 pt-6">
 											<h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
 												<Icon icon="mdi:account-group" class="text-lg" />
 												Additional Credits
 											</h3>
-											<div class="flex flex-col gap-3">
-												{#each production.credits as credit}
-													<div class="flex items-center gap-3 bg-white/5 rounded-lg p-3">
-														{#if credit.profile_image}
-															<img
-																src={credit.profile_image}
-																alt={credit.name}
-																class="w-10 h-10 rounded-full object-cover flex-shrink-0"
-															/>
-														{:else}
-															<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-																<Icon icon="mdi:account" class="text-xl text-gray-400" />
-															</div>
-														{/if}
-														<div class="flex-1 min-w-0">
-															<p class="text-white font-medium text-sm">{credit.name}</p>
-															<p class="text-gray-400 text-xs">
-																{credit.roles ? credit.roles.map(r => r.title).join(', ') : credit.role}
-															</p>
-														</div>
-														{#if credit.website_url || (credit.social_links && credit.social_links.length > 0)}
-															<div class="flex items-center gap-1.5 flex-shrink-0 ml-auto">
-																{#if credit.website_url}
-																	<a
-																		href={credit.website_url}
-																		target="_blank"
-																		rel="noopener noreferrer"
-																		class="text-gray-400 hover:text-white transition-colors"
-																		title="Website"
-																	>
-																		<Icon icon="mdi:web" class="text-lg" />
-																	</a>
-																{/if}
-																{#if credit.social_links}
-																	{#each credit.social_links as social}
-																		{#if social.network_url}
-																			<a
-																				href={social.network_url}
-																				target="_blank"
-																				rel="noopener noreferrer"
-																				class="text-gray-400 hover:text-white transition-colors"
-																				title={social.network || 'Link'}
-																			>
-																				<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} class="text-base" />
-																			</a>
-																		{/if}
-																	{/each}
-																{/if}
-															</div>
-														{/if}
-													</div>
-												{/each}
-											</div>
+											{@render creditsList()}
 										</div>
 									{/if}
 
@@ -425,6 +436,21 @@
 											</div>
 										</div>
 									{/if}
+								</div>
+							{/if}
+						{/snippet}
+
+						<!-- Snippet: Credits Panel (when >5 credits) -->
+						{#snippet creditsPanel()}
+							{#if hasCreditsTab}
+								<div class="space-y-6 tab-sections">
+									<div>
+										<h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+											<Icon icon="mdi:account-group" class="text-lg" />
+											Additional Credits ({credits.length})
+										</h3>
+										{@render creditsList()}
+									</div>
 								</div>
 							{/if}
 						{/snippet}
@@ -500,10 +526,11 @@
 						{/if}
 
 						<!-- Tab Content / Detail Sections -->
-						{#if hasDetailsContent || hasStoryContent || hasMediaContent}
+						{#if hasDetailsContent || hasCreditsTab || hasStoryContent || hasMediaContent}
 							<div class="mb-8">
 								{#if !showTabs}
 									{@render detailsPanel()}
+									{@render creditsPanel()}
 									{@render storyPanel()}
 									{@render mediaPanel()}
 								{:else}
@@ -511,6 +538,8 @@
 										<div transition:fade={{ duration: 150 }}>
 											{#if activeTab === 'details'}
 												{@render detailsPanel()}
+											{:else if activeTab === 'credits'}
+												{@render creditsPanel()}
 											{:else if activeTab === 'story'}
 												{@render storyPanel()}
 											{:else if activeTab === 'media'}

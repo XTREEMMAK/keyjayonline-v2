@@ -36,7 +36,9 @@
 	let zoomLevel = $state(1); // 1 = fit (100%), up to 4 (400%)
 	let imageLoading = $state(true);
 	let containerRef = $state(null);
+	let contentWrapperRef = $state(null);
 	let captionExpanded = $state(false);
+	let scrollableMode = $state(false); // stays true during close animation for smooth collapse
 	let slideDirection = $state(1); // 1 = forward (slide left), -1 = backward (slide right)
 	let showAllPages = $state(false);
 	let downloading = $state(false);
@@ -80,8 +82,18 @@
 		const hasCaption = pg.caption || pg.title;
 		const availW = viewportWidth * 0.9;
 		const availH = viewportHeight * (hasCaption ? 0.65 : 0.8);
+		const maxH = viewportHeight * 0.85;
 
-		const scale = Math.min(availW / pg.width, availH / pg.height);
+		const isPortrait = pg.height > pg.width;
+		let scale;
+
+		if (isPortrait) {
+			// Portrait: prioritize filling width, cap at 85% viewport height
+			scale = Math.min(availW / pg.width, maxH / pg.height);
+		} else {
+			// Landscape: fit within both dimensions
+			scale = Math.min(availW / pg.width, availH / pg.height);
+		}
 
 		return `width:${Math.round(pg.width * scale)}px;height:${Math.round(pg.height * scale)}px`;
 	});
@@ -788,6 +800,29 @@
 		}
 	});
 
+	// Keep scrollable mode active during the 300ms close animation
+	$effect(() => {
+		if (captionExpanded) {
+			scrollableMode = true;
+		} else if (scrollableMode) {
+			const timer = setTimeout(() => { scrollableMode = false; }, 300);
+			return () => clearTimeout(timer);
+		}
+	});
+
+	// Smooth scroll to keep caption visible during expand & collapse
+	$effect(() => {
+		if (!containerRef || !contentWrapperRef || !scrollableMode) return;
+
+		const observer = new ResizeObserver(() => {
+			if (containerRef.scrollHeight > containerRef.clientHeight) {
+				containerRef.scrollTop = containerRef.scrollHeight - containerRef.clientHeight;
+			}
+		});
+		observer.observe(contentWrapperRef);
+		return () => observer.disconnect();
+	});
+
 	// Cleanup on unmount
 	$effect(() => {
 		return () => {
@@ -892,7 +927,8 @@
 		<!-- Main content area -->
 		<div
 			bind:this={containerRef}
-			class="absolute inset-0 flex items-center justify-center overflow-hidden pt-14 pb-16"
+			class="absolute inset-0 flex justify-center pt-14 pb-16 transition-all duration-300 viewer-scrollbar {scrollableMode ? 'overflow-y-auto' : 'items-center overflow-hidden'}"
+		style={scrollableMode ? 'align-items: safe center;' : ''}
 			in:fade={{ duration: 300, delay: 150 }}
 			role="presentation"
 		>
@@ -945,8 +981,9 @@
 				<div in:fade={{ duration: 200, delay: 50 }} out:fade={{ duration: 150 }}>
 				{#key currentPage}
 					<div
+						bind:this={contentWrapperRef}
 						class="flex flex-col items-center max-w-[90vw]"
-						class:max-h-full={!captionExpanded}
+						class:max-h-full={!scrollableMode}
 						in:fly={{ x: slideDirection * 200, duration: 350 }}
 					>
 						<!-- Image container with zoom -->
@@ -1166,6 +1203,29 @@
 	.caption-content {
 		scrollbar-width: thin;
 		scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.3);
+	}
+
+	/* Viewer container thin scrollbar */
+	.viewer-scrollbar {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+	}
+
+	.viewer-scrollbar::-webkit-scrollbar {
+		width: 4px;
+	}
+
+	.viewer-scrollbar::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.viewer-scrollbar::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.15);
+		border-radius: 4px;
+	}
+
+	.viewer-scrollbar::-webkit-scrollbar-thumb:hover {
+		background: rgba(255, 255, 255, 0.3);
 	}
 
 	/* Rich content in captions */
