@@ -71,9 +71,9 @@ USER sveltekit
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+# Health check (BusyBox wget: use -q instead of --no-verbose)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget -q --spider http://localhost:3000/api/health || exit 1
 
 # Start the application
 CMD ["node", "build"]

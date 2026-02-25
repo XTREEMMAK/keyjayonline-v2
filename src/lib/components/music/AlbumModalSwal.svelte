@@ -73,6 +73,9 @@ import {
 			}
 		};
 
+		// Store credits for global access by detail drill-down
+		window._albumCredits = album.credits || [];
+
 		const modalContent = createModalContent(samples);
 
 		// Push history state for back button handling
@@ -113,6 +116,16 @@ import {
 				// Clean up global functions when modal closes
 				delete window.handleAlbumShare;
 				delete window.toggleCreditSocials;
+				delete window.showCreditDetail;
+				delete window.backToCredits;
+				delete window._albumCredits;
+				delete window._creditDetailIdPrefix;
+
+				// Remove click-away handler for credit social overlays
+				if (creditClickAwayHandler) {
+					document.removeEventListener('click', creditClickAwayHandler);
+					creditClickAwayHandler = null;
+				}
 			}
 		});
 
@@ -286,6 +299,80 @@ import {
 	}
 
 	/**
+	 * Generate credit detail HTML for the drill-down view.
+	 * @param {Credit} credit - Normalized credit object
+	 * @returns {string} HTML string for detail view
+	 */
+	function generateCreditDetailHtml(credit) {
+		const rolesText = credit.roles && credit.roles.length > 0
+			? credit.roles.map(r => r.title).join(', ')
+			: (credit.role || '');
+
+		const profileHtml = credit.profile_image
+			? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(59, 130, 246, 0.4); margin-bottom: 16px;" />`
+			: `<div style="width: 96px; height: 96px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;"><iconify-icon noobserver icon="mdi:account" width="40" height="40" style="color: #3b82f6;"></iconify-icon></div>`;
+
+		const additionalInfoHtml = credit.additional_info
+			? `<p style="color: #6b7280; font-size: 0.875rem; font-style: italic; margin: 4px 0 0 0;">${credit.additional_info.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`
+			: '';
+
+		const bioHtml = credit.bio
+			? `<div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 8px;">
+				<h4 style="font-size: 0.7rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Biography</h4>
+				<div class="bio-content" style="color: #d1d5db; line-height: 1.7; font-size: 0.875rem; text-align: left;">${sanitizeHtml(credit.bio)}</div>
+			   </div>`
+			: '';
+
+		// Build social links rows
+		let linksHtml = '';
+		const hasWebsite = credit.website_url;
+		const hasSocials = Array.isArray(credit.social_links) && credit.social_links.some(s => s.network_url);
+		if (hasWebsite || hasSocials) {
+			const rows = [];
+			if (credit.website_url) {
+				const displayUrl = credit.website_url.replace(/^https?:\/\//, '');
+				rows.push(`<a href="${credit.website_url}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #d1d5db; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+					<iconify-icon noobserver icon="mdi:web" width="20" height="20" style="color: #9ca3af; flex-shrink: 0;"></iconify-icon>
+					<span style="flex: 1; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayUrl}</span>
+					<iconify-icon noobserver icon="mdi:open-in-new" width="14" height="14" style="color: #6b7280; flex-shrink: 0;"></iconify-icon>
+				</a>`);
+			}
+			if (Array.isArray(credit.social_links)) {
+				for (const social of credit.social_links) {
+					if (!social.network_url) continue;
+					const icon = resolveSocialIcon(social);
+					const label = social.network || social.network_url.replace(/^https?:\/\//, '');
+					rows.push(`<a href="${social.network_url}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #d1d5db; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+						<iconify-icon noobserver icon="${icon}" width="20" height="20" style="color: #9ca3af; flex-shrink: 0;"></iconify-icon>
+						<span style="flex: 1; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${label}</span>
+						<iconify-icon noobserver icon="mdi:open-in-new" width="14" height="14" style="color: #6b7280; flex-shrink: 0;"></iconify-icon>
+					</a>`);
+				}
+			}
+			linksHtml = `<div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 8px;">
+				<h4 style="font-size: 0.7rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Links</h4>
+				<div style="display: flex; flex-direction: column; gap: 8px;">${rows.join('')}</div>
+			</div>`;
+		}
+
+		return `
+			<div id="credit-detail-view" style="display: flex; flex-direction: column; gap: 16px;">
+				<button onclick="event.stopPropagation(); backToCredits()" style="display: flex; align-items: center; gap: 8px; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 4px 0; font-size: 0.875rem; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">
+					<iconify-icon noobserver icon="mdi:arrow-left" width="18" height="18"></iconify-icon>
+					Back to Credits
+				</button>
+				<div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+					${profileHtml}
+					<h3 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0;">${credit.name}</h3>
+					${rolesText ? `<p style="color: #9ca3af; font-size: 0.875rem; margin: 4px 0 0 0;">${rolesText}</p>` : ''}
+					${additionalInfoHtml}
+				</div>
+				${bioHtml}
+				${linksHtml}
+			</div>`;
+	}
+
+	/**
 	 * Generate grouped credits HTML with collapsible sections
 	 * @param {Credit[]} credits - Array of credit objects
 	 * @param {string} idPrefix - Prefix for unique IDs (desktop/mobile)
@@ -296,6 +383,8 @@ import {
 			return '<p style="color: #9ca3af; text-align: center; padding: 40px;">No credits available for this album.</p>';
 		}
 
+		// Stamp original index so we can reference it after groupCreditsByRole spreads copies
+		credits.forEach((c, i) => { c._creditIdx = i; });
 		const groups = groupCreditsByRole(credits, MUSIC_ROLE_PRIORITY);
 		if (groups.length === 0) {
 			return '<p style="color: #9ca3af; text-align: center; padding: 40px;">No credits available for this album.</p>';
@@ -320,12 +409,13 @@ import {
 						<div style="display: grid; gap: 8px;">
 							${group.credits.map((credit, creditIdx) => {
 								const creditUniqueId = `${idPrefix}${index}-${creditIdx}`;
+								const flatIdx = credit._creditIdx != null ? credit._creditIdx : -1;
 								const additionalInfo = credit.additional_info ? `<p style="color: #6b7280; font-size: 0.75rem; font-style: italic; margin: 2px 0 0 0;">${credit.additional_info.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>` : '';
 								return `
 								<div style="position: relative; display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.2s ease;"
 									 onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'"
 									 onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
-									${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : `<div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><iconify-icon noobserver icon="mdi:account" width="24" height="24" style="color: #3b82f6;"></iconify-icon></div>`}
+									${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" onclick="event.stopPropagation(); showCreditDetail(${flatIdx}, '${idPrefix}')" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3); cursor: pointer; transition: border-color 0.2s, transform 0.2s;" onmouseover="this.style.borderColor='rgba(59, 130, 246, 0.7)'; this.style.transform='scale(1.1)'" onmouseout="this.style.borderColor='rgba(59, 130, 246, 0.3)'; this.style.transform='scale(1)'" />` : `<div onclick="event.stopPropagation(); showCreditDetail(${flatIdx}, '${idPrefix}')" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; transition: background 0.2s, transform 0.2s;" onmouseover="this.style.background='rgba(59, 130, 246, 0.35)'; this.style.transform='scale(1.1)'" onmouseout="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.transform='scale(1)'"><iconify-icon noobserver icon="mdi:account" width="24" height="24" style="color: #3b82f6;"></iconify-icon></div>`}
 									<div style="flex: 1; min-width: 0; text-align: left;">
 										<p style="color: #ffffff; font-weight: 500; font-size: 0.875rem; margin: 0;">${credit.name}</p>
 										<p style="color: #9ca3af; font-size: 0.75rem; margin: 0;">${credit.displayRole || credit.role}</p>
@@ -611,16 +701,89 @@ import {
 		`;
 	}
 	
+	/** @type {((e: Event) => void)|null} */
+	let creditClickAwayHandler = null;
+
 	function initializeModalComponents() {
-		// Click-away handler for credit social overlays
-		document.addEventListener('click', (e) => {
+		// Register global toggle function for credit social overlays
+		/** @param {string} overlayId */
+		window.toggleCreditSocials = function(overlayId) {
+			const overlay = document.getElementById(overlayId);
+			if (!overlay) return;
+			const isVisible = overlay.classList.contains('social-overlay-visible');
+			// Close any other open overlays first
+			document.querySelectorAll('.credit-social-overlay.social-overlay-visible').forEach(el => {
+				el.classList.remove('social-overlay-visible');
+			});
+			if (!isVisible) {
+				overlay.classList.add('social-overlay-visible');
+			}
+		};
+
+		// Register global function for credit detail drill-down
+		window.showCreditDetail = function(idx, idPrefix) {
+			const credit = window._albumCredits?.[idx];
+			if (!credit) return;
+
+			const detailHtml = generateCreditDetailHtml(credit);
+
+			// Find the correct container based on idPrefix (desktop- vs mobile-)
+			let container;
+			if (idPrefix.startsWith('desktop')) {
+				container = document.querySelector('#content-credits > div');
+			} else {
+				container = document.querySelector('#accordion-credits .accordion-content-inner > div');
+			}
+
+			if (container) {
+				window._creditDetailIdPrefix = idPrefix;
+				container.innerHTML = detailHtml;
+
+				// Scroll to the detail view header
+				requestAnimationFrame(() => {
+					const detailView = document.getElementById('credit-detail-view');
+					if (detailView) {
+						detailView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					}
+				});
+			}
+		};
+
+		// Register global function to go back from credit detail to credits list
+		window.backToCredits = function() {
+			const idPrefix = window._creditDetailIdPrefix;
+			if (!idPrefix) return;
+
+			const credits = window._albumCredits || [];
+			const creditsHtml = generateGroupedCreditsHtml(credits, idPrefix);
+
+			let container;
+			if (idPrefix.startsWith('desktop')) {
+				container = document.querySelector('#content-credits > div');
+			} else {
+				container = document.querySelector('#accordion-credits .accordion-content-inner > div');
+			}
+
+			if (container) {
+				container.innerHTML = `
+					<h3 style="font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 600; color: #ffffff; margin-bottom: 20px; text-align: left;">Album Credits</h3>
+					${creditsHtml}
+				`;
+			}
+
+			delete window._creditDetailIdPrefix;
+		};
+
+		// Click-away handler for credit social overlays (store ref for cleanup)
+		creditClickAwayHandler = (e) => {
 			if (!e.target.closest('.credit-social-overlay') &&
 				!e.target.closest('[onclick*="toggleCreditSocials"]')) {
 				document.querySelectorAll('.credit-social-overlay.social-overlay-visible').forEach(el => {
 					el.classList.remove('social-overlay-visible');
 				});
 			}
-		});
+		};
+		document.addEventListener('click', creditClickAwayHandler);
 
 		// Hide skeleton loader once image loads
 		const artwork = document.querySelector('.album-artwork');
@@ -837,20 +1000,6 @@ import {
 			content.offsetHeight; // eslint-disable-line no-unused-expressions
 			content.style.maxHeight = '0px';
 			if (arrow) arrow.style.transform = 'rotate(0deg)';
-		}
-	};
-
-	/** @param {string} overlayId */
-	window.toggleCreditSocials = function(overlayId) {
-		const overlay = document.getElementById(overlayId);
-		if (!overlay) return;
-		const isVisible = overlay.classList.contains('social-overlay-visible');
-		// Close any other open overlays first
-		document.querySelectorAll('.credit-social-overlay.social-overlay-visible').forEach(el => {
-			el.classList.remove('social-overlay-visible');
-		});
-		if (!isVisible) {
-			overlay.classList.add('social-overlay-visible');
 		}
 	};
 

@@ -22,7 +22,7 @@
 	import { pushModalState, popModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { getExternalLinkIcon } from '$lib/utils/externalLinks.js';
-	import { groupCreditsByRole, PRODUCTIONS_ROLE_PRIORITY, countSocialIcons, SOCIAL_ICON_OVERFLOW_THRESHOLD } from '$lib/utils/creditGrouping.js';
+	import { groupCreditsByRole, PRODUCTIONS_ROLE_PRIORITY, COMICS_ROLE_PRIORITY, countSocialIcons, SOCIAL_ICON_OVERFLOW_THRESHOLD } from '$lib/utils/creditGrouping.js';
 	import SkeletonImage from '$lib/components/ui/SkeletonImage.svelte';
 	import ActionPickerModal from '$lib/components/ui/ActionPickerModal.svelte';
 	// Props
@@ -54,13 +54,16 @@
 	const embeds = $derived(production?.embeds || []);
 	const hasMediaContent = $derived(embeds.length > 0);
 	const hasCreditsTab = $derived(creditsInSeparateTab && credits.length > 0);
+	const isComic = $derived(production?.category?.includes('comic'));
+	const creditsPriority = $derived(isComic ? COMICS_ROLE_PRIORITY : PRODUCTIONS_ROLE_PRIORITY);
 	const groupedCredits = $derived(
-		creditsInSeparateTab ? groupCreditsByRole(credits, PRODUCTIONS_ROLE_PRIORITY) : []
+		creditsInSeparateTab ? groupCreditsByRole(credits, creditsPriority) : []
 	);
 
 	// Credits UI state
 	let expandedGroups = $state({});
 	let socialOverlayOpen = $state({});
+	let selectedCredit = $state(null);
 
 	function toggleGroup(role) {
 		expandedGroups = { ...expandedGroups, [role]: expandedGroups[role] === false ? true : false };
@@ -118,12 +121,14 @@
 		closeActionPicker();
 		expandedGroups = {};
 		socialOverlayOpen = {};
+		selectedCredit = null;
 		popModalState(); // Go back in history if we pushed a state
 		onClose();
 	}
 
 	// Switch active tab
 	function switchTab(tabId) {
+		selectedCredit = null;
 		activeTab = tabId;
 	}
 
@@ -186,12 +191,28 @@
 				};
 			}
 		} else {
+			// Reset credits UI state on any close path (X, back button, etc.)
+			expandedGroups = {};
+			socialOverlayOpen = {};
+			selectedCredit = null;
 			// Remove keyboard listener
 			if (browser) {
 				window.removeEventListener('keydown', handleKeydown);
 				// Restore body scroll
 				document.body.style.overflow = '';
 			}
+		}
+	});
+
+	// Scroll to detail header when credit detail opens
+	$effect(() => {
+		if (selectedCredit && browser) {
+			requestAnimationFrame(() => {
+				const detailView = document.getElementById('credit-detail-view');
+				if (detailView) {
+					detailView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			});
 		}
 	});
 
@@ -419,15 +440,19 @@
 						{#snippet creditsList()}
 							<div class="flex flex-col gap-3">
 								{#each credits as credit, idx}
-									<div class="relative flex items-center gap-3 bg-white/5 rounded-lg p-3">
+									<div class="relative flex items-center gap-3 bg-white/5 rounded-lg p-3 transition-all duration-200">
 										{#if credit.profile_image}
 											<img
 												src={credit.profile_image}
 												alt={credit.name}
-												class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+												class="w-10 h-10 rounded-full object-cover flex-shrink-0 cursor-pointer border-2 border-transparent hover:border-blue-500/70 hover:scale-110 transition-all duration-200"
+												onclick={(e) => { e.stopPropagation(); selectedCredit = credit; }}
 											/>
 										{:else}
-											<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+											<div
+												class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-blue-500/30 hover:scale-110 transition-all duration-200"
+												onclick={(e) => { e.stopPropagation(); selectedCredit = credit; }}
+											>
 												<Icon icon="mdi:account" class="text-xl text-gray-400" />
 											</div>
 										{/if}
@@ -470,15 +495,19 @@
 										{#if expandedGroups[group.role] !== false}
 											<div class="pt-3 flex flex-col gap-2" transition:slide={{ duration: 250 }}>
 												{#each group.credits as credit, cIdx}
-													<div class="relative flex items-center gap-3 bg-white/5 rounded-lg p-3 border-l-3 border-blue-500 transition-all duration-200 hover:bg-white/[0.08]">
+													<div class="relative flex items-center gap-3 bg-white/5 rounded-lg p-3 border-l-3 border-blue-500 transition-all duration-200">
 														{#if credit.profile_image}
 															<img
 																src={credit.profile_image}
 																alt={credit.name}
-																class="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-blue-500/30"
+																class="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-blue-500/30 cursor-pointer hover:border-blue-500/70 hover:scale-110 transition-all duration-200"
+																onclick={(e) => { e.stopPropagation(); selectedCredit = credit; }}
 															/>
 														{:else}
-															<div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+															<div
+																class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-blue-500/35 hover:scale-110 transition-all duration-200"
+																onclick={(e) => { e.stopPropagation(); selectedCredit = credit; }}
+															>
 																<Icon icon="mdi:account" class="text-xl text-blue-500" />
 															</div>
 														{/if}
@@ -496,6 +525,87 @@
 										{/if}
 									</div>
 								{/each}
+							</div>
+						{/snippet}
+
+						<!-- Snippet: Credit Detail View (drill-down) -->
+						{#snippet creditDetailView(credit)}
+							<div class="space-y-6" id="credit-detail-view">
+								<!-- Back button -->
+								<button
+									onclick={() => selectedCredit = null}
+									class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm"
+								>
+									<Icon icon="mdi:arrow-left" class="text-lg" />
+									Back to Credits
+								</button>
+
+								<!-- Profile header -->
+								<div class="flex flex-col items-center text-center">
+									{#if credit.profile_image}
+										<img
+											src={credit.profile_image}
+											alt={credit.name}
+											class="w-24 h-24 rounded-full object-cover border-3 border-blue-500/40 mb-4"
+										/>
+									{:else}
+										<div class="w-24 h-24 rounded-full bg-blue-500/20 flex items-center justify-center mb-4">
+											<Icon icon="mdi:account" class="text-4xl text-blue-500" />
+										</div>
+									{/if}
+									<h3 class="text-xl font-bold text-white">{credit.name}</h3>
+									<p class="text-gray-400 text-sm mt-1">
+										{credit.roles ? credit.roles.map(r => r.title).join(', ') : credit.role}
+									</p>
+									{#if credit.additional_info}
+										<p class="text-gray-500 text-sm italic mt-1">{credit.additional_info}</p>
+									{/if}
+								</div>
+
+								<!-- Bio -->
+								{#if credit.bio}
+									<div class="border-t border-white/10 pt-4">
+										<h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Biography</h4>
+									<div class="text-gray-300 leading-relaxed text-sm [&_p]:mb-3 [&_p:last-child]:mb-0">{@html sanitizeHtml(credit.bio)}</div>
+									</div>
+								{/if}
+
+								<!-- Links -->
+								{#if credit.website_url || (credit.social_links && credit.social_links.length > 0)}
+									<div class="border-t border-white/10 pt-4">
+										<h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Links</h4>
+										<div class="flex flex-col gap-2">
+											{#if credit.website_url}
+												<a
+													href={credit.website_url}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
+												>
+													<Icon icon="mdi:web" class="text-lg text-gray-400 group-hover:text-white" />
+													<span class="text-gray-300 group-hover:text-white text-sm truncate flex-1">{credit.website_url.replace(/^https?:\/\//, '')}</span>
+													<Icon icon="mdi:open-in-new" class="text-sm text-gray-500" />
+												</a>
+											{/if}
+											{#if credit.social_links}
+												{#each credit.social_links as social}
+													{#if social.network_url}
+														<a
+															href={social.network_url}
+															target="_blank"
+															rel="noopener noreferrer"
+															class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
+														>
+															<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} class="text-lg text-gray-400 group-hover:text-white" />
+															<span class="text-gray-300 group-hover:text-white text-sm truncate flex-1">{social.network || social.network_url.replace(/^https?:\/\//, '')}</span>
+															<Icon icon="mdi:open-in-new" class="text-sm text-gray-500" />
+														</a>
+													{/if}
+												{/each}
+											{/if}
+										</div>
+									</div>
+								{/if}
 							</div>
 						{/snippet}
 
@@ -525,11 +635,15 @@
 
 									{#if !creditsInSeparateTab && credits.length > 0}
 										<div class="border-t border-white/10 pt-6">
-											<h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-												<Icon icon="mdi:account-group" class="text-lg" />
-												Additional Credits
-											</h3>
-											{@render creditsList()}
+											{#if selectedCredit}
+												{@render creditDetailView(selectedCredit)}
+											{:else}
+												<h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+													<Icon icon="mdi:account-group" class="text-lg" />
+													Additional Credits
+												</h3>
+												{@render creditsList()}
+											{/if}
 										</div>
 									{/if}
 
@@ -551,15 +665,21 @@
 						<!-- Snippet: Credits Panel (when >5 credits, grouped by role) -->
 						{#snippet creditsPanel()}
 							{#if hasCreditsTab}
-								<div class="space-y-6 tab-sections">
-									<div>
-										<h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-											<Icon icon="mdi:account-group" class="text-lg" />
-											Credits ({credits.length})
-										</h3>
-										{@render groupedCreditsList()}
+								{#if selectedCredit}
+									<div class="space-y-6 tab-sections">
+										{@render creditDetailView(selectedCredit)}
 									</div>
-								</div>
+								{:else}
+									<div class="space-y-6 tab-sections">
+										<div>
+											<h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+												<Icon icon="mdi:account-group" class="text-lg" />
+												Credits ({credits.length})
+											</h3>
+											{@render groupedCreditsList()}
+										</div>
+									</div>
+								{/if}
 							{/if}
 						{/snippet}
 

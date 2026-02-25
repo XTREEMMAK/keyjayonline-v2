@@ -17,6 +17,11 @@ export const PRODUCTIONS_ROLE_PRIORITY = [
 	'Art', 'Animation', 'Music', 'Sound Design', 'Editing'
 ];
 
+/** Priority order for comics production role groups */
+export const COMICS_ROLE_PRIORITY = [
+	'Lead Illustrator', 'Illustrator', 'Writer'
+];
+
 /** When a credit has this many or more social icons, collapse behind an info button */
 export const SOCIAL_ICON_OVERFLOW_THRESHOLD = 4;
 
@@ -82,18 +87,18 @@ export function groupCreditsByRole(credits, priorityOrder = []) {
 	}
 
 	const sortedRoles = Object.keys(grouped).sort((a, b) => {
-		const aSort = groupSort[a];
-		const bSort = groupSort[b];
-		// Roles with sort values come first, ordered by sort
-		if (aSort != null && bSort != null) return aSort - bSort;
-		if (aSort != null) return -1;
-		if (bSort != null) return 1;
-		// Fallback to hardcoded priority for legacy credits
 		const aIdx = priorityOrder.indexOf(a);
 		const bIdx = priorityOrder.indexOf(b);
+		// Priority roles always come first, in their specified order
 		if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
 		if (aIdx !== -1) return -1;
 		if (bIdx !== -1) return 1;
+		// Remaining roles sort by Directus sort field
+		const aSort = groupSort[a];
+		const bSort = groupSort[b];
+		if (aSort != null && bSort != null) return aSort - bSort;
+		if (aSort != null) return -1;
+		if (bSort != null) return 1;
 		return a.localeCompare(b);
 	});
 

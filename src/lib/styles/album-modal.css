@@ -625,3 +625,11 @@ body.swal2-shown {
 		padding: 8px;
 	}
 }
+
+/* Bio WYSIWYG paragraph spacing */
+.bio-content p {
+	margin-bottom: 0.75rem;
+}
+.bio-content p:last-child {
+	margin-bottom: 0;
+}
