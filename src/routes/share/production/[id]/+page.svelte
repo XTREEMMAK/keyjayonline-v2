@@ -6,6 +6,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import * as THREE from 'three';
 	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
+	import VideoPlayerModal from '$lib/components/ui/VideoPlayerModal.svelte';
 	import { loadPlaylist, showPlayer, expandPlayer } from '$lib/stores/musicPlayer.js';
 
 	let { data } = $props();
@@ -57,6 +58,23 @@
 		}
 	}
 
+	// Video player state
+	let videoPlayerOpen = $state(false);
+	let videoPlayerUrl = $state('');
+	let videoPlayerTitle = $state('');
+
+	function openVideoPlayer(url, title = '') {
+		videoPlayerUrl = url;
+		videoPlayerTitle = title;
+		videoPlayerOpen = true;
+	}
+
+	function closeVideoPlayer() {
+		videoPlayerOpen = false;
+		videoPlayerUrl = '';
+		videoPlayerTitle = '';
+	}
+
 	function handleAction(action) {
 		switch (action.actionType) {
 			case 'viewer':
@@ -65,11 +83,18 @@
 			case 'audio_player':
 				playProductionPlaylist(action.playlistId);
 				break;
+			case 'video_player':
+				openVideoPlayer(action.videoUrl, action.label || production.title);
+				break;
 		}
 	}
 
 	// Support platforms from site settings
 	const supportPlatforms = $derived(siteSettings?.supportPlatforms || []);
+
+	// Split actions into primary (audio, viewer, video) and additional (external links)
+	const primaryActions = $derived((production.actions || []).filter(a => a.isPrimary));
+	const additionalLinks = $derived((production.actions || []).filter(a => !a.isPrimary));
 
 	// Share functionality
 	let shareSuccess = $state(false);
@@ -355,33 +380,40 @@
 				{/if}
 			</div>
 
-			<!-- Actions & Links -->
-			{#if production.actions && production.actions.length > 0}
+			<!-- Primary Actions (audio, viewer, video) -->
+			{#if primaryActions.length > 0}
+				<div class="primary-actions">
+					<div class="actions-row">
+						{#each primaryActions as action}
+							<button
+								onclick={() => handleAction(action)}
+								class="action-button action-button--{action.actionType}"
+								title={action.label}
+							>
+								<Icon icon={action.icon} width={22} height={22} />
+								<span>{action.label}</span>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			<!-- Additional Links -->
+			{#if additionalLinks.length > 0}
 				<div class="external-links">
-					<h3>Links & Actions</h3>
+					<h3>Additional Links</h3>
 					<div class="links-row">
-						{#each production.actions as action}
-							{#if action.actionType === 'external_link'}
-								<a
-									href={action.url}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="external-link"
-									title={action.label}
-								>
-									<Icon icon={action.icon} width={24} height={24} />
-									<span>{action.label}</span>
-								</a>
-							{:else}
-								<button
-									onclick={() => handleAction(action)}
-									class="external-link"
-									title={action.label}
-								>
-									<Icon icon={action.icon} width={24} height={24} />
-									<span>{action.label}</span>
-								</button>
-							{/if}
+						{#each additionalLinks as action}
+							<a
+								href={action.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="external-link"
+								title={action.label}
+							>
+								<Icon icon={action.icon} width={24} height={24} />
+								<span>{action.label}</span>
+							</a>
 						{/each}
 					</div>
 				</div>
@@ -474,6 +506,14 @@
 	loading={viewerLoading}
 	onClose={closeContentViewer}
 	canDownload={true}
+/>
+
+<!-- Video Player Modal -->
+<VideoPlayerModal
+	isOpen={videoPlayerOpen}
+	videoUrl={videoPlayerUrl}
+	title={videoPlayerTitle}
+	onClose={closeVideoPlayer}
 />
 
 <style>
@@ -682,6 +722,49 @@
 		border-radius: 20px;
 		color: rgba(255, 255, 255, 0.9);
 		font-size: 0.75rem;
+	}
+
+	.primary-actions {
+		margin-bottom: 2rem;
+	}
+
+	.actions-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		justify-content: center;
+	}
+
+	.action-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1.5rem;
+		border: none;
+		border-radius: 50px;
+		color: white;
+		font-size: 0.95rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.3s;
+		background: linear-gradient(135deg, rgba(249, 115, 22, 0.8), rgba(239, 68, 68, 0.8));
+	}
+
+	.action-button:hover {
+		transform: translateY(-2px) scale(1.05);
+		box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+	}
+
+	.action-button--audio_player {
+		background: linear-gradient(135deg, rgba(22, 163, 74, 0.8), rgba(5, 150, 105, 0.8));
+	}
+
+	.action-button--video_player {
+		background: linear-gradient(135deg, rgba(147, 51, 234, 0.8), rgba(37, 99, 235, 0.8));
+	}
+
+	.action-button--viewer {
+		background: linear-gradient(135deg, rgba(249, 115, 22, 0.8), rgba(239, 68, 68, 0.8));
 	}
 
 	.external-links {

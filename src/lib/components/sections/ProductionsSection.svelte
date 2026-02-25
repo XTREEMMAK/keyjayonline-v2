@@ -541,6 +541,15 @@
 												{featuredVideoActions[0].label}
 											</button>
 										{/if}
+										<!-- Info button -->
+										<button
+											onclick={() => handleCardClick(featuredProduction)}
+											class="neu-button !p-3 !rounded-full text-white hover:scale-105 transform transition-all duration-300 flex items-center justify-center"
+											title="View details"
+											aria-label="View production details"
+										>
+											<Icon icon="mdi:information-outline" class="text-2xl" />
+										</button>
 									</div>
 									{#if (featuredProduction.actions || []).filter(a => !a.isPrimary).length > 0}
 										<div class="w-full text-center mt-4">

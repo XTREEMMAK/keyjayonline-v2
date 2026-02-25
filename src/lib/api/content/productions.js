@@ -128,6 +128,7 @@ function parseTags(raw) {
  */
 const ACTION_FIELDS = [
   'id',
+  'status',
   'action_type',
   'url',
   'link_text',
@@ -149,7 +150,7 @@ function buildProductionActions(production, rawActions) {
   const actions = [];
   const links = {};
 
-  const records = rawActions || [];
+  const records = (rawActions || []).filter(a => a.status === 'published');
 
   for (let i = 0; i < records.length; i++) {
     const raw = records[i];
@@ -369,7 +370,7 @@ export async function getProductions() {
       const [allActions, allEmbeds, allCredits] = await Promise.all([
         directus.request(
           readItems('kjov2_productions_actions', {
-            filter: { production_id: { _in: productionIds } },
+            filter: { production_id: { _in: productionIds }, status: { _eq: 'published' } },
             fields: ['production_id', ...ACTION_FIELDS],
             sort: ['sort']
           })
@@ -700,7 +701,7 @@ export async function getProductionBySlug(slug) {
       const [allActions, allEmbeds, allCredits] = await Promise.all([
         directus.request(
           readItems('kjov2_productions_actions', {
-            filter: { production_id: { _eq: production.id } },
+            filter: { production_id: { _eq: production.id }, status: { _eq: 'published' } },
             fields: ['production_id', ...ACTION_FIELDS],
             sort: ['sort']
           })
