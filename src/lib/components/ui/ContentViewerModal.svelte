@@ -62,11 +62,29 @@
 	let dragStartPanY = 0;
 	let totalDragDistance = 0;
 
+	// Viewport dimensions for fit-to-viewport calculation
+	let viewportWidth = $state(0);
+	let viewportHeight = $state(0);
+
 	// Computed
 	const currentPageData = $derived(pages[currentPage] || null);
 	const totalPages = $derived(pages.length);
 	const hasNext = $derived(currentPage < totalPages - 1);
 	const hasPrev = $derived(currentPage > 0);
+
+	// Fit-to-viewport: calculate explicit pixel dimensions so images fill the available space
+	const imageFitStyle = $derived.by(() => {
+		const pg = currentPageData;
+		if (!pg?.width || !pg?.height || !viewportWidth || !viewportHeight) return '';
+
+		const hasCaption = pg.caption || pg.title;
+		const availW = viewportWidth * 0.9;
+		const availH = viewportHeight * (hasCaption ? 0.65 : 0.8);
+
+		const scale = Math.min(availW / pg.width, availH / pg.height);
+
+		return `width:${Math.round(pg.width * scale)}px;height:${Math.round(pg.height * scale)}px`;
+	});
 
 	// Zoom configuration
 	const ZOOM_MIN = 1;
@@ -658,6 +676,15 @@
 
 			// Lock body scroll when modal is open
 			if (browser) {
+				// Capture viewport dimensions for fit-to-viewport image sizing
+				viewportWidth = window.innerWidth;
+				viewportHeight = window.innerHeight;
+				const handleResize = () => {
+					viewportWidth = window.innerWidth;
+					viewportHeight = window.innerHeight;
+				};
+				window.addEventListener('resize', handleResize);
+
 				// Push history state for back button handling
 				pushModalState('content-viewer');
 
@@ -700,6 +727,7 @@
 					clearTimeout(dragCooldownTimer);
 					document.body.style.overflow = originalOverflow;
 					document.body.style.paddingRight = originalPaddingRight;
+					window.removeEventListener('resize', handleResize);
 					window.removeEventListener('keydown', handleKeydown);
 					document.removeEventListener('fullscreenchange', handleFullscreenChange);
 					document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -959,7 +987,8 @@
 							<img
 								src={currentPageData.imageUrl}
 								alt={currentPageData.title || `Page ${currentPage + 1}`}
-								class="max-w-[90vw] object-contain rounded-lg shadow-2xl transition-opacity duration-500 {imageLoading ? 'opacity-0' : 'opacity-100'} {currentPageData.caption || currentPageData.title ? 'max-h-[65vh]' : 'max-h-[80vh]'} {zoomLevel > 1 ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'}"
+								style={imageFitStyle}
+								class="object-contain rounded-lg shadow-2xl transition-opacity duration-500 {!imageFitStyle ? 'max-w-[90vw] ' + (currentPageData.caption || currentPageData.title ? 'max-h-[65vh]' : 'max-h-[80vh]') : ''} {imageLoading ? 'opacity-0' : 'opacity-100'} {zoomLevel > 1 ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'}"
 								onload={handleImageLoad}
 								use:checkComplete
 								draggable="false"

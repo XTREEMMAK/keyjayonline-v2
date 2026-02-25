@@ -69,6 +69,10 @@
 	let scrollY = $state(0);
 	let isMobile = $state(false);
 
+	// Studio tab: sticky image on scroll (same pattern as About section)
+	let studioImageRef = $state(null);
+	let studioWrapperRef = $state(null);
+
 	// Derived parallax transform - scrollY dependency triggers recalculation
 	const parallaxY = $derived(() => {
 		const _scroll = scrollY;
@@ -78,6 +82,24 @@
 		const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
 		const progress = (viewportHeight - rect.top) / (viewportHeight + rect.height);
 		return Math.max(-100, Math.min(100, (progress - 0.5) * 200));
+	});
+
+	// Studio tab: sticky image offset (follows scroll like About section bio photo)
+	const studioImageOffset = $derived.by(() => {
+		const _scroll = scrollY;
+		if (!browser || !studioImageRef || !studioWrapperRef || view !== 'studio') return 0;
+		if (window.innerWidth < 1024) return 0;
+
+		const stickyTop = 80;
+		const wrapperRect = studioWrapperRef.getBoundingClientRect();
+		const imageHeight = studioImageRef.getBoundingClientRect().height;
+		const maxOffset = Math.max(0, wrapperRect.height - imageHeight);
+
+		if (wrapperRect.top <= stickyTop) {
+			const rawOffset = stickyTop - wrapperRect.top;
+			return Math.min(Math.max(0, rawOffset), maxOffset);
+		}
+		return 0;
 	});
 
 	// Use Latest Projects from Directus kjov2_music_releases (fetched via getLatestProjects)
@@ -961,10 +983,15 @@
 		<div class="music-view-panel" class:active={view === 'studio'}>
 				<section class="py-12 relative">
 					<div class="max-w-6xl mx-auto">
-						<h2 class="text-2xl font-bold text-white mb-8 text-center">What I Use</h2>
-						<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-							<!-- Studio Photo (slide in from left) -->
-							<div class="neu-card overflow-hidden self-start" in:fly={{ x: -100, duration: 600 }}>
+						<h2 class="text-4xl font-bold text-white mb-8 text-center">What I Use</h2>
+						<div bind:this={studioWrapperRef} class="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:items-start">
+							<!-- Studio Photo (slide in from left, follows scroll on lg+) -->
+							<div
+								bind:this={studioImageRef}
+								class="neu-card overflow-hidden self-start lg:col-span-3"
+								style="transform: translateY({studioImageOffset}px); will-change: transform;"
+								in:fly={{ x: -100, duration: 600 }}
+							>
 								{#if musicData.studioPhoto}
 									<img src={musicData.studioPhoto} alt="Studio setup" class="w-full object-cover" loading="lazy" />
 								{:else}
@@ -976,7 +1003,7 @@
 							</div>
 
 							<!-- Gear/Specs List -->
-							<div>
+							<div class="lg:col-span-2">
 								{#if studioGear.length === 0}
 									<div class="text-center py-16">
 										<Icon icon="mdi:music-box-multiple" class="text-gray-600 text-6xl mb-4 mx-auto" />
