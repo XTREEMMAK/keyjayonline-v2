@@ -430,6 +430,31 @@ body.swal2-shown {
 	border-radius: 2px;
 }
 
+/* Credit social icon overlay (info button -> reveal) */
+.credit-social-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	background: rgba(15, 23, 42, 0.85);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	border-radius: 8px;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.25s ease;
+	z-index: 5;
+	padding: 8px;
+}
+
+.credit-social-overlay.social-overlay-visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+
 @media (max-width: 768px) {
 	.album-modal-content {
 		max-height: calc(100vh - 60px) !important;
@@ -504,6 +529,13 @@ body.swal2-shown {
 		backdrop-filter: none !important;
 		-webkit-backdrop-filter: none !important;
 		background: rgba(30, 41, 59, 0.6) !important;
+	}
+
+	/* Disable backdrop-filter on social overlays for mobile scroll performance */
+	.credit-social-overlay {
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		background: rgba(15, 23, 42, 0.95) !important;
 	}
 
 	/* Simplify shadows for better performance */

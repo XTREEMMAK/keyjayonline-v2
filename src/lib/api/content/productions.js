@@ -15,11 +15,13 @@ import { getExternalLinkIcon } from '../../utils/externalLinks.js';
  * Credit fields to fetch from Directus (shared between queries)
  */
 const CREDIT_FIELDS = [
-  'role',
   'additional_info',
   'display_order',
   {
     person_id: ['name', 'bio', 'website_url', 'social_links', 'profile_image.id', 'profile_image.filename_disk']
+  },
+  {
+    role: [{ kjov2_ip_roles_id: ['id', 'name'] }]
   }
 ];
 

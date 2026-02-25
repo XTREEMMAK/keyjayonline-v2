@@ -9,6 +9,7 @@
 	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
 	import { pushModalState, setupPopstateHandler } from '$lib/utils/modalHistory.js';
 	import { isImageLoaded, markImageLoaded } from '$lib/utils/imageCache.js';
+	import { groupCreditsByRole, MUSIC_ROLE_PRIORITY, countSocialIcons, SOCIAL_ICON_OVERFLOW_THRESHOLD } from '$lib/utils/creditGrouping.js';
 import {
 	getTrackPlayerConfig,
 	setupTrackPlayerEvents,
@@ -109,8 +110,9 @@ import {
 				// Cleanup popstate listener
 				if (cleanupPopstate) cleanupPopstate();
 
-				// Clean up global function when modal closes
+				// Clean up global functions when modal closes
 				delete window.handleAlbumShare;
+				delete window.toggleCreditSocials;
 			}
 		});
 
@@ -246,10 +248,12 @@ import {
 
 	/**
 	 * Generate social icons HTML for a credit entry.
+	 * When icon count >= threshold, renders an info button + hidden overlay instead.
 	 * @param {Credit} credit
-	 * @returns {string} HTML string with globe + social icons
+	 * @param {string} [uniqueId] - Unique ID for overlay targeting
+	 * @returns {string} HTML string with globe + social icons (or info button + overlay)
 	 */
-	function generateCreditSocialIconsHtml(credit) {
+	function generateCreditSocialIconsHtml(credit, uniqueId = '') {
 		const icons = [];
 		if (credit.website_url) {
 			icons.push(`<a href="${credit.website_url}" target="_blank" rel="noopener noreferrer" title="Website" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon noobserver icon="mdi:web" width="18" height="18"></iconify-icon></a>`);
@@ -262,6 +266,22 @@ import {
 			icons.push(`<a href="${social.network_url}" target="_blank" rel="noopener noreferrer" title="${label}" onclick="event.stopPropagation();" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'"><iconify-icon noobserver icon="${icon}" width="16" height="16"></iconify-icon></a>`);
 		}
 		if (icons.length === 0) return '';
+
+		const iconCount = countSocialIcons(credit);
+		if (iconCount >= SOCIAL_ICON_OVERFLOW_THRESHOLD && uniqueId) {
+			const overlayId = `credit-social-${uniqueId}`;
+			return `
+				<button onclick="event.stopPropagation(); toggleCreditSocials('${overlayId}')" title="View links" style="margin-left: auto; flex-shrink: 0; color: #9ca3af; transition: color 0.2s; background: none; border: none; cursor: pointer; padding: 4px;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">
+					<iconify-icon noobserver icon="mdi:account-details" width="20" height="20"></iconify-icon>
+				</button>
+				<div id="${overlayId}" class="credit-social-overlay">
+					${icons.join('')}
+					<button onclick="event.stopPropagation(); toggleCreditSocials('${overlayId}')" title="Close" style="position: absolute; top: 4px; right: 4px; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 2px;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">
+						<iconify-icon noobserver icon="mdi:close" width="14" height="14"></iconify-icon>
+					</button>
+				</div>`;
+		}
+
 		return `<div style="display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0;">${icons.join('')}</div>`;
 	}
 
@@ -276,51 +296,12 @@ import {
 			return '<p style="color: #9ca3af; text-align: center; padding: 40px;">No credits available for this album.</p>';
 		}
 
-		// Group credits by category
-		const groupedCredits = {};
-		credits.forEach(credit => {
-			// Get all unique categories from roles
-			const categories = new Set();
-			if (credit.roles && Array.isArray(credit.roles)) {
-				credit.roles.forEach(role => {
-					categories.add(role.category || 'Other');
-				});
-			} else {
-				categories.add('Other');
-			}
+		const groups = groupCreditsByRole(credits, MUSIC_ROLE_PRIORITY);
+		if (groups.length === 0) {
+			return '<p style="color: #9ca3af; text-align: center; padding: 40px;">No credits available for this album.</p>';
+		}
 
-			// Add credit to each category it belongs to
-			categories.forEach(category => {
-				if (!groupedCredits[category]) {
-					groupedCredits[category] = [];
-				}
-				// Get roles for this category
-				const rolesInCategory = credit.roles?.filter(r => (r.category || 'Other') === category) || [{ title: credit.role }];
-				groupedCredits[category].push({
-					...credit,
-					displayRoles: rolesInCategory.map(r => r.title).join(', ')
-				});
-			});
-		});
-
-		// Sort categories by priority - keyboards/roles in specific order
-		const priorityOrder = ['Creator', 'Producer', 'Composer', 'Song Writer', 'Vocalists', 'Rapper', 'Mixing', 'Mastering'];
-		const sortedCategories = Object.keys(groupedCredits).sort((a, b) => {
-			const aIndex = priorityOrder.indexOf(a);
-			const bIndex = priorityOrder.indexOf(b);
-
-			// If both are in priority list, sort by that order
-			if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
-			// Priority categories come first
-			if (aIndex !== -1) return -1;
-			if (bIndex !== -1) return 1;
-			// Otherwise sort alphabetically
-			return a.localeCompare(b);
-		});
-
-		// Generate HTML for each category group
-		return sortedCategories.map((category, index) => {
-			const categoryCredits = groupedCredits[category];
+		return groups.map((group, index) => {
 			const uniqueId = `${idPrefix}credit-group-${index}`;
 
 			return `
@@ -331,24 +312,28 @@ import {
 						onmouseout="this.style.background='rgba(59, 130, 246, 0.15)'">
 						<span style="display: flex; align-items: center; gap: 8px;">
 							<iconify-icon noobserver icon="mdi:account-group" width="18" height="18" style="color: #3b82f6;"></iconify-icon>
-							${category} <span style="color: #9ca3af; font-weight: 400;">(${categoryCredits.length})</span>
+							${group.role} <span style="color: #9ca3af; font-weight: 400;">(${group.credits.length})</span>
 						</span>
 						<iconify-icon noobserver id="${uniqueId}-arrow" icon="mdi:chevron-down" width="20" height="20" style="color: #9ca3af; transition: transform 0.3s ease; transform: rotate(180deg);"></iconify-icon>
 					</button>
-					<div id="${uniqueId}" class="credit-group-content" style="max-height: 2000px; overflow: hidden; transition: max-height 0.4s ease; padding-top: 12px;">
+					<div id="${uniqueId}" class="credit-group-content" style="max-height: none; overflow: hidden; transition: max-height 0.3s ease; padding-top: 12px;">
 						<div style="display: grid; gap: 8px;">
-							${categoryCredits.map(credit => `
-								<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(55, 65, 81, 0.3); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.3s ease;"
-									 onmouseover="this.style.background='rgba(55, 65, 81, 0.5)'; this.style.boxShadow='0 0 20px rgba(59, 130, 246, 0.3)'; this.style.borderLeftColor='#60a5fa'"
-									 onmouseout="this.style.background='rgba(55, 65, 81, 0.3)'; this.style.boxShadow='none'; this.style.borderLeftColor='#3b82f6'">
+							${group.credits.map((credit, creditIdx) => {
+								const creditUniqueId = `${idPrefix}${index}-${creditIdx}`;
+								const additionalInfo = credit.additional_info ? `<p style="color: #6b7280; font-size: 0.75rem; font-style: italic; margin: 2px 0 0 0;">${credit.additional_info.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>` : '';
+								return `
+								<div style="position: relative; display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.2s ease;"
+									 onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'"
+									 onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
 									${credit.profile_image ? `<img src="${credit.profile_image}" alt="${credit.name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(59, 130, 246, 0.3);" />` : `<div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><iconify-icon noobserver icon="mdi:account" width="24" height="24" style="color: #3b82f6;"></iconify-icon></div>`}
-									<div style="flex: 1; min-width: 0;">
-										<div style="color: #ffffff; font-weight: 500; font-size: 0.9rem; margin-bottom: 2px;">${credit.name}</div>
-										<div style="color: #9ca3af; font-size: 0.8rem;">${credit.displayRoles || credit.role}</div>
+									<div style="flex: 1; min-width: 0; text-align: left;">
+										<p style="color: #ffffff; font-weight: 500; font-size: 0.875rem; margin: 0;">${credit.name}</p>
+										<p style="color: #9ca3af; font-size: 0.75rem; margin: 0;">${credit.displayRole || credit.role}</p>
+										${additionalInfo}
 									</div>
-									${generateCreditSocialIconsHtml(credit)}
-								</div>
-							`).join('')}
+									${generateCreditSocialIconsHtml(credit, creditUniqueId)}
+								</div>`;
+							}).join('')}
 						</div>
 					</div>
 				</div>
@@ -627,6 +612,16 @@ import {
 	}
 	
 	function initializeModalComponents() {
+		// Click-away handler for credit social overlays
+		document.addEventListener('click', (e) => {
+			if (!e.target.closest('.credit-social-overlay') &&
+				!e.target.closest('[onclick*="toggleCreditSocials"]')) {
+				document.querySelectorAll('.credit-social-overlay.social-overlay-visible').forEach(el => {
+					el.classList.remove('social-overlay-visible');
+				});
+			}
+		});
+
 		// Hide skeleton loader once image loads
 		const artwork = document.querySelector('.album-artwork');
 		const img = artwork?.querySelector('img');
@@ -825,13 +820,37 @@ import {
 		const isCollapsed = content.style.maxHeight === '0px';
 
 		if (isCollapsed) {
-			// Expand
-			content.style.maxHeight = '2000px';
+			// Expand: set to scrollHeight for precise animation, then open-ended
+			content.style.maxHeight = content.scrollHeight + 'px';
 			if (arrow) arrow.style.transform = 'rotate(180deg)';
+			// After transition, allow content to grow naturally
+			content.addEventListener('transitionend', function handler() {
+				if (content.style.maxHeight !== '0px') {
+					content.style.maxHeight = 'none';
+				}
+				content.removeEventListener('transitionend', handler);
+			});
 		} else {
-			// Collapse
+			// Collapse: first pin to actual height, then animate to 0
+			content.style.maxHeight = content.scrollHeight + 'px';
+			// Force reflow so the browser registers the current max-height
+			content.offsetHeight; // eslint-disable-line no-unused-expressions
 			content.style.maxHeight = '0px';
 			if (arrow) arrow.style.transform = 'rotate(0deg)';
+		}
+	};
+
+	/** @param {string} overlayId */
+	window.toggleCreditSocials = function(overlayId) {
+		const overlay = document.getElementById(overlayId);
+		if (!overlay) return;
+		const isVisible = overlay.classList.contains('social-overlay-visible');
+		// Close any other open overlays first
+		document.querySelectorAll('.credit-social-overlay.social-overlay-visible').forEach(el => {
+			el.classList.remove('social-overlay-visible');
+		});
+		if (!isVisible) {
+			overlay.classList.add('social-overlay-visible');
 		}
 	};
 
