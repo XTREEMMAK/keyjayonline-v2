@@ -97,3 +97,9 @@ export {
   getRadioTrack,
   createRadioSubscriber
 } from './content/radio.js';
+
+// Now / Updates APIs
+export {
+  getNowEntries,
+  getLatestNowEntryDate
+} from './content/now.js';

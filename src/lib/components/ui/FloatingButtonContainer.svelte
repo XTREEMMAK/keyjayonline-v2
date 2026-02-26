@@ -6,6 +6,8 @@
 	import { toggleMobileMenu, mobileMenuOpen, closeMobileMenu } from '$lib/stores/mobileNav.js';
 	import { sectionModalOpen } from '$lib/stores/stickyNav.js';
 	import { immediateTap } from '$lib/actions/immediateTap.js';
+	import NewContentIndicator from '$lib/components/ui/NewContentIndicator.svelte';
+	import { hasNewContent, clearNewContent } from '$lib/stores/newContent.js';
 
 	// Props
 	let { socialLinks = [] } = $props();
@@ -39,6 +41,10 @@
 			closeSocialMenu();
 		}
 		toggleMobileMenu();
+		// Clear new content indicator when menu is opened
+		if (get(hasNewContent)) {
+			clearNewContent();
+		}
 	}
 
 	function closeSocialMenu() {
@@ -136,6 +142,7 @@
 		>
 			<span class="hamburger-line hamburger-line-top"></span>
 			<span class="hamburger-line hamburger-line-middle"></span>
+			<NewContentIndicator />
 			<span class="hamburger-line hamburger-line-bottom"></span>
 		</button>
 
@@ -169,6 +176,17 @@
 		in:fly={{ y: 20, duration: 300 }}
 		out:fly={{ y: 20, duration: 250 }}
 	>
+		{#if $hasNewContent}
+			<a
+				href="/now"
+				class="mobile-menu-item"
+				onclick={() => clearNewContent()}
+				style="--item-glow-color: #fbbf24;"
+			>
+				<iconify-icon icon="mdi:bell-ring" class="text-xl text-amber-400"></iconify-icon>
+				<span class="text-amber-400">New updates &rarr;</span>
+			</a>
+		{/if}
 		{#each navItems as section}
 			<button
 				class="mobile-menu-item"
@@ -268,6 +286,7 @@
 		opacity: 0;
 		pointer-events: none;
 		transform: translateY(100%) translateZ(0);
+		visibility: hidden;
 	}
 
 	/* Bar Buttons - Common styles */

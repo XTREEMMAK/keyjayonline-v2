@@ -8,6 +8,8 @@
 	import { browser } from '$app/environment';
 	import { mouseGlow } from '$lib/actions/mouseGlow.js';
 	import { prefetchSection } from '$lib/stores/sectionData.js';
+	import NewContentIndicator from '$lib/components/ui/NewContentIndicator.svelte';
+	import { hasNewContent, clearNewContent } from '$lib/stores/newContent.js';
 
 	let isVisible = $state(true);
 	let isScrolled = $state(false);
@@ -161,6 +163,7 @@
 				alt="KEY JAY ONLINE"
 				class="logo-img"
 			/>
+			<NewContentIndicator />
 		</button>
 	</div>
 
@@ -180,6 +183,7 @@
 				alt="KEY JAY ONLINE"
 				class="logo-img"
 			/>
+			<NewContentIndicator />
 		</button>
 
 		<!-- Divider -->
@@ -207,6 +211,17 @@
 			in:fly={{ y: -10, duration: 200 }}
 			out:fly={{ y: -10, duration: 200 }}
 		>
+			{#if $hasNewContent}
+				<a
+					href="/now"
+					class="mobile-menu-item"
+					onclick={() => clearNewContent()}
+					style="--item-glow-color: #fbbf24;"
+				>
+					<iconify-icon icon="mdi:bell-ring" class="text-xl text-amber-400"></iconify-icon>
+					<span class="text-amber-400">New updates &rarr;</span>
+				</a>
+			{/if}
 			{#each navItems as section}
 				<button
 					class="mobile-menu-item"
@@ -242,6 +257,7 @@
 
 	/* Logo button styling */
 	.neu-navbar-logo {
+		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;

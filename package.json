@@ -19,7 +19,8 @@
 		"docker:logs": "docker compose --profile local-db logs -f",
 		"docker:build": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db build --no-cache",
 		"schema:snapshot": "set -a && . ./.env.local && set +a && node scripts/schema-snapshot.js",
-		"icons:generate": "node scripts/generate-icons.js"
+		"icons:generate": "node scripts/generate-icons.js",
+		"neocities:deploy": "node neocities/deploy.js"
 	},
 	"devDependencies": {
 		"@aws-sdk/client-s3": "^3.983.0",
@@ -44,6 +45,7 @@
 		"dompurify": "^3.2.6",
 		"form-data": "^4.0.5",
 		"isomorphic-dompurify": "^2.26.0",
+		"marked": "^17.0.3",
 		"mixitup": "^3.3.2",
 		"music-metadata": "^11.8.3",
 		"node-fetch": "^3.3.2",

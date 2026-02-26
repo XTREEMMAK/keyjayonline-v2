@@ -12,7 +12,8 @@ const staticSections = [
 	{ path: '#voice', priority: 0.8, changefreq: 'monthly' },
 	{ path: '#productions', priority: 0.8, changefreq: 'weekly' },
 	{ path: '#about', priority: 0.7, changefreq: 'monthly' },
-	{ path: '#contact', priority: 0.6, changefreq: 'monthly' }
+	{ path: '#contact', priority: 0.6, changefreq: 'monthly' },
+	{ path: 'now', priority: 0.6, changefreq: 'weekly' }
 ];
 
 /**

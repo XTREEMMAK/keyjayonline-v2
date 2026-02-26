@@ -10,6 +10,7 @@
 	import ScrollToTop from '$lib/components/ui/ScrollToTop.svelte';
 	import { radioEnabled } from '$lib/stores/musicPlayer.js';
 	import { PUBLIC_SITE_URL } from '$env/static/public';
+	import { checkForNewContent } from '$lib/stores/newContent.js';
 	let { children, data } = $props();
 
 	// Initialize radioEnabled store from server data
@@ -46,6 +47,9 @@
 		const timer = setTimeout(() => {
 			pageReady = true;
 		}, 100);
+
+		// Check for new content (non-blocking)
+		checkForNewContent();
 
 		return () => clearTimeout(timer);
 	});
@@ -96,6 +100,7 @@
 		<meta name="twitter:image" content="{PUBLIC_SITE_URL}/img/og-social.webp" />
 	{/if}
 	<link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
+	<link rel="alternate" type="application/rss+xml" title="Key Jay Online" href="/feed.xml" />
 	<!-- JSON-LD Structured Data -->
 	{@html `<script type="application/ld+json">
 	{

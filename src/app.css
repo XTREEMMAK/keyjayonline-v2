@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '$lib/styles/neumorphic.css';
+@plugin '@tailwindcss/typography';
 
 @layer components {
   /* Responsive subtitle class */
