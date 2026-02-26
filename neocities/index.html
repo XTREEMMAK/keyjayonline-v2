@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Key Jay — IndieWeb Outpost</title>
+  <meta name="description" content="Key Jay's IndieWeb outpost. Music composer for indie games, voice actor, and builder of things on the web.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
+  <link rel="alternate" type="application/rss+xml" title="Key Jay Online RSS Feed" href="https://keyjayonline.com/feed.xml">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="me" href="https://keyjayonline.com">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="wave-bg"></canvas>
+  <div id="hero-bg"></div>
+
+  <!-- ================================================================
+       HAMBURGER MENU — top-right on desktop, bottom-center on mobile
+       ================================================================ -->
+  <button class="v2-menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false">
+    <div class="v2-burger">
+      <span class="v2-burger-line"></span>
+      <span class="v2-burger-line"></span>
+      <span class="v2-burger-line"></span>
+    </div>
+  </button>
+
+  <div class="v2-menu-overlay" id="menu-overlay"></div>
+
+  <nav class="v2-menu-panel" id="menu-panel">
+    <div class="v2-menu-header">Explore</div>
+    <div class="v2-menu-links">
+      <a href="https://keyjayonline.com" rel="me" class="v2-menu-link v2-ml-home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home Site</span>
+      </a>
+      <a href="https://keyjayonline.com/#Music" class="v2-menu-link v2-ml-music">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <span>Music</span>
+      </a>
+      <a href="https://keyjayonline.com/#Voice" class="v2-menu-link v2-ml-voice">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <span>Voice</span>
+      </a>
+      <a href="https://keyjayonline.com/#Productions" class="v2-menu-link v2-ml-prod">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <span>Productions</span>
+      </a>
+      <a href="https://keyjayonline.com/#Tech" class="v2-menu-link v2-ml-tech">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <span>Tech</span>
+      </a>
+      <a href="https://keyjayonline.com/games" class="v2-menu-link v2-ml-games">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="18" y1="10" x2="18.01" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>
+        <span>Games</span>
+      </a>
+      <div class="v2-menu-divider"></div>
+      <a href="https://keyjayonline.com/feed.xml" class="v2-menu-link v2-ml-rss">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        <span>RSS Feed</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ================================================================
+       FLOATING MUSIC BUTTON — lower-right, opens player popup
+       ================================================================ -->
+  <button class="v2-music-btn" id="music-btn" aria-label="Open music player">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+  </button>
+
+  <!-- ================================================================
+       MUSIC PLAYER POPUP — glassmorphic overlay
+       ================================================================ -->
+  <div class="v2-player-overlay" id="player-overlay"></div>
+  <div class="v2-player-popup" id="player-popup">
+    <div class="v2-player-popup-header">
+      <svg class="v2-section-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      <h3>Now Playing</h3>
+      <button class="v2-player-close" id="player-close" aria-label="Close player">&times;</button>
+    </div>
+    <div class="audio-player" id="audio-player">
+      <p class="player-loading">Loading player...</p>
+    </div>
+    <div class="v2-player-cta">
+      <a href="https://keyjayonline.com/#Music" class="neu-button neu-button-round player-cta-link">
+        Explore Music on KeyJayOnline &rarr;
+      </a>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       HERO BANNER — full-bleed, centered logo + title
+       ================================================================ -->
+  <div class="v2-hero">
+    <div class="v2-hero-inner h-card">
+      <img src="assets/KJ_Logo_Medium_W.svg" alt="Key Jay" class="v2-logo">
+      <h1 class="p-name v2-hero-title">Key Jay <span class="gradient-text v2-shimmer">Online</span></h1>
+      <p class="v2-hero-subtitle">IndieWeb Outpost</p>
+      <p class="v2-hero-tagline p-note">
+        Game music composer · Voice actor · Full-stack builder<br>
+        Home base is <a href="https://keyjayonline.com" rel="me" class="u-url">KeyJayOnline.com</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="page-container">
+
+    <!-- ================================================================
+         INTRO — first-person bio (h-card microformat)
+         ================================================================ -->
+    <section class="v2-intro-wrap">
+      <div class="v2-intro-icon-overlap">
+        <svg class="v2-section-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="v2-intro glass-card">
+        <p class="v2-intro-text">
+          I'm <span class="p-name v2-intro-name">Key Jay</span> — I make music for indie games, voice characters and IVR systems, and build the tech that holds it all together. My main site at <a href="https://keyjayonline.com" rel="me" class="u-url">KeyJayOnline.com</a> is where the full portfolio lives. This page is my corner of the indie web — a quieter outpost that syndicates what I'm up to.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         VIDEO SHOWCASE — hidden on first visit, visible on return
+         ================================================================ -->
+    <section class="v2-video-section" id="video-showcase" hidden>
+      <div class="section-label">
+        <svg class="v2-section-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <h2>Featured</h2>
+        <div class="label-line"></div>
+      </div>
+      <div class="v2-video-card glass-card">
+        <div class="v2-video-embed">
+          <iframe data-yt-embed
+            src=""
+            title="Featured video"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         NOW ENTRIES — h-feed microformat
+         ================================================================ -->
+    <section class="now-section">
+      <div class="section-label">
+        <svg class="v2-section-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <h2>What I'm up to</h2>
+        <div class="label-line"></div>
+      </div>
+      <div class="h-feed" id="now-entries">
+        <!-- Entries rendered by script.js -->
+        <div class="now-placeholder glass-card">
+          <p>Loading updates...</p>
+        </div>
+      </div>
+      <div class="now-cta-container">
+        <a href="https://keyjayonline.com/now" class="neu-button neu-button-round now-cta-link">
+          See all updates on KeyJayOnline &rarr;
+        </a>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         RSS SUBSCRIBE BAR
+         ================================================================ -->
+    <section class="rss-bar glass-card">
+      <div class="rss-content">
+        <svg class="rss-icon v2-section-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        <span class="rss-text">Music, productions, /now updates — one feed.</span>
+      </div>
+      <a href="https://keyjayonline.com/feed.xml" class="neu-button neu-button-round rss-subscribe-btn">
+        Subscribe
+      </a>
+    </section>
+
+    <!-- ================================================================
+         WEBRING (placeholder)
+         ================================================================ -->
+    <section class="webring-bar glass-card">
+      <span class="webring-label">Webring</span>
+      <div class="webring-nav">
+        <a href="#" rel="external" class="webring-link">&larr; Prev</a>
+        <span class="webring-divider">&middot;</span>
+        <a href="#" rel="external" class="webring-link">Random</a>
+        <span class="webring-divider">&middot;</span>
+        <a href="#" rel="external" class="webring-link">Next &rarr;</a>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         FOOTER
+         ================================================================ -->
+    <footer class="site-footer">
+      <div class="footer-divider"></div>
+      <p class="footer-built">Built by hand · Hosted on <a href="https://neocities.org" target="_blank" rel="noopener">NeoCities</a></p>
+      <p class="footer-home">Home base &rarr; <a href="https://keyjayonline.com" rel="me">KeyJayOnline.com</a></p>
+    </footer>
+
+  </div>
+
+  <script src="wave-bg.js"></script>
+  <script src="script.js"></script>
+  <script src="audio-player.js"></script>
+  <script src="video-showcase.js"></script>
+  <script>
+    (function () {
+      // Hamburger menu
+      var menuBtn = document.getElementById('menu-btn');
+      var menuPanel = document.getElementById('menu-panel');
+      var menuOverlay = document.getElementById('menu-overlay');
+      var menuOpen = false;
+
+      function toggleMenu() {
+        menuOpen = !menuOpen;
+        menuBtn.classList.toggle('v2-menu-btn-active', menuOpen);
+        menuBtn.setAttribute('aria-expanded', menuOpen);
+        menuPanel.classList.toggle('v2-menu-panel-open', menuOpen);
+        menuOverlay.classList.toggle('v2-menu-overlay-visible', menuOpen);
+      }
+
+      menuBtn.addEventListener('click', toggleMenu);
+      menuOverlay.addEventListener('click', toggleMenu);
+
+      // Music player popup
+      var musicBtn = document.getElementById('music-btn');
+      var playerPopup = document.getElementById('player-popup');
+      var playerOverlay = document.getElementById('player-overlay');
+      var playerClose = document.getElementById('player-close');
+      var playerOpen = false;
+
+      function togglePlayer() {
+        playerOpen = !playerOpen;
+        musicBtn.classList.toggle('v2-music-btn-active', playerOpen);
+        playerPopup.classList.toggle('v2-player-popup-open', playerOpen);
+        playerOverlay.classList.toggle('v2-player-overlay-visible', playerOpen);
+      }
+
+      musicBtn.addEventListener('click', togglePlayer);
+      playerOverlay.addEventListener('click', togglePlayer);
+      playerClose.addEventListener('click', togglePlayer);
+
+      // Escape key closes whichever is open
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          if (playerOpen) togglePlayer();
+          if (menuOpen) toggleMenu();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
