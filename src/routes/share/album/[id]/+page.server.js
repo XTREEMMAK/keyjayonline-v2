@@ -34,10 +34,14 @@ export async function load({ params, fetch }) {
 					{ cover_art: ['id', 'filename_disk', 'filename_download'] },
 					{
 						credits: [
-							'role',
 							'additional_info',
 							'display_order',
-							{ person_id: ['name', 'bio', 'website_url', 'profile_image.id', 'profile_image.filename_disk'] }
+							{
+								person_id: ['name', 'bio', 'website_url', 'social_links', 'profile_image.id', 'profile_image.filename_disk']
+							},
+							{
+								role: [{ kjov2_ip_roles_id: ['id', 'name', 'sort'] }]
+							}
 						]
 					},
 					{

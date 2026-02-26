@@ -5,6 +5,9 @@
 	import { generateShareUrl, copyShareUrl } from '$lib/utils/shareLinks.js';
 	import { getAudioUrl } from '$lib/utils/environment.js';
 	import { sanitizeHtml } from '$lib/utils/sanitize.js';
+	import { groupCreditsByRole, MUSIC_ROLE_PRIORITY, countSocialIcons, SOCIAL_ICON_OVERFLOW_THRESHOLD } from '$lib/utils/creditGrouping.js';
+	import { getExternalLinkIcon } from '$lib/utils/externalLinks.js';
+	import { fade } from 'svelte/transition';
 
 	let { data } = $props();
 	const { album, samples, meta } = data;
@@ -21,8 +24,8 @@
 
 	const currentTrack = $derived(samples[currentTrackIndex]);
 
-	// Helper to get external link icon (matching AlbumModalSwal pattern)
-	function getExternalLinkIcon(link) {
+	// Helper to get streaming link icon (matching AlbumModalSwal pattern)
+	function getStreamingLinkIcon(link) {
 		if (link.icon_type === 'custom' && link.icon_value) {
 			return link.icon_value;
 		}
@@ -73,54 +76,8 @@
 		return platformColors[platform] || { bg: 'rgba(59, 130, 246, 0.2)', bgHover: 'rgba(59, 130, 246, 0.3)', color: '#3b82f6' };
 	}
 
-	// Helper to group credits by category
-	function groupCreditsByCategory(credits) {
-		const grouped = {};
-
-		credits.forEach(credit => {
-			const categories = new Set();
-
-			if (credit.roles && credit.roles.length > 0) {
-				credit.roles.forEach(role => {
-					categories.add(role.category || 'Other');
-				});
-			} else {
-				categories.add('Other');
-			}
-
-			categories.forEach(category => {
-				if (!grouped[category]) {
-					grouped[category] = [];
-				}
-				const rolesInCategory = credit.roles?.filter(r => (r.category || 'Other') === category) || [{ title: credit.role }];
-				grouped[category].push({
-					...credit,
-					displayRoles: rolesInCategory.map(r => r.title).join(', ')
-				});
-			});
-		});
-
-		return grouped;
-	}
-
-	const groupedCredits = $derived(groupCreditsByCategory(album.credits || []));
-
-	// Sort categories by priority order (matching AlbumModalSwal)
-	const priorityOrder = ['Creator', 'Producer', 'Composer', 'Song Writer', 'Vocalists', 'Rapper', 'Mixing', 'Mastering'];
-	const sortedCreditCategories = $derived(
-		Object.keys(groupedCredits).sort((a, b) => {
-			const aIndex = priorityOrder.indexOf(a);
-			const bIndex = priorityOrder.indexOf(b);
-
-			// If both are in priority list, sort by that order
-			if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
-			// Priority categories come first
-			if (aIndex !== -1) return -1;
-			if (bIndex !== -1) return 1;
-			// Otherwise sort alphabetically
-			return a.localeCompare(b);
-		})
-	);
+	// Credits: group by role using shared utility
+	const groupedCredits = $derived(groupCreditsByRole(album.credits || [], MUSIC_ROLE_PRIORITY));
 
 	// Collapsible state for credit sections (Creator expanded by default, others collapsed)
 	let collapsedCreditSections = $state({});
@@ -128,18 +85,33 @@
 	// Initialize collapsed state when credits change
 	$effect(() => {
 		const initialState = {};
-		sortedCreditCategories.forEach(category => {
-			// Creator section starts expanded (false), all others collapsed (true)
-			initialState[category] = category !== 'Creator';
+		groupedCredits.forEach(group => {
+			initialState[group.role] = group.role !== 'Creator';
 		});
 		collapsedCreditSections = initialState;
 	});
 
-	function toggleCreditSection(category) {
+	function toggleCreditSection(role) {
 		collapsedCreditSections = {
 			...collapsedCreditSections,
-			[category]: !collapsedCreditSections[category]
+			[role]: !collapsedCreditSections[role]
 		};
+	}
+
+	// Credit detail drill-down state
+	let selectedCredit = $state(null);
+	let socialOverlayOpen = $state({});
+
+	function selectCredit(credit) {
+		selectedCredit = credit;
+	}
+
+	function deselectCredit() {
+		selectedCredit = null;
+	}
+
+	function toggleSocialOverlay(key) {
+		socialOverlayOpen = { ...socialOverlayOpen, [key]: !socialOverlayOpen[key] };
 	}
 
 	function playTrack(index) {
@@ -383,7 +355,7 @@
 							title={link.label}
 							style="--chip-color: {colors.color}; --chip-bg: {colors.bg}; --chip-hover: {colors.bgHover};"
 						>
-							<Icon icon={getExternalLinkIcon(link)} width={20} height={20} />
+							<Icon icon={getStreamingLinkIcon(link)} width={20} height={20} />
 							<span>{link.label}</span>
 						</a>
 					{/each}
@@ -419,55 +391,176 @@
 			<section class="credits-section">
 				<h2>Credits</h2>
 				<div class="credits-content">
-					{#each sortedCreditCategories as category}
-						{@const categoryCredits = groupedCredits[category]}
-						{@const isCollapsed = collapsedCreditSections[category]}
-						<div class="credit-category">
-							<button
-								class="credit-category-header"
-								onclick={() => toggleCreditSection(category)}
-								aria-expanded={!isCollapsed}
-							>
-								<div class="credit-category-title">
-									<Icon icon="mdi:account-group" width={18} height={18} />
-									<span>{category}</span>
-									<span class="credit-count">({categoryCredits.length})</span>
-								</div>
-								<Icon
-									icon="mdi:chevron-down"
-									width={20}
-									height={20}
-									class="credit-chevron"
-									style="transform: rotate({isCollapsed ? '0deg' : '180deg'})"
-								/>
+					{#if selectedCredit}
+						<!-- Credit Detail Drill-Down -->
+						<div class="credit-detail-view" transition:fade={{ duration: 200 }}>
+							<button class="credit-detail-back" onclick={() => deselectCredit()}>
+								<Icon icon="mdi:arrow-left" width={18} height={18} />
+								Back to Credits
 							</button>
-							<div class="credit-list-wrapper" class:collapsed={isCollapsed}>
-								<div class="credit-list">
-									{#each categoryCredits as credit}
-										<div class="credit-item">
-											{#if credit.profile_image}
-												<img src={credit.profile_image} alt={credit.name} class="credit-avatar" />
-											{:else}
-												<div class="credit-avatar-placeholder">
-													<Icon icon="mdi:account" width={24} height={24} />
-												</div>
+							<div class="credit-detail-profile">
+								{#if selectedCredit.profile_image}
+									<img src={selectedCredit.profile_image} alt={selectedCredit.name} class="credit-detail-avatar" />
+								{/if}
+								<h3 class="credit-detail-name">{selectedCredit.name}</h3>
+								<p class="credit-detail-roles">
+									{selectedCredit.roles ? selectedCredit.roles.map(r => r.title).join(', ') : selectedCredit.role}
+								</p>
+								{#if selectedCredit.additional_info}
+									<p class="credit-detail-additional">{selectedCredit.additional_info}</p>
+								{/if}
+							</div>
+							{#if selectedCredit.bio}
+								<div class="credit-detail-bio">
+									<div class="credit-detail-bio-content">{@html sanitizeHtml(selectedCredit.bio)}</div>
+								</div>
+							{/if}
+							{#if selectedCredit.website_url || (selectedCredit.social_links && selectedCredit.social_links.length > 0)}
+								<div class="credit-detail-links">
+									{#if selectedCredit.website_url}
+										{@const isMailto = selectedCredit.website_url.startsWith('mailto:')}
+										<a
+											href={selectedCredit.website_url}
+											target={isMailto ? undefined : '_blank'}
+											rel={isMailto ? undefined : 'noopener noreferrer'}
+											class="credit-detail-link-row"
+										>
+											<Icon icon={isMailto ? 'mdi:email-outline' : 'mdi:web'} width={18} height={18} />
+											<span class="credit-detail-link-text">{selectedCredit.website_url.replace(/^(https?:\/\/|mailto:)/, '')}</span>
+											<Icon icon={isMailto ? 'mdi:email-outline' : 'mdi:open-in-new'} width={14} height={14} class="credit-detail-link-arrow" />
+										</a>
+									{/if}
+									{#if selectedCredit.social_links}
+										{#each selectedCredit.social_links as social}
+											{#if social.network_url}
+												{@const isSocialMailto = social.network_url.startsWith('mailto:')}
+												<a
+													href={social.network_url}
+													target={isSocialMailto ? undefined : '_blank'}
+													rel={isSocialMailto ? undefined : 'noopener noreferrer'}
+													class="credit-detail-link-row"
+												>
+													<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} width={18} height={18} />
+													<span class="credit-detail-link-text">{social.network || social.network_url.replace(/^(https?:\/\/|mailto:)/, '')}</span>
+													<Icon icon="mdi:open-in-new" width={14} height={14} class="credit-detail-link-arrow" />
+												</a>
 											{/if}
-											<div class="credit-details">
-												<div class="credit-name">{credit.name}</div>
-												<div class="credit-role">{credit.displayRoles || credit.role}</div>
-												{#if credit.website_url}
-													<a href={credit.website_url} target="_blank" rel="noopener noreferrer" class="credit-link">
-														<Icon icon="mdi:open-in-new" width={12} height={12} />
-														View Profile
-													</a>
+										{/each}
+									{/if}
+								</div>
+							{/if}
+						</div>
+					{:else}
+						<!-- Grouped Credits List -->
+						{#each groupedCredits as group, gIdx}
+							{@const isCollapsed = collapsedCreditSections[group.role]}
+							<div class="credit-category">
+								<button
+									class="credit-category-header"
+									onclick={() => toggleCreditSection(group.role)}
+									aria-expanded={!isCollapsed}
+								>
+									<div class="credit-category-title">
+										<Icon icon="mdi:account-group" width={18} height={18} />
+										<span>{group.role}</span>
+										<span class="credit-count">({group.credits.length})</span>
+									</div>
+									<Icon
+										icon="mdi:chevron-down"
+										width={20}
+										height={20}
+										class="credit-chevron"
+										style="transform: rotate({isCollapsed ? '0deg' : '180deg'})"
+									/>
+								</button>
+								<div class="credit-list-wrapper" class:collapsed={isCollapsed}>
+									<div class="credit-list">
+										{#each group.credits as credit, cIdx}
+											{@const socialKey = `group-${gIdx}-${cIdx}`}
+											<div class="credit-item">
+												{#if credit.profile_image}
+													<img
+														src={credit.profile_image}
+														alt={credit.name}
+														class="credit-avatar credit-avatar-clickable"
+														onclick={(e) => { e.stopPropagation(); selectCredit(credit); }}
+													/>
+												{:else}
+													<div
+														class="credit-avatar-placeholder credit-avatar-clickable"
+														onclick={(e) => { e.stopPropagation(); selectCredit(credit); }}
+													>
+														<Icon icon="mdi:account" width={24} height={24} />
+													</div>
+												{/if}
+												<div class="credit-details">
+													<div class="credit-name">{credit.name}</div>
+													<div class="credit-role">{credit.displayRole || credit.role}</div>
+													{#if credit.additional_info}
+														<div class="credit-additional">{credit.additional_info}</div>
+													{/if}
+												</div>
+												<!-- Social icons -->
+												{#if credit.website_url || (credit.social_links && credit.social_links.length > 0)}
+													{#if countSocialIcons(credit) >= SOCIAL_ICON_OVERFLOW_THRESHOLD}
+														<!-- Overflow: info button + overlay -->
+														<button
+															class="credit-social-overflow-btn"
+															onclick={() => toggleSocialOverlay(socialKey)}
+															title="View links"
+														>
+															<Icon icon="mdi:account-details" width={20} height={20} />
+														</button>
+														{#if socialOverlayOpen[socialKey]}
+															<div class="credit-social-overlay" transition:fade={{ duration: 200 }}>
+																{#if credit.website_url}
+																	{@const isMailto = credit.website_url.startsWith('mailto:')}
+																	<a href={credit.website_url} target={isMailto ? undefined : '_blank'} rel={isMailto ? undefined : 'noopener noreferrer'} class="credit-social-icon" title={isMailto ? 'Email' : 'Website'}>
+																		<Icon icon={isMailto ? 'mdi:email-outline' : 'mdi:web'} width={20} height={20} />
+																	</a>
+																{/if}
+																{#if credit.social_links}
+																	{#each credit.social_links as social}
+																		{#if social.network_url}
+																			<a href={social.network_url} target={social.network_url.startsWith('mailto:') ? undefined : '_blank'} rel={social.network_url.startsWith('mailto:') ? undefined : 'noopener noreferrer'} class="credit-social-icon" title={social.network || 'Link'}>
+																				<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} width={18} height={18} />
+																			</a>
+																		{/if}
+																	{/each}
+																{/if}
+																<button class="credit-social-overlay-close" onclick={() => toggleSocialOverlay(socialKey)} title="Close">
+																	<Icon icon="mdi:close" width={14} height={14} />
+																</button>
+															</div>
+														{/if}
+													{:else}
+														<!-- Inline social icons -->
+														<div class="credit-social-icons">
+															{#if credit.website_url}
+																{@const isMailto = credit.website_url.startsWith('mailto:')}
+																<a href={credit.website_url} target={isMailto ? undefined : '_blank'} rel={isMailto ? undefined : 'noopener noreferrer'} class="credit-social-icon" title={isMailto ? 'Email' : 'Website'}>
+																	<Icon icon={isMailto ? 'mdi:email-outline' : 'mdi:web'} width={18} height={18} />
+																</a>
+															{/if}
+															{#if credit.social_links}
+																{#each credit.social_links as social}
+																	{#if social.network_url}
+																		<a href={social.network_url} target={social.network_url.startsWith('mailto:') ? undefined : '_blank'} rel={social.network_url.startsWith('mailto:') ? undefined : 'noopener noreferrer'} class="credit-social-icon" title={social.network || 'Link'}>
+																			<Icon icon={getExternalLinkIcon({ url: social.network_url, label: social.network })} width={16} height={16} />
+																		</a>
+																	{/if}
+																{/each}
+															{/if}
+														</div>
+													{/if}
 												{/if}
 											</div>
-										</div>
-									{/each}
+										{/each}
+									</div>
 								</div>
 							</div>
-						</div>
-					{/each}
+						{/each}
+					{/if}
 				</div>
 			</section>
 		{/if}
@@ -822,6 +915,7 @@
 		text-align: center;
 	}
 
+	/* Credit Group Headers */
 	.credit-category {
 		margin-bottom: 1rem;
 	}
@@ -868,6 +962,7 @@
 		transition: transform 0.3s ease;
 	}
 
+	/* Credit List */
 	.credit-list-wrapper {
 		max-height: 2000px;
 		overflow: hidden;
@@ -884,26 +979,24 @@
 
 	.credit-list {
 		display: grid;
-		gap: 1rem;
+		gap: 8px;
 	}
 
+	/* Credit Items */
 	.credit-item {
+		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 1rem;
-		padding: 1rem;
-		background: rgba(55, 65, 81, 0.3);
-		backdrop-filter: blur(10px);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		gap: 12px;
+		padding: 12px;
+		background: rgba(255, 255, 255, 0.05);
 		border-radius: 8px;
-		border-left: 3px solid rgba(59, 130, 246, 0.5);
-		transition: all 0.3s;
+		border-left: 3px solid #3b82f6;
+		transition: all 0.2s ease;
 	}
 
 	.credit-item:hover {
-		background: rgba(55, 65, 81, 0.5);
-		border-left-color: #60a5fa;
-		transform: translateX(4px);
+		background: rgba(255, 255, 255, 0.08);
 	}
 
 	.credit-avatar,
@@ -919,6 +1012,16 @@
 		border: 2px solid rgba(59, 130, 246, 0.3);
 	}
 
+	.credit-avatar-clickable {
+		cursor: pointer;
+		transition: border-color 0.2s, transform 0.2s;
+	}
+
+	.credit-avatar-clickable:hover {
+		border-color: rgba(59, 130, 246, 0.7);
+		transform: scale(1.1);
+	}
+
 	.credit-avatar-placeholder {
 		background: rgba(59, 130, 246, 0.2);
 		display: flex;
@@ -927,35 +1030,216 @@
 		color: #3b82f6;
 	}
 
+	.credit-avatar-placeholder.credit-avatar-clickable:hover {
+		background: rgba(59, 130, 246, 0.35);
+	}
+
 	.credit-details {
 		flex: 1;
 		min-width: 0;
+		text-align: left;
 	}
 
 	.credit-name {
 		color: white;
 		font-weight: 500;
-		font-size: 0.95rem;
-		margin-bottom: 2px;
+		font-size: 0.875rem;
+		margin: 0;
 	}
 
 	.credit-role {
-		color: rgba(255, 255, 255, 0.7);
-		font-size: 0.85rem;
+		color: #9ca3af;
+		font-size: 0.75rem;
+		margin: 0;
 	}
 
-	.credit-link {
-		color: #3b82f6;
+	.credit-additional {
+		color: #6b7280;
 		font-size: 0.75rem;
+		font-style: italic;
 		margin-top: 2px;
+	}
+
+	/* Social Icons */
+	.credit-social-icons {
 		display: flex;
 		align-items: center;
-		gap: 4px;
+		gap: 6px;
+		flex-shrink: 0;
+		margin-left: auto;
+	}
+
+	.credit-social-icon {
+		color: #9ca3af;
+		transition: color 0.2s;
 		text-decoration: none;
 	}
 
-	.credit-link:hover {
-		color: #60a5fa;
+	.credit-social-icon:hover {
+		color: #ffffff;
+	}
+
+	/* Social Overflow */
+	.credit-social-overflow-btn {
+		flex-shrink: 0;
+		margin-left: auto;
+		color: #9ca3af;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 4px;
+		transition: color 0.2s;
+	}
+
+	.credit-social-overflow-btn:hover {
+		color: #ffffff;
+	}
+
+	.credit-social-overlay {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		flex-wrap: wrap;
+		border-radius: 8px;
+		z-index: 10;
+		padding: 12px;
+		background: rgba(15, 23, 42, 0.85);
+		backdrop-filter: blur(8px);
+	}
+
+	.credit-social-overlay-close {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+		color: #9ca3af;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 2px;
+		transition: color 0.2s;
+	}
+
+	.credit-social-overlay-close:hover {
+		color: #ffffff;
+	}
+
+	/* Credit Detail Drill-Down */
+	.credit-detail-view {
+		display: flex;
+		flex-direction: column;
+		gap: 24px;
+	}
+
+	.credit-detail-back {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		color: #9ca3af;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 4px 0;
+		font-size: 0.875rem;
+		transition: color 0.2s;
+	}
+
+	.credit-detail-back:hover {
+		color: #ffffff;
+	}
+
+	.credit-detail-profile {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 8px;
+	}
+
+	.credit-detail-avatar {
+		width: 96px;
+		height: 96px;
+		border-radius: 50%;
+		object-fit: cover;
+		border: 3px solid rgba(59, 130, 246, 0.4);
+		margin-bottom: 8px;
+	}
+
+	.credit-detail-name {
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: #ffffff;
+		margin: 0;
+	}
+
+	.credit-detail-roles {
+		color: #9ca3af;
+		font-size: 0.875rem;
+		margin: 0;
+	}
+
+	.credit-detail-additional {
+		color: #6b7280;
+		font-size: 0.875rem;
+		font-style: italic;
+		margin: 4px 0 0 0;
+	}
+
+	.credit-detail-bio {
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		padding-top: 16px;
+	}
+
+	.credit-detail-bio-content {
+		color: #d1d5db;
+		line-height: 1.7;
+		font-size: 0.875rem;
+		text-align: left;
+	}
+
+	.credit-detail-bio-content :global(p) {
+		margin-bottom: 12px;
+	}
+
+	.credit-detail-bio-content :global(p:last-child) {
+		margin-bottom: 0;
+	}
+
+	.credit-detail-links {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.credit-detail-link-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 8px 12px;
+		border-radius: 8px;
+		background: rgba(255, 255, 255, 0.05);
+		color: #d1d5db;
+		text-decoration: none;
+		transition: background 0.2s;
+	}
+
+	.credit-detail-link-row:hover {
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	.credit-detail-link-text {
+		flex: 1;
+		font-size: 0.875rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.credit-detail-link-arrow {
+		color: #6b7280;
+		flex-shrink: 0;
 	}
 
 	.share-footer {
