@@ -71,9 +71,9 @@ USER sveltekit
 # Expose port
 EXPOSE 3000
 
-# Health check (BusyBox wget: use -q instead of --no-verbose)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget -q --spider http://localhost:3000/api/health || exit 1
+# Health check using Node.js (avoids BusyBox wget quirks in Alpine)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD node -e "const http=require('http');http.get('http://localhost:3000/api/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"
 
 # Start the application
 CMD ["node", "build"]
