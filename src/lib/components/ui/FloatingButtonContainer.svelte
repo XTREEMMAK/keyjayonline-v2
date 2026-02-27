@@ -181,10 +181,12 @@
 				href="/now"
 				class="mobile-menu-item"
 				onclick={() => clearNewContent()}
-				style="--item-glow-color: #fbbf24;"
+				style="--item-glow-color: #fbbf24; white-space: nowrap;"
 			>
-				<iconify-icon icon="mdi:bell-ring" class="text-xl text-amber-400"></iconify-icon>
-				<span class="text-amber-400">New updates &rarr;</span>
+				<span class="bell-ring-anim">
+					<iconify-icon icon="mdi:bell-ring" class="text-xl text-amber-400"></iconify-icon>
+				</span>
+				<span class="text-amber-400">New updates</span>
 			</a>
 		{/if}
 		{#each navItems as section}
@@ -248,6 +250,25 @@
 {/if}
 
 <style>
+	/* Bell ringing animation for new updates indicator */
+	.bell-ring-anim {
+		display: inline-flex;
+		animation: bell-ring 2s ease-in-out infinite;
+		transform-origin: top center;
+	}
+
+	@keyframes bell-ring {
+		0% { transform: rotate(0deg); }
+		5% { transform: rotate(15deg); }
+		10% { transform: rotate(-13deg); }
+		15% { transform: rotate(10deg); }
+		20% { transform: rotate(-8deg); }
+		25% { transform: rotate(5deg); }
+		30% { transform: rotate(-3deg); }
+		35% { transform: rotate(0deg); }
+		100% { transform: rotate(0deg); }
+	}
+
 	/* Bottom Bar - 5-column grid layout */
 	.bottom-bar {
 		position: fixed;

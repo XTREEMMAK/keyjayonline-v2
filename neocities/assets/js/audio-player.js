@@ -8,7 +8,6 @@
 (function () {
   'use strict';
 
-  var KJO_API = 'https://keyjayonline.com/api/radio/sample.json';
   var PLAYER_CONTAINER_ID = 'audio-player';
 
   // State
@@ -335,31 +334,23 @@
     audio.addEventListener('pause', onPause);
     audio.addEventListener('ended', onEnded);
 
-    fetch(KJO_API)
-      .then(function (res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json();
-      })
-      .then(function (data) {
-        if (!data.tracks || data.tracks.length === 0) {
-          renderFallback(container);
-          return;
-        }
-
-        // Filter out tracks with no audio URL
-        tracks = data.tracks.filter(function (t) { return t.audioUrl; });
-        if (tracks.length === 0) {
-          renderFallback(container);
-          return;
-        }
-
-        render(container);
-        setupMediaSessionHandlers();
-        loadTrack(0);
-      })
-      .catch(function () {
+    window.KJO.fetchRadioSample().then(function (data) {
+      if (!data || !data.tracks || data.tracks.length === 0) {
         renderFallback(container);
-      });
+        return;
+      }
+
+      // Filter out tracks with no audio URL
+      tracks = data.tracks.filter(function (t) { return t.audioUrl; });
+      if (tracks.length === 0) {
+        renderFallback(container);
+        return;
+      }
+
+      render(container);
+      setupMediaSessionHandlers();
+      loadTrack(0);
+    });
   }
 
   if (document.readyState === 'loading') {

@@ -1,12 +1,26 @@
 <script>
-	import { hasNewContent } from '$lib/stores/newContent.js';
+	import { hasNewContent, clearNewContent } from '$lib/stores/newContent.js';
+
+	let { interactive = false } = $props();
 </script>
 
 {#if $hasNewContent}
-	<span class="new-content-dot" aria-label="New content available">
-		<span class="new-content-dot-ping"></span>
-		<span class="new-content-dot-core"></span>
-	</span>
+	{#if interactive}
+		<a
+			href="/now"
+			class="new-content-dot interactive"
+			title="New updates available"
+			onclick={() => clearNewContent()}
+		>
+			<span class="new-content-dot-ping"></span>
+			<span class="new-content-dot-core"></span>
+		</a>
+	{:else}
+		<span class="new-content-dot" aria-label="New content available">
+			<span class="new-content-dot-ping"></span>
+			<span class="new-content-dot-core"></span>
+		</span>
+	{/if}
 {/if}
 
 <style>
@@ -18,6 +32,16 @@
 		height: 10px;
 		pointer-events: none;
 		z-index: 10;
+	}
+
+	.new-content-dot.interactive {
+		pointer-events: auto;
+		cursor: pointer;
+		width: 14px;
+		height: 14px;
+		top: -4px;
+		right: -4px;
+		text-decoration: none;
 	}
 
 	.new-content-dot-core {

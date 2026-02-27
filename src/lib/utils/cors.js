@@ -28,3 +28,17 @@ export function getCorsHeaders(requestOrigin) {
 	}
 	return { Vary: 'Origin' };
 }
+
+/**
+ * Return a JSONP response if a callback parameter is present.
+ * Sanitizes callback name to prevent XSS (alphanumeric + underscore only).
+ * Returns null if no callback — caller should fall through to json().
+ */
+export function jsonpResponse(data, callback, headers = {}) {
+	if (!callback) return null;
+	const safeCb = callback.replace(/[^a-zA-Z0-9_]/g, '');
+	if (!safeCb) return null;
+	return new Response(safeCb + '(' + JSON.stringify(data) + ')', {
+		headers: { 'Content-Type': 'application/javascript; charset=utf-8', ...headers }
+	});
+}

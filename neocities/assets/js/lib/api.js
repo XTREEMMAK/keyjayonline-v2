@@ -1,6 +1,7 @@
 /**
- * API Fetch Helpers
- * Centralized fetch with in-memory caching for all KJO API calls.
+ * API Helpers
+ * JSONP-based data loading to bypass NeoCities CSP (connect-src 'self').
+ * Falls back to fetch for same-origin requests.
  */
 
 (function () {
@@ -13,50 +14,61 @@
   // Simple in-memory cache
   var cache = {};
   var CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+  var cbCounter = 0;
 
   /**
-   * Fetch JSON from a URL with optional caching.
-   * @param {string} url - Full URL to fetch
-   * @param {string} [cacheKey] - Cache key (if omitted, no caching)
-   * @returns {Promise<Object|null>} Parsed JSON or null on error
+   * Load JSON via JSONP (script-tag injection).
+   * Bypasses CSP connect-src by using script-src which allows *.
    */
-  function fetchJSON(url, cacheKey) {
+  function jsonp(url, cacheKey) {
     if (cacheKey && cache[cacheKey] && Date.now() - cache[cacheKey].time < CACHE_TTL) {
       return Promise.resolve(cache[cacheKey].data);
     }
 
-    return fetch(url)
-      .then(function (res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json();
-      })
-      .then(function (data) {
+    return new Promise(function (resolve) {
+      var cbName = '__kjo_cb_' + (++cbCounter);
+      var script = document.createElement('script');
+
+      function cleanup() {
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[cbName] = function (data) {
+        cleanup();
         if (cacheKey) cache[cacheKey] = { data: data, time: Date.now() };
-        return data;
-      })
-      .catch(function (err) {
-        console.error('Fetch failed: ' + url, err);
-        return null;
-      });
+        resolve(data);
+      };
+
+      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + cbName;
+      script.onerror = function () {
+        cleanup();
+        console.error('JSONP failed: ' + url);
+        resolve(null);
+      };
+      document.head.appendChild(script);
+    });
   }
 
-  window.KJO.fetchJSON = fetchJSON;
-
   window.KJO.fetchNowFeed = function () {
-    return fetchJSON(KJO_BASE + '/now/feed.json', 'now');
+    return jsonp(KJO_BASE + '/now/feed.json', 'now');
   };
 
   window.KJO.fetchGameShelf = function () {
-    return fetchJSON(KJO_BASE + '/games/shelf.json', 'games');
+    return jsonp(KJO_BASE + '/games/shelf.json', 'games');
   };
 
   window.KJO.fetchWatchShelf = function () {
-    return fetchJSON(KJO_BASE + '/watching/shelf.json', 'watch');
+    return jsonp(KJO_BASE + '/watching/shelf.json', 'watch');
+  };
+
+  window.KJO.fetchRadioSample = function () {
+    return jsonp(KJO_BASE + '/radio/sample.json', 'radio');
   };
 
   window.KJO.omdbLookup = function (imdbId) {
     if (!OMDB_KEY) return Promise.resolve(null);
-    return fetchJSON(
+    return jsonp(
       'https://www.omdbapi.com/?i=' + encodeURIComponent(imdbId) + '&apikey=' + OMDB_KEY,
       'omdb-' + imdbId
     );

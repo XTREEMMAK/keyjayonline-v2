@@ -7,36 +7,14 @@
  */
 
 import { json } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
 import { PUBLIC_SITE_URL } from '$env/static/public';
 import { getDirectusInstance, readItems } from '$lib/api/core/client.js';
 import { sanitizeHtml, stripHtml } from '$lib/utils/markdown.js';
+import { getCorsHeaders, jsonpResponse } from '$lib/utils/cors.js';
 
 let cachedResult = null;
 let cacheTimestamp = 0;
 const CACHE_TTL_MS = 15 * 60 * 1000;
-
-function getAllowedOrigins() {
-	const envOrigins = env.CORS_ALLOWED_ORIGINS;
-	if (envOrigins) {
-		return envOrigins.split(',').map((o) => o.trim());
-	}
-	return ['https://keyjay.neocities.org'];
-}
-
-function getCorsHeaders(requestOrigin) {
-	const allowed = getAllowedOrigins();
-	if (requestOrigin && allowed.includes(requestOrigin)) {
-		return {
-			'Access-Control-Allow-Origin': requestOrigin,
-			'Access-Control-Allow-Methods': 'GET, OPTIONS',
-			'Access-Control-Allow-Headers': 'Content-Type',
-			'Access-Control-Max-Age': '86400',
-			Vary: 'Origin'
-		};
-	}
-	return { Vary: 'Origin' };
-}
 
 export async function OPTIONS({ request }) {
 	const origin = request.headers.get('origin');
@@ -46,15 +24,15 @@ export async function OPTIONS({ request }) {
 	});
 }
 
-export async function GET({ request }) {
+export async function GET({ request, url }) {
 	const origin = request.headers.get('origin');
 	const corsHeaders = getCorsHeaders(origin);
+	const callback = url.searchParams.get('callback');
 	const now = Date.now();
 
 	if (cachedResult && now - cacheTimestamp < CACHE_TTL_MS) {
-		return json(cachedResult, {
-			headers: { 'Cache-Control': 'public, max-age=900', ...corsHeaders }
-		});
+		const headers = { 'Cache-Control': 'public, max-age=900', ...corsHeaders };
+		return jsonpResponse(cachedResult, callback, headers) || json(cachedResult, { headers });
 	}
 
 	try {
@@ -92,14 +70,12 @@ export async function GET({ request }) {
 		cachedResult = result;
 		cacheTimestamp = Date.now();
 
-		return json(result, {
-			headers: { 'Cache-Control': 'public, max-age=900', ...corsHeaders }
-		});
+		const headers = { 'Cache-Control': 'public, max-age=900', ...corsHeaders };
+		return jsonpResponse(result, callback, headers) || json(result, { headers });
 	} catch (error) {
 		console.error('Error fetching now entries for JSON feed:', error);
-		return json(
-			{ error: 'Content unavailable' },
-			{ status: 503, headers: { 'Cache-Control': 'no-cache', ...corsHeaders } }
-		);
+		const errData = { error: 'Content unavailable' };
+		const errHeaders = { 'Cache-Control': 'no-cache', ...corsHeaders };
+		return jsonpResponse(errData, callback, errHeaders) || json(errData, { status: 503, headers: errHeaders });
 	}
 }

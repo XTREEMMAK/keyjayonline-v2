@@ -7,7 +7,7 @@
  */
 
 import { json } from '@sveltejs/kit';
-import { getCorsHeaders } from '$lib/utils/cors.js';
+import { getCorsHeaders, jsonpResponse } from '$lib/utils/cors.js';
 import { getVidtvWatching } from '$lib/api/content/vidtvWatching.js';
 
 let cachedResult = null;
@@ -22,15 +22,15 @@ export async function OPTIONS({ request }) {
 	});
 }
 
-export async function GET({ request }) {
+export async function GET({ request, url }) {
 	const origin = request.headers.get('origin');
 	const corsHeaders = getCorsHeaders(origin);
+	const callback = url.searchParams.get('callback');
 	const now = Date.now();
 
 	if (cachedResult && now - cacheTimestamp < CACHE_TTL_MS) {
-		return json(cachedResult, {
-			headers: { 'Cache-Control': 'public, max-age=900', ...corsHeaders }
-		});
+		const headers = { 'Cache-Control': 'public, max-age=900', ...corsHeaders };
+		return jsonpResponse(cachedResult, callback, headers) || json(cachedResult, { headers });
 	}
 
 	try {
@@ -44,14 +44,12 @@ export async function GET({ request }) {
 		cachedResult = result;
 		cacheTimestamp = Date.now();
 
-		return json(result, {
-			headers: { 'Cache-Control': 'public, max-age=900', ...corsHeaders }
-		});
+		const headers = { 'Cache-Control': 'public, max-age=900', ...corsHeaders };
+		return jsonpResponse(result, callback, headers) || json(result, { headers });
 	} catch (error) {
 		console.error('Error fetching watching shelf:', error);
-		return json(
-			{ error: 'Content unavailable' },
-			{ status: 503, headers: { 'Cache-Control': 'no-cache', ...corsHeaders } }
-		);
+		const errData = { error: 'Content unavailable' };
+		const errHeaders = { 'Cache-Control': 'no-cache', ...corsHeaders };
+		return jsonpResponse(errData, callback, errHeaders) || json(errData, { status: 503, headers: errHeaders });
 	}
 }
