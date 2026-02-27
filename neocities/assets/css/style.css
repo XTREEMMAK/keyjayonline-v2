@@ -1897,16 +1897,79 @@ html {
   color: var(--neu-accent-purple, #764ba2);
 }
 
-.shelf-notes {
-  font-size: 0.75rem;
-  font-style: italic;
+/* Notes toggle button */
+.shelf-notes-btn {
+  display: block;
+  width: calc(100% - 2rem);
+  margin: 0 1rem 0.75rem;
+  padding: 0.3rem 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--neu-text-secondary, #9ca3af);
-  line-height: 1.5;
-  padding: 0 1rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.shelf-notes-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--neu-text-primary, #e5e7eb);
 }
 
-.shelf-notes p {
-  margin: 0 0 0.4rem;
+/* Frosted glass notes overlay */
+.shelf-notes-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 20, 30, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  border-radius: inherit;
+  z-index: 2;
+}
+.shelf-notes-overlay.shelf-notes-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.shelf-notes-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.65rem;
+  background: none;
+  border: none;
+  color: var(--neu-text-secondary, #9ca3af);
+  font-size: 1.25rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  transition: color 0.15s;
+}
+.shelf-notes-close:hover {
+  color: #fff;
+}
+
+.shelf-notes-overlay-inner {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--neu-text-primary, #e5e7eb);
+  line-height: 1.6;
+  text-align: center;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.shelf-notes-overlay-inner p {
+  margin: 0 0 0.5rem;
 }
 
 /* Empty/loading states */

@@ -85,7 +85,26 @@
     ]));
 
     if (item.notes) {
-      card.appendChild(KJO.el('div', 'shelf-notes', item.notes));
+      var noteBtn = KJO.el('button', 'shelf-notes-btn', 'Notes');
+      var overlay = KJO.el('div', 'shelf-notes-overlay');
+      var overlayInner = KJO.el('div', 'shelf-notes-overlay-inner');
+      overlayInner.innerHTML = item.notes;
+      var closeBtn = KJO.el('button', 'shelf-notes-close', '\u00d7');
+
+      closeBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        overlay.classList.remove('shelf-notes-open');
+      });
+
+      noteBtn.addEventListener('click', function () {
+        overlay.classList.add('shelf-notes-open');
+      });
+
+      overlay.appendChild(closeBtn);
+      overlay.appendChild(overlayInner);
+      card.style.position = 'relative';
+      card.appendChild(noteBtn);
+      card.appendChild(overlay);
     }
 
     if (item.imdb_id && !item.cover_url) {

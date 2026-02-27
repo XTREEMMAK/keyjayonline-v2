@@ -47,9 +47,26 @@
     ]));
 
     if (game.notes) {
-      var notes = KJO.el('div', 'shelf-notes');
-      notes.innerHTML = game.notes;
-      card.appendChild(notes);
+      var noteBtn = KJO.el('button', 'shelf-notes-btn', 'Notes');
+      var overlay = KJO.el('div', 'shelf-notes-overlay');
+      var overlayInner = KJO.el('div', 'shelf-notes-overlay-inner');
+      overlayInner.innerHTML = game.notes;
+      var closeBtn = KJO.el('button', 'shelf-notes-close', '\u00d7');
+
+      closeBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        overlay.classList.remove('shelf-notes-open');
+      });
+
+      noteBtn.addEventListener('click', function () {
+        overlay.classList.add('shelf-notes-open');
+      });
+
+      overlay.appendChild(closeBtn);
+      overlay.appendChild(overlayInner);
+      card.style.position = 'relative';
+      card.appendChild(noteBtn);
+      card.appendChild(overlay);
     }
 
     return card;
