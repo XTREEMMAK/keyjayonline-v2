@@ -68,6 +68,10 @@
   padding: 0;
 }
 
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background: var(--neu-bg-dark);
   color: var(--neu-text-primary);
@@ -757,6 +761,7 @@ a:hover {
   }
 }
 
+.spa-nav,
 .now-section,
 .rss-bar,
 .webring-bar,
@@ -765,6 +770,7 @@ a:hover {
   animation: slide-in 0.5s ease-out forwards;
 }
 
+.spa-nav          { animation-delay: 0.2s; }
 .now-section      { animation-delay: 0.45s; }
 .rss-bar          { animation-delay: 0.55s; }
 .webring-bar      { animation-delay: 0.65s; }
