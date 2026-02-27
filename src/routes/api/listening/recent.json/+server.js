@@ -47,7 +47,7 @@ export async function GET({ request, url }) {
 			`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks` +
 			`&user=${encodeURIComponent(username)}` +
 			`&api_key=${encodeURIComponent(apiKey)}` +
-			`&limit=10&format=json`;
+			`&limit=5&format=json`;
 
 		const response = await fetch(lastfmUrl);
 		if (!response.ok) {

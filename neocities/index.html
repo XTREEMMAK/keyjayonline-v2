@@ -1,3 +1,60 @@
+<!--
+                               .......:-==++++*********+++==-:........
+                    .    .......:=+++****************************+=:.. ...  .         .
+                         ...:=+***************************************+:.....
+                   .....:-+++*********************************************=:....
+    .             ....=+++++*************************************************=...
+    .          ....:++++++******************************************************-.....
+            .....-++++++**********************************************************=...   .
+           ....-++++++************************************************************#*=....
+        .....:++++++**************************************************************###*-......
+  .     ....=++++++***************************************************************#####+....
+     . ...-++++++*************************************************************###########=...
+     ....=+++*+**************************************************************#############+..
+     ...+++++**************************************************************################*:...
+  .  .:++++***************************************************************###################:..
+  ...:++*+**************************************************************#####################*-..
+  ..:+*+*************************************************************#*#######################*:...
+   .+***************************************************************###########################*...
+...=**************************************************************##############################*..
+..-+****:..............:+********************=:....................:=*######+..............-#####=.
+..+*****:..............:+****************+-:...................:=+##########+..............-#####*:.
+.-+*****:..............:+*************+-:...................:+*#############+..            -######=.
+.=******:..............:+**********+-...................:-*#################=..            -######*.
+:*******:..............:+*******+-...................-=*####################=..............-#######:
+-*******:..............:+*****-:.................:=+*#*#####################+==============+#######=
++*******:..............:+*+-..................:+***#*#######################=..     .      -#######*
++*******:..............:-.................:-********########################=.. ..         -########
+********:..............................:+*********##########################=..            -########
+********:..............................:+********###########################=.. .          =########
+********:.................................:=*###############################-..      .   ..=########
+********-..............:==:..................:-*###########################*-...        ...=########
++*******-..............:+***-....................:+########################:...        ....+#######*
+=*******-..............:+****************************#################**-......         ..-########+
+:*******-..............:+*********+======---------------=+=:::::::::......      . .     .:#########-
+.+******-..............:+***********+-....     ....     ...:+-..... ..               ...+#######%%*.
+.-******-..............:+**********####*:........       ......:+-........  ...........+########%%#=.
+..+*****-..............:+*********########*=....               ..:=-:....  ......-=*########%%%%%*:.
+..-*****-..............:+******##############*=......................-+-..:=+**############%%%%%%=..
+...+**************************###########################################################%%%%%%%*..
+  ..+***********************##########################################################%%%%%%%%%#...
+  ..:+*********************##########################################################%%%%%%%%%#:..
+  ...:*******************##########################################################%%%%%%%%%%#-.
+   ...:****************###########################################################%%%%%%%%%%#-..
+     ...+************##########################################################%%%%%%%%%%%%#:....
+     ....+*********###########################################################%%%%%%%%%%%%*....
+        ..=******###########################################################%%%%%%%%%%%%%=...
+        ....+*############################################################%%%%%%%%%%%%%*:..
+        .....-*##########################################################%%%%%%%%%%%%%=..     .
+            ...=*#####################################################%%%%%%%%%%%%%#=...
+      . .   .....=*##################################################%%%%%%%%%%%%#=...          .
+               ....-*##############################################%%%%%%%%%%%%#-..
+               .......+##########################################%%%%%%%%%%%#+....
+.                     ..:=*####################################%%%%%%%%%%#+:....              .
+             .        ......-+###############################%%%%%%%%#*-......
+.                         ......:=##########################%%%%%#+:.....               .
+.                        .  .     ....-=+***#############**+=-.....          .
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,6 +69,7 @@
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
   <link rel="me" href="https://keyjayonline.com">
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://lydels.neocities.org/musicianswebring/onionring.css">
 </head>
 <body>
   <canvas id="wave-bg"></canvas>
@@ -51,6 +109,14 @@
       <a href="#listening" class="v2-menu-link spa-nav-link v2-ml-listening">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
         <span>Listening</span>
+      </a>
+      <a href="#the-horde" class="v2-menu-link spa-nav-link v2-ml-the-horde">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M2 12h20"/><path d="M12 7v5"/><circle cx="12" cy="12" r="1.5"/><path d="M6 7V5a6 6 0 0 1 12 0v2"/></svg>
+        <span>The Horde</span>
+      </a>
+      <a href="#emulator" class="v2-menu-link spa-nav-link v2-ml-emulator">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="3"/><line x1="12" y1="9" x2="12" y2="17"/><path d="M6 17a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2"/><line x1="6" y1="17" x2="18" y2="17"/></svg>
+        <span>Emulator</span>
       </a>
       <a href="#explore" class="v2-menu-link spa-nav-link v2-ml-tech">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -166,17 +232,27 @@
     </section>
 
     <!-- ================================================================
-         WEBRING (placeholder)
+         WEBRINGS (carousel — add .webring-slide divs to include more)
          ================================================================ -->
     <section class="webring-bar glass-card">
-      <span class="webring-label">Webring</span>
-      <div class="webring-nav">
-        <a href="#" rel="external" class="webring-link">&larr; Prev</a>
-        <span class="webring-divider">&middot;</span>
-        <a href="#" rel="external" class="webring-link">Random</a>
-        <span class="webring-divider">&middot;</span>
-        <a href="#" rel="external" class="webring-link">Next &rarr;</a>
+      <span class="webring-label">Webrings</span>
+      <div class="webring-carousel" id="webring-carousel">
+        <div class="webring-slide" data-ring="musicians">
+          <div id="musicians-ring">
+            <script type="text/javascript" src="https://lydels.neocities.org/musicianswebring/onionring-variables.js"></script>
+            <script type="text/javascript" src="https://lydels.neocities.org/musicianswebring/onionring-widget.js"></script>
+          </div>
+        </div>
+        <div class="webring-slide" data-ring="another-ring">
+          <a target="_blank" href="https://webmasterwebring.netlify.app"><img src="https://file.garden/ZrZSgsrYfQXsO7QH/ww/btn.png" width="88" height="31"></a>
+        </div>
+        <!-- Add more webring slides here:
+        <div class="webring-slide" data-ring="another-ring">
+          <div id="another-ring">...</div>
+        </div>
+        -->
       </div>
+      <div class="webring-dots" id="webring-dots"></div>
     </section>
 
     <!-- ================================================================
@@ -213,7 +289,10 @@
   <script src="assets/js/pages/home.js"></script>
   <script src="assets/js/pages/playing.js"></script>
   <script src="assets/js/pages/watching.js"></script>
+  <script src="assets/js/pages/indie-vibes.js"></script>
   <script src="assets/js/pages/listening.js"></script>
+  <script src="assets/js/pages/the-horde.js"></script>
+  <script src="assets/js/pages/emulator.js"></script>
   <script src="assets/js/pages/explore.js"></script>
   <script src="assets/js/pages/about.js"></script>
 
@@ -303,6 +382,48 @@
           container.appendChild(a);
         }
       });
+
+      // Webring carousel
+      (function () {
+        var carousel = document.getElementById('webring-carousel');
+        var dotsWrap = document.getElementById('webring-dots');
+        if (!carousel || !dotsWrap) return;
+
+        var slides = carousel.querySelectorAll('.webring-slide');
+        if (slides.length === 0) return;
+
+        var current = 0;
+        var timer = null;
+
+        // Activate first slide
+        slides[0].classList.add('webring-slide-active');
+
+        // Only build dots + rotation if multiple rings
+        if (slides.length > 1) {
+          for (var i = 0; i < slides.length; i++) {
+            var dot = document.createElement('button');
+            dot.className = 'webring-dot' + (i === 0 ? ' webring-dot-active' : '');
+            dot.setAttribute('data-index', i);
+            dot.setAttribute('aria-label', slides[i].getAttribute('data-ring') || 'Ring ' + (i + 1));
+            dot.addEventListener('click', (function (idx) {
+              return function () { goTo(idx); resetTimer(); };
+            })(i));
+            dotsWrap.appendChild(dot);
+          }
+
+          function goTo(idx) {
+            slides[current].classList.remove('webring-slide-active');
+            dotsWrap.children[current].classList.remove('webring-dot-active');
+            current = idx;
+            slides[current].classList.add('webring-slide-active');
+            dotsWrap.children[current].classList.add('webring-dot-active');
+          }
+
+          function advance() { goTo((current + 1) % slides.length); }
+          function resetTimer() { clearInterval(timer); timer = setInterval(advance, 8000); }
+          resetTimer();
+        }
+      })();
 
       // Start the SPA router
       KJO.router.start();

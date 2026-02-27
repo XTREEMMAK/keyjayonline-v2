@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emulator — KeyJay Online</title>
+  <style>
+    body, html { margin: 0; padding: 0; background: #1a1a2e; overflow: hidden; }
+    #game { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    EJS_player = '#game';
+    EJS_core = params.get('core') || 'nes';
+    EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+    EJS_color = '#6366f1';
+
+    // ROM can come from URL param or postMessage from parent SPA
+    var romUrl = params.get('rom');
+    if (romUrl) {
+      EJS_gameUrl = romUrl;
+    }
+
+    // Listen for ROM blob URLs sent via postMessage from parent iframe
+    window.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'load-rom' && e.data.url) {
+        EJS_gameUrl = e.data.url;
+        // Reload the loader script to pick up the new ROM
+        var script = document.createElement('script');
+        script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+        document.body.appendChild(script);
+      }
+    });
+  </script>
+  <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+</body>
+</html>

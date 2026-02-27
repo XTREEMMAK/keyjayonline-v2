@@ -74,6 +74,9 @@
   }
 
   function render(container) {
+    // Indie Vibes curated picks section (above scrobbles)
+    if (KJO.renderIndieVibes) KJO.renderIndieVibes(container);
+
     container.appendChild(KJO.sectionLabel(
       KJO.icon('headphones', 28, { className: 'v2-section-icon' }),
       "What I'm Listening To"

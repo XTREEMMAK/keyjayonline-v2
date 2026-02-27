@@ -136,6 +136,65 @@
   };
 
   // ---------------------------------------------------------------------------
+  // Video Modal (YouTube embed)
+  // ---------------------------------------------------------------------------
+
+  window.KJO.videoModal = (function () {
+    var overlay, modal, iframe, titleEl;
+    var isOpen = false;
+
+    function ensureDOM() {
+      if (modal) return;
+
+      overlay = KJO.el('div', 'v2-video-overlay');
+      overlay.addEventListener('click', close);
+
+      var iconWrap = KJO.el('span', '');
+      iconWrap.innerHTML = KJO.icon('video', 20, { className: 'v2-section-icon' });
+      titleEl = KJO.el('h3', '', 'Trailer');
+      var closeBtn = KJO.el('button', 'v2-video-close', '\u00d7');
+      closeBtn.addEventListener('click', close);
+      var header = KJO.tree('div', 'v2-video-modal-header', [iconWrap, titleEl, closeBtn]);
+
+      iframe = KJO.el('iframe', '', null, {
+        allowfullscreen: '',
+        allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+        frameborder: '0'
+      });
+      var responsive = KJO.tree('div', 'v2-video-responsive', [iframe]);
+      var body = KJO.tree('div', 'v2-video-modal-body', [responsive]);
+
+      modal = KJO.tree('div', 'v2-video-modal', [header, body]);
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(modal);
+    }
+
+    function open(videoId, title) {
+      ensureDOM();
+      iframe.src = 'https://www.youtube-nocookie.com/embed/' + videoId + '?rel=0&modestbranding=1&autoplay=1';
+      titleEl.textContent = title || 'Trailer';
+      overlay.classList.add('v2-video-overlay-visible');
+      modal.classList.add('v2-video-modal-open');
+      isOpen = true;
+    }
+
+    function close() {
+      if (!isOpen) return;
+      overlay.classList.remove('v2-video-overlay-visible');
+      modal.classList.remove('v2-video-modal-open');
+      setTimeout(function () { iframe.src = ''; }, 300);
+      isOpen = false;
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && isOpen) close();
+    });
+
+    return { open: open, close: close };
+  })();
+
+  // ---------------------------------------------------------------------------
   // Shared shelf utilities (extracted from playing.js / watching.js)
   // ---------------------------------------------------------------------------
 

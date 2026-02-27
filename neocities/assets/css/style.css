@@ -684,13 +684,13 @@ a:hover {
 }
 
 /* =============================================================================
-   WEBRING
+   WEBRINGS (carousel)
    ============================================================================= */
 .webring-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
+  gap: 10px;
   padding: 16px 24px;
   margin-bottom: 32px;
 }
@@ -703,26 +703,60 @@ a:hover {
   letter-spacing: 0.06em;
 }
 
-.webring-nav {
+.webring-carousel {
+  position: relative;
+  width: 100%;
+  min-height: 32px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
 }
 
-.webring-link {
-  font-size: 0.8rem;
-  color: var(--neu-text-secondary);
-  transition: color 0.2s ease;
+.webring-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
 }
 
-.webring-link:hover {
-  color: var(--neu-accent);
+.webring-slide-active {
+  position: relative;
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.webring-divider {
-  color: var(--neu-text-muted);
-  font-size: 0.7rem;
-  opacity: 0.5;
+.webring-dots {
+  display: flex;
+  gap: 8px;
+}
+
+/* Hide dots when only 1 ring */
+.webring-dots:empty {
+  display: none;
+}
+
+.webring-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s ease;
+}
+
+.webring-dot:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.webring-dot-active {
+  background: var(--neu-accent);
+  border-color: var(--neu-accent);
 }
 
 /* =============================================================================
@@ -879,8 +913,7 @@ html {
   }
 
   .webring-bar {
-    flex-direction: column;
-    gap: 10px;
+    padding: 12px 16px;
   }
 
 }
@@ -1424,6 +1457,106 @@ html {
   padding: 8px 16px;
 }
 
+/* ── Video Modal (YouTube embed) ────────────────────────────────────────────── */
+
+.v2-video-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1010;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.v2-video-overlay-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.v2-video-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  z-index: 1011;
+  width: 90vw;
+  max-width: 800px;
+  background: rgba(30, 32, 40, 0.85);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.v2-video-modal-open {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.v2-video-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.v2-video-modal-header h3 {
+  flex: 1;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--neu-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v2-video-close {
+  background: none;
+  border: none;
+  color: var(--neu-text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.v2-video-close:hover {
+  color: var(--neu-text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.v2-video-modal-body {
+  padding: 0;
+}
+
+.v2-video-responsive {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  overflow: hidden;
+}
+
+.v2-video-responsive iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 /* =============================================================================
    Section Icons — 15° tilt, no transparency
    ============================================================================= */
@@ -1849,7 +1982,7 @@ html {
 
 .shelf-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -1900,14 +2033,14 @@ html {
 
 .shelf-card-inner {
   display: flex;
-  gap: 0.85rem;
-  padding: 1rem;
+  gap: 1.1rem;
+  padding: 1.25rem;
 }
 
 /* Cover art well */
 .shelf-cover-well {
-  width: 80px;
-  min-height: 80px;
+  width: 200px;
+  min-height: 200px;
   flex-shrink: 0;
   align-self: stretch;
   position: relative;
@@ -1985,14 +2118,14 @@ html {
 .shelf-title {
   font-family: 'Michroma', sans-serif;
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: 1.05rem;
   color: var(--neu-text-primary, #e5e7eb);
   margin: 0;
   line-height: 1.3;
 }
 
 .shelf-meta {
-  font-size: 0.68rem;
+  font-size: 0.85rem;
   color: var(--neu-text-muted, #6b7280);
 }
 
@@ -2004,27 +2137,27 @@ html {
 }
 
 .shelf-genres {
-  font-size: 0.68rem;
+  font-size: 0.85rem;
   color: var(--neu-text-muted, #6b7280);
 }
 
 .shelf-rating {
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   color: #f59e0b;
 }
 
 .shelf-imdb-rating {
-  font-size: 0.68rem;
+  font-size: 0.85rem;
   color: var(--neu-text-secondary, #9ca3af);
 }
 
 .shelf-date {
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--neu-text-muted, #6b7280);
 }
 
 .shelf-external-link {
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--neu-accent, #667eea);
   text-decoration: none;
   transition: color 0.2s;
@@ -2039,12 +2172,15 @@ html {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: #fff;
   background: linear-gradient(135deg, var(--neu-accent), var(--neu-accent-purple));
   text-decoration: none;
-  padding: 2px 8px;
+  padding: 4px 10px;
+  border: none;
   border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
   transition: opacity 0.2s, transform 0.2s;
 }
 
@@ -2059,8 +2195,8 @@ html {
   display: block;
   width: calc(100% - 2rem);
   margin: 0 1rem 0.75rem;
-  padding: 0.3rem 0;
-  font-size: 0.7rem;
+  padding: 0.4rem 0;
+  font-size: 0.88rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2102,8 +2238,9 @@ html {
   display: none;
 }
 
-/* Step 3: expanded card — hover disabled, grid-column set via JS for animated transition */
+/* Step 3: expanded card — cancel entrance animation so fill-mode doesn't override FLIP transform */
 .shelf-card-expanded {
+  animation: none;
   /* grid-column handled by JS inline style for smooth width animation */
 }
 
@@ -2163,7 +2300,7 @@ html {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--neu-text-primary, #e5e7eb);
   line-height: 1.6;
 }
@@ -2208,9 +2345,9 @@ html {
 
 .status-pill {
   display: inline-block;
-  padding: 2px 10px;
+  padding: 3px 12px;
   border-radius: 50px;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2241,9 +2378,9 @@ html {
 /* Media type badge */
 .media-badge {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 4px;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
   background: rgba(255, 255, 255, 0.04);
@@ -2265,9 +2402,9 @@ html {
 .filter-pill {
   position: relative;
   z-index: 0;
-  padding: 6px 14px;
+  padding: 7px 16px;
   border-radius: 50px;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   font-family: 'Michroma', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2459,11 +2596,16 @@ html {
 
 .listening-card-inner {
   display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 1rem;
+  align-items: flex-start;
+  gap: 1.1rem;
+  padding: 1.25rem;
   position: relative;
   z-index: 1;
+}
+
+.listening-card-inner .shelf-cover-well {
+  align-self: auto;
+  aspect-ratio: 1;
 }
 
 .listening-card-info {
@@ -2472,13 +2614,13 @@ html {
 }
 
 .listening-artist {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--neu-text-secondary, #9ca3af);
   margin-top: 0.2rem;
 }
 
 .listening-album {
-  font-size: 0.78rem;
+  font-size: 0.92rem;
   color: var(--neu-text-muted, #6b7280);
   font-style: italic;
   margin-top: 0.15rem;
@@ -2536,8 +2678,8 @@ html {
 }
 
 .listening-now-content .shelf-cover-well {
-  width: 100px;
-  min-height: 100px;
+  width: 200px;
+  min-height: 200px;
   flex-shrink: 0;
 }
 
@@ -2547,19 +2689,19 @@ html {
 }
 
 .listening-now-track {
-  font-size: 1.1rem;
+  font-size: 1.35rem;
   font-weight: 600;
   color: var(--neu-text-primary, #ffffff);
 }
 
 .listening-now-artist {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   color: var(--neu-text-secondary, #9ca3af);
   margin-top: 0.2rem;
 }
 
 .listening-now-album {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--neu-text-muted, #6b7280);
   font-style: italic;
   margin-top: 0.15rem;
@@ -2573,13 +2715,382 @@ html {
 
 .listening-profile-btn {
   text-decoration: none;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
 }
 
 /* Nav accent colors for listening */
 .spa-nl-listening svg   { stroke: #ec4899; }
 .v2-ml-listening        { color: #ec4899; }
 .v2-ml-listening svg    { stroke: #ec4899; }
+
+/* Nav accent colors for the horde */
+.v2-ml-the-horde.spa-nav-active { color: #ef4444; }
+.v2-ml-the-horde.spa-nav-active svg { stroke: #ef4444; }
+
+/* Nav accent colors for emulator */
+.v2-ml-emulator.spa-nav-active { color: #818cf8; }
+.v2-ml-emulator.spa-nav-active svg { stroke: #818cf8; }
+
+/* ==========================================================================
+   INDIE VIBES — curated music showcase
+   ========================================================================== */
+
+.indie-card {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  animation: shelf-card-in 0.35s ease both;
+}
+
+.indie-card:hover {
+  transform: translateY(-2px);
+}
+
+.indie-card-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1.1rem;
+  padding: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.indie-card-inner .shelf-cover-well {
+  align-self: auto;
+  aspect-ratio: 1;
+}
+
+.indie-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.indie-artist {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 0.15rem;
+}
+
+.indie-genre {
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 0.4rem;
+}
+
+.indie-note {
+  font-size: 0.95rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.3rem;
+  line-height: 1.4;
+}
+
+.indie-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.indie-sample-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.85rem;
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.indie-sample-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.indie-sample-btn.indie-sample-playing {
+  border-color: #1db954;
+  color: #1db954;
+  background: rgba(29, 185, 84, 0.08);
+}
+
+.indie-platform-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.95rem;
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.indie-platform-link:hover {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   THE HORDE — webrings, stamps, cool links
+   ========================================================================== */
+
+.horde-section {
+  margin-bottom: 2rem;
+}
+
+.horde-section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 1rem;
+}
+
+.horde-rings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.horde-ring-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  min-height: 80px;
+  text-align: center;
+}
+
+.horde-ring-name {
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.6rem;
+}
+
+.horde-ring-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.horde-stamps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 88px);
+  gap: 6px;
+  justify-content: center;
+}
+
+.horde-stamp-link {
+  display: block;
+  line-height: 0;
+}
+
+.horde-stamp {
+  width: 88px;
+  height: 31px;
+  image-rendering: pixelated;
+  border-radius: 2px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.horde-stamp:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+.horde-stamps-empty,
+.horde-links-empty {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.horde-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.horde-link-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  text-decoration: none;
+  color: inherit;
+  animation: shelf-card-in 0.35s ease both;
+  transition: transform 0.2s ease;
+}
+
+.horde-link-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   EMULATOR — in-browser retro game emulation
+   ========================================================================== */
+
+.emu-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.emu-system-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.emu-system-btn {
+  padding: 0.6rem 1rem;
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.emu-system-btn:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.emu-system-btn.emu-active {
+  border-color: #818cf8;
+  color: #818cf8;
+  background: rgba(129, 140, 248, 0.08);
+}
+
+.emu-rom-section {
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.emu-rom-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.5rem;
+}
+
+.emu-file-input {
+  display: block;
+  margin: 0.5rem auto;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.emu-file-input::file-selector-button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.emu-file-input::file-selector-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.emu-or {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0.8rem 0;
+}
+
+.emu-url-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.emu-url-input:focus {
+  border-color: #818cf8;
+}
+
+.emu-url-input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.emu-launch-btn {
+  display: block;
+  margin: 0 auto 1.5rem;
+}
+
+.emu-launch-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.emu-frame-wrap {
+  position: relative;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.emu-frame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 0;
+  border-radius: 12px;
+  background: #000;
+}
+
+.emu-fullscreen-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0.3rem 0.6rem;
+  font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  z-index: 2;
+  transition: background 0.2s ease;
+}
+
+.emu-fullscreen-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
 
 /* ==========================================================================
    RESPONSIVE — SPA additions
@@ -2592,6 +3103,11 @@ html {
 
   .shelf-card-expanded .shelf-card-layout {
     flex-direction: column;
+  }
+
+  .shelf-cover-well {
+    width: 140px;
+    min-height: 140px;
   }
 
   .shelf-cover-full .shelf-cover-well {
@@ -2616,8 +3132,25 @@ html {
   }
 
   .listening-now-content .shelf-cover-well {
-    width: 80px;
-    min-height: 80px;
+    width: 140px;
+    min-height: 140px;
+  }
+
+  .indie-card-inner {
+    flex-direction: column;
+  }
+
+  .horde-stamps-grid {
+    gap: 4px;
+  }
+
+  .horde-rings-grid,
+  .horde-links-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .emu-frame {
+    aspect-ratio: 16 / 9;
   }
 }
 
@@ -2653,5 +3186,10 @@ html {
 
   .about-card {
     padding: 1.5rem;
+  }
+
+  .v2-video-modal {
+    width: 96vw;
+    border-radius: 12px;
   }
 }

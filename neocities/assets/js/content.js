@@ -28,7 +28,7 @@
       'to be a fan of things. Games, music, movies, whatever catches my attention. Who knows how ' +
       'this little corner will grow.</p>' +
       '<p>In any case; welcome, and thanks for stopping by this unique little journey.</p>' +
-      '<p>Enjoy!</p>',
+      '<p>ENJOY! 🍻</p>',
 
     // -----------------------------------------------------------------------
     // About page — IndieWeb section
@@ -36,10 +36,10 @@
     aboutIndieWeb: '<h3>IndieWeb</h3>' +
       '<p>This page is part of the ' +
       '<a href="https://indieweb.org" target="_blank" rel="noopener">IndieWeb</a>' +
-      ' \u2014 a growing community of people who believe the web should be a place for ' +
+      ', a growing community of people who believe the web should be a place for ' +
       'genuine self-expression, not just another feed algorithm. I joined because places ' +
       'like NeoCities remind me of the web I grew up with: personal, creative, and built ' +
-      'by hand. No metrics, no monetization \u2014 just people sharing what they love on ' +
-      'their own terms.</p>'
+      'by hand. No metrics, no monetization, just people sharing what they love on ' +
+      'their own terms ^_^.</p>'
   };
 })();

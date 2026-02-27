@@ -63,6 +63,14 @@
   var INFO_FADE = 200;       // ms — info section fade out/in during layout switch
   var COVER_RESIZE = 400;    // ms — matches cover well CSS transition duration
 
+  /** Smooth-scroll element to top of viewport, accounting for sticky nav. */
+  function scrollToEl(el) {
+    var nav = document.querySelector('.spa-nav');
+    var offset = nav ? nav.offsetHeight + 12 : 12;
+    var top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  }
+
   function expandNotes(card) {
     var grid = card.closest('.shelf-grid');
     if (!grid) return;
@@ -83,7 +91,7 @@
 
     setTimeout(function () {
       // Capture position before hiding siblings (card still in original column)
-      var firstLeft = card.getBoundingClientRect().left;
+      var firstRect = card.getBoundingClientRect();
 
       var siblings = grid.querySelectorAll('.shelf-card:not(.shelf-card-expanded)');
       for (var i = 0; i < siblings.length; i++) siblings[i].classList.add('shelf-card-hidden');
@@ -93,19 +101,23 @@
       card.style.width = startWidth + 'px';
       card.style.gridColumn = '1 / -1';
 
-      // Read new position and compensate with translateX
-      var lastLeft = card.getBoundingClientRect().left;
-      var deltaX = firstLeft - lastLeft;
-      card.style.transform = 'translateX(' + deltaX + 'px)';
+      // Read new position and compensate with translate (X + Y)
+      var lastRect = card.getBoundingClientRect();
+      var deltaX = firstRect.left - lastRect.left;
+      var deltaY = firstRect.top - lastRect.top;
+      card.style.transform = 'translate(' + deltaX + 'px, ' + deltaY + 'px)';
 
       // Commit initial state
       void card.offsetWidth;
+
+      // Scroll viewport to grid top while card animates into place
+      scrollToEl(grid);
 
       // Enable transitions and animate to expanded state
       var targetWidth = grid.clientWidth;
       card.style.transition = 'width ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1), transform ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1)';
       card.style.width = targetWidth + 'px';
-      card.style.transform = 'translateX(0)';
+      card.style.transform = 'translate(0, 0)';
 
       // After width animation — phased cover expansion + poster layout
       setTimeout(function () {
@@ -156,7 +168,7 @@
 
       setTimeout(function () {
         var expandedWidth = card.offsetWidth;
-        var firstLeft = card.getBoundingClientRect().left;
+        var firstRect = card.getBoundingClientRect();
 
       // Kill base CSS transitions during FLIP measurement
       card.style.transition = 'none';
@@ -168,8 +180,9 @@
       for (var i = 0; i < hiddenSiblings.length; i++) hiddenSiblings[i].classList.remove('shelf-card-hidden');
 
       var targetWidth = card.offsetWidth;
-      var lastLeft = card.getBoundingClientRect().left;
-      var deltaX = lastLeft - firstLeft;
+      var lastRect = card.getBoundingClientRect();
+      var deltaX = lastRect.left - firstRect.left;
+      var deltaY = lastRect.top - firstRect.top;
 
       // Revert to expanded state (synchronous — no paint)
       for (var i = 0; i < hiddenSiblings.length; i++) hiddenSiblings[i].classList.add('shelf-card-hidden');
@@ -182,10 +195,11 @@
       // Enable transitions and animate shrink + slide
       card.style.transition = 'width ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1), transform ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1)';
       card.style.width = targetWidth + 'px';
-      card.style.transform = 'translateX(' + deltaX + 'px)';
+      card.style.transform = 'translate(' + deltaX + 'px, ' + deltaY + 'px)';
 
       setTimeout(function () {
         card.style.cssText = '';
+        card.style.animation = 'none'; // prevent entrance animation replay
         card.classList.remove('shelf-card-expanded');
 
         var siblings = grid.querySelectorAll('.shelf-card-hidden');
@@ -193,6 +207,7 @@
 
         void grid.offsetHeight;
         grid.classList.remove('shelf-notes-active');
+        scrollToEl(card);
       }, WIDTH_DURATION);
       }, PANEL_DURATION);
     }, INFO_FADE);
