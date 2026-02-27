@@ -53,6 +53,11 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span>About</span>
       </a>
+      <div class="v2-menu-divider" id="menu-music-divider"></div>
+      <a href="#" class="v2-menu-link v2-ml-music" id="menu-music-btn">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <span>Music Player</span>
+      </a>
     </div>
   </nav>
 
@@ -240,6 +245,18 @@
       musicBtn.addEventListener('click', togglePlayer);
       playerOverlay.addEventListener('click', togglePlayer);
       playerClose.addEventListener('click', togglePlayer);
+
+      // Menu music button (mobile) — close menu, open player
+      var menuMusicBtn = document.getElementById('menu-music-btn');
+      if (menuMusicBtn) {
+        menuMusicBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (menuOpen) toggleMenu();
+          setTimeout(function () {
+            if (!playerOpen) togglePlayer();
+          }, 200);
+        });
+      }
 
       // Escape key closes whichever is open
       document.addEventListener('keydown', function (e) {

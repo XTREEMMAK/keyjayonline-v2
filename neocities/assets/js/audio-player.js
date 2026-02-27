@@ -15,6 +15,8 @@
   var currentIndex = 0;
   var audio = null;
   var isPlaying = false;
+  var volume = 0.8;
+  var isMuted = false;
 
   // DOM refs (set during render)
   var els = {};
@@ -179,6 +181,14 @@
     return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
   }
 
+  function volumeIcon() {
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+  }
+
+  function volumeMutedIcon() {
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+  }
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -288,10 +298,54 @@
     progressWrap.appendChild(timeRow);
     progressWrap.appendChild(progressBar);
 
+    // Volume
+    var volumeWrap = document.createElement('div');
+    volumeWrap.className = 'player-volume-wrap';
+
+    var muteBtn = document.createElement('button');
+    muteBtn.className = 'player-volume-btn';
+    muteBtn.setAttribute('aria-label', 'Mute/Unmute');
+    muteBtn.innerHTML = isMuted ? volumeMutedIcon() : volumeIcon();
+    els.muteBtn = muteBtn;
+
+    muteBtn.addEventListener('click', function () {
+      isMuted = !isMuted;
+      audio.volume = isMuted ? 0 : volume;
+      muteBtn.innerHTML = isMuted ? volumeMutedIcon() : volumeIcon();
+      localStorage.setItem('kjo_player_muted', String(isMuted));
+    });
+
+    var volumeSlider = document.createElement('input');
+    volumeSlider.type = 'range';
+    volumeSlider.className = 'player-volume-slider';
+    volumeSlider.min = '0';
+    volumeSlider.max = '1';
+    volumeSlider.step = '0.01';
+    volumeSlider.value = String(volume);
+    els.volumeSlider = volumeSlider;
+
+    volumeSlider.addEventListener('input', function () {
+      volume = parseFloat(volumeSlider.value);
+      audio.volume = volume;
+      if (volume > 0 && isMuted) {
+        isMuted = false;
+        muteBtn.innerHTML = volumeIcon();
+        localStorage.setItem('kjo_player_muted', 'false');
+      } else if (volume === 0 && !isMuted) {
+        isMuted = true;
+        muteBtn.innerHTML = volumeMutedIcon();
+      }
+      localStorage.setItem('kjo_player_volume', String(volume));
+    });
+
+    volumeWrap.appendChild(muteBtn);
+    volumeWrap.appendChild(volumeSlider);
+
     // Assemble
     container.appendChild(trackInfo);
     container.appendChild(controls);
     container.appendChild(progressWrap);
+    container.appendChild(volumeWrap);
   }
 
   // ---------------------------------------------------------------------------
@@ -328,6 +382,14 @@
     // Create shared audio element
     audio = document.createElement('audio');
     audio.preload = 'metadata';
+
+    // Restore volume from localStorage
+    var savedVol = localStorage.getItem('kjo_player_volume');
+    if (savedVol !== null) volume = parseFloat(savedVol);
+    var savedMute = localStorage.getItem('kjo_player_muted');
+    if (savedMute === 'true') isMuted = true;
+    audio.volume = isMuted ? 0 : volume;
+
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('play', onPlay);

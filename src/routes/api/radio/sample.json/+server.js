@@ -57,7 +57,8 @@ export async function GET({ request, url }) {
 			readItems('kjov2_music_samples', {
 				filter: {
 					status: { _eq: 'published' },
-					music_sample: { _nnull: true }
+					music_sample: { _nnull: true },
+					is_legacy: { _neq: true }
 				},
 				fields: [
 					'id',

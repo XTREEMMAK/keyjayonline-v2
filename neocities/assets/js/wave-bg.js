@@ -1,6 +1,7 @@
 /**
  * Wave Background — ported from WaveBackground.svelte
  * Canvas 2D animated bezier wave effect, zero dependencies.
+ * Mobile: reduced complexity (1 wave, 80 segments, 1x DPR, ~30fps).
  */
 
 (function () {
@@ -15,10 +16,14 @@
   var PI = Math.PI;
   var PI2 = 2 * PI;
 
+  var IS_MOBILE = (window.innerWidth < 768) ||
+    ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0);
+
   var OPTIONS = {
     rotation: 45,
-    waves: 3,
-    width: 200,
+    waves: IS_MOBILE ? 1 : 3,
+    width: IS_MOBILE ? 80 : 200,
     hue: [11, 14],
     amplitude: 0.5,
     speed: [0.004, 0.008]
@@ -93,13 +98,14 @@
   var hue = OPTIONS.hue[0];
   var hueFw = true;
   var width, height, centerX, centerY, radius;
+  var frameCount = 0;
 
   for (var i = 0; i < OPTIONS.waves; i++) {
     waves.push(new Wave());
   }
 
   function resize() {
-    var scale = window.devicePixelRatio || 1;
+    var scale = IS_MOBILE ? 1 : (window.devicePixelRatio || 1);
     width = window.innerWidth * scale;
     height = window.innerHeight * scale;
     canvas.width = width;
@@ -135,6 +141,14 @@
   }
 
   function animate() {
+    animationId = requestAnimationFrame(animate);
+
+    // Throttle to ~30fps on mobile (skip every other frame)
+    if (IS_MOBILE) {
+      frameCount++;
+      if (frameCount % 2 !== 0) return;
+    }
+
     var color = updateColor();
     ctx.clearRect(0, 0, width, height);
 
@@ -149,8 +163,6 @@
       waves[i].update(color);
       waves[i].draw(ctx, centerX, centerY, radius);
     }
-
-    animationId = requestAnimationFrame(animate);
   }
 
   animate();

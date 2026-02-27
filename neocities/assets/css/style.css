@@ -370,6 +370,68 @@ a:hover {
   transition: width 0.1s linear;
 }
 
+/* Volume */
+.player-volume-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.player-volume-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--neu-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.player-volume-btn:hover {
+  color: var(--neu-text-primary);
+}
+
+.player-volume-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--neu-bg-dark);
+  box-shadow:
+    inset 1px 1px 2px var(--neu-shadow-dark),
+    inset -1px -1px 2px var(--neu-shadow-light);
+  outline: none;
+  cursor: pointer;
+}
+
+.player-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neu-accent), var(--neu-accent-purple));
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.player-volume-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neu-accent), var(--neu-accent-purple));
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
 /* Player CTA */
 .player-cta-container {
   text-align: center;
@@ -1107,6 +1169,22 @@ html {
   background: rgba(102, 126, 234, 0.15);
 }
 
+/* Menu music link + divider — hidden on desktop, shown on mobile */
+#menu-music-btn,
+#menu-music-divider {
+  display: none;
+}
+
+.v2-menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 4px 24px;
+}
+
+.v2-ml-music svg {
+  stroke: var(--neu-accent);
+}
+
 /* =============================================================================
    Music Player Popup — glassmorphic card
    ============================================================================= */
@@ -1443,6 +1521,11 @@ html {
     padding-top: 0.5rem;
   }
 
+  /* Body padding so fixed hamburger doesn't cover footer */
+  body {
+    padding-bottom: 80px;
+  }
+
   /* Move hamburger to bottom center on mobile */
   .v2-menu-btn {
     top: auto;
@@ -1453,13 +1536,24 @@ html {
     width: 52px;
     height: 52px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
   }
 
-  /* Music button shifts right of center on mobile */
+  /* Hide hamburger when menu is open so it doesn't block content */
+  .v2-menu-btn.v2-menu-btn-active {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Hide floating music button on mobile — accessible from menu instead */
   .v2-music-btn {
-    bottom: 16px;
-    right: auto;
-    left: calc(50% + 40px);
+    display: none;
+  }
+
+  /* Show music link in menu on mobile */
+  #menu-music-btn,
+  #menu-music-divider {
+    display: flex;
   }
 
   /* Slide-out from bottom on mobile — glassmorphic sheet */
@@ -1488,11 +1582,11 @@ html {
     text-align: center;
   }
 
-  /* Player popup full-width on mobile */
+  /* Player popup centered on mobile */
   .v2-player-popup {
-    bottom: 80px;
-    right: 8px;
-    left: 8px;
+    bottom: 24px;
+    right: 16px;
+    left: 16px;
     width: auto;
   }
 }
