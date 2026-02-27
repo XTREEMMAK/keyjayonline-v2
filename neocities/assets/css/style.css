@@ -2601,9 +2601,13 @@ html {
 
   .shelf-panel-open .shelf-notes-panel {
     flex: 1 1 auto;
-    max-height: 350px;
+    max-height: none;
     border-left: none;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .shelf-panel-open .shelf-notes-panel-inner {
+    overflow-y: visible;
   }
 
   .listening-now-content {
