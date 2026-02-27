@@ -17,7 +17,7 @@
 
   function renderGameCard(game, index) {
     var card = KJO.el('div', 'shelf-card glass-card');
-    card.setAttribute('data-status', game.game_status || '');
+    card.setAttribute('data-status', (game.game_status || '').toLowerCase());
     KJO.staggerDelay(card, index);
 
     var dateText = null;

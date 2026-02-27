@@ -59,8 +59,8 @@
 
   function renderMediaCard(item, index) {
     var card = KJO.el('div', 'shelf-card glass-card');
-    card.setAttribute('data-status', item.watch_status || '');
-    card.setAttribute('data-type', item.media_type || '');
+    card.setAttribute('data-status', (item.watch_status || '').toLowerCase());
+    card.setAttribute('data-type', (item.media_type || '').toLowerCase());
     KJO.staggerDelay(card, index);
 
     var badges = KJO.tree('div', 'shelf-badges', [
