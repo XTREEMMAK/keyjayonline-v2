@@ -126,10 +126,9 @@
 
       feedContainer.innerHTML = '';
       var site = data.site || {};
-      for (var i = 0; i < data.entries.length; i++) {
-        var el = renderEntry(data.entries[i], site, i === 0);
-        feedContainer.appendChild(el);
-      }
+      // Only show the most recent entry on the homepage
+      var el = renderEntry(data.entries[0], site, true);
+      feedContainer.appendChild(el);
     }).catch(function () {
       renderFallback(feedContainer);
     });
