@@ -63,7 +63,7 @@
   };
 
   window.KJO.fetchRadioSample = function () {
-    return jsonp(KJO_BASE + '/radio/sample.json', 'radio');
+    return jsonp(KJO_BASE + '/radio/sample.json');
   };
 
   window.KJO.omdbLookup = function (imdbId) {

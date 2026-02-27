@@ -108,13 +108,11 @@ export async function GET({ request, url }) {
 				game_status: game.game_status,
 				platform: game.platform,
 				notes: game.notes ? sanitizeHtml(game.notes) : null,
-				cover_url: game.cover_url || igdb.cover_url || null,
+				cover_url: igdb.cover_url || null,
 				genres: igdb.genres || [],
 				summary: igdb.summary || null,
-				rating: game.rating,
 				igdb_id: game.igdb_id,
-				started_at: game.started_at,
-				finished_at: game.finished_at
+				date_created: game.date_created
 			};
 		});
 

@@ -5,8 +5,9 @@
  * (NeoCities outpost audio player). Queries kjov2_music_samples directly
  * since the full radio feature isn't enabled yet.
  *
+ * No server-side caching — each request gets a fresh random selection.
+ * Prefers non-legacy tracks but falls back to legacy if needed to fill 5.
  * Includes CORS headers restricted to allowed origins.
- * Cached for 15 minutes (random selection is re-shuffled on cache expiry).
  */
 
 import { json } from '@sveltejs/kit';
@@ -15,9 +16,6 @@ import { getDirectusInstance, readItems } from '$lib/api/core/client.js';
 import { buildAssetUrl } from '$lib/api/core/assets.js';
 import { getCorsHeaders, jsonpResponse } from '$lib/utils/cors.js';
 
-let cachedResult = null;
-let cacheTimestamp = 0;
-const CACHE_TTL_MS = 15 * 60 * 1000;
 const SAMPLE_COUNT = 5;
 
 /** Fisher-Yates shuffle */
@@ -29,6 +27,18 @@ function shuffle(arr) {
 	}
 	return a;
 }
+
+const SAMPLE_FIELDS = [
+	'id',
+	'track_name',
+	'artist',
+	'library',
+	'is_legacy',
+	'is_radio_new',
+	'description',
+	{ music_sample: ['id', 'filename_disk'] },
+	{ thumbnail: ['id', 'filename_disk'] }
+];
 
 export async function OPTIONS({ request }) {
 	const origin = request.headers.get('origin');
@@ -42,39 +52,33 @@ export async function GET({ request, url }) {
 	const origin = request.headers.get('origin');
 	const corsHeaders = getCorsHeaders(origin);
 	const callback = url.searchParams.get('callback');
-	const now = Date.now();
-
-	if (cachedResult && now - cacheTimestamp < CACHE_TTL_MS) {
-		const headers = { 'Cache-Control': 'public, max-age=900', ...corsHeaders };
-		return jsonpResponse(cachedResult, callback, headers) || json(cachedResult, { headers });
-	}
 
 	try {
 		const directus = getDirectusInstance();
 		const baseUrl = PUBLIC_SITE_URL || 'https://keyjayonline.com';
 
-		const samples = await directus.request(
+		// Fetch all published tracks with audio
+		const allSamples = await directus.request(
 			readItems('kjov2_music_samples', {
 				filter: {
 					status: { _eq: 'published' },
-					music_sample: { _nnull: true },
-					is_legacy: { _neq: true }
+					music_sample: { _nnull: true }
 				},
-				fields: [
-					'id',
-					'track_name',
-					'artist',
-					'library',
-					'is_radio_new',
-					'description',
-					{ music_sample: ['id', 'filename_disk'] },
-					{ thumbnail: ['id', 'filename_disk'] }
-				],
+				fields: SAMPLE_FIELDS,
 				limit: -1
 			})
 		);
 
-		const randomSamples = shuffle(samples).slice(0, SAMPLE_COUNT);
+		// Prefer non-legacy, fall back to legacy to fill SAMPLE_COUNT
+		const nonLegacy = allSamples.filter((s) => !s.is_legacy);
+		let pool = shuffle(nonLegacy);
+
+		if (pool.length < SAMPLE_COUNT) {
+			const legacy = allSamples.filter((s) => s.is_legacy);
+			pool = pool.concat(shuffle(legacy));
+		}
+
+		const randomSamples = pool.slice(0, SAMPLE_COUNT);
 
 		const result = {
 			tracks: randomSamples.map((sample) => ({
@@ -88,10 +92,7 @@ export async function GET({ request, url }) {
 			radio_url: `${baseUrl}/radio`
 		};
 
-		cachedResult = result;
-		cacheTimestamp = Date.now();
-
-		const headers = { 'Cache-Control': 'public, max-age=900', ...corsHeaders };
+		const headers = { 'Cache-Control': 'no-store', ...corsHeaders };
 		return jsonpResponse(result, callback, headers) || json(result, { headers });
 	} catch (error) {
 		console.error('Error fetching music samples for radio sample:', error);

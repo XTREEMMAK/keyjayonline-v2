@@ -26,10 +26,6 @@ export async function getGamesPlaying() {
 					'game_status',
 					'platform',
 					'notes',
-					'cover_url',
-					'rating',
-					'started_at',
-					'finished_at',
 					'date_created'
 				],
 				sort: ['sort']
@@ -43,10 +39,6 @@ export async function getGamesPlaying() {
 			game_status: item.game_status,
 			platform: item.platform,
 			notes: item.notes,
-			cover_url: item.cover_url,
-			rating: item.rating,
-			started_at: item.started_at,
-			finished_at: item.finished_at,
 			date_created: item.date_created
 		}));
 	} catch (error) {
