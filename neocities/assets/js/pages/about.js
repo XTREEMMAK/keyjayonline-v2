@@ -29,8 +29,8 @@
     container.appendChild(KJO.tree('div', 'about-card glass-card h-card', [
       KJO.tree('div', 'about-avatar', [
         KJO.el('img', 'u-photo about-avatar-img', null, {
-          src: 'assets/images/KJ_Logo_Medium_W.svg',
-          alt: 'Key Jay'
+          src: 'assets/images/Jamaal_Photo.webp',
+          alt: 'Jamaal (Key Jay)'
         })
       ]),
       KJO.el('h2', 'about-name p-name', 'Key Jay'),

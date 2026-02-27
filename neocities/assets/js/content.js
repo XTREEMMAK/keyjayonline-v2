@@ -10,23 +10,6 @@
   window.KJO.copy = {
 
     // -----------------------------------------------------------------------
-    // Home page — intro paragraph
-    // -----------------------------------------------------------------------
-    intro: 'Hey all! <br/>' +
-      'I\'m <span class="p-name v2-intro-name">Jamaal</span>, but I also go by ' +
-      '<span class="v2-intro-name">Key Jay</span>. I\'m a music composer, voice actor, ' +
-      'IT professional, gamer, and overall creative guy who likes building things. ' +
-      'My main site lives at ' +
-      '<a href="https://keyjayonline.com" rel="me" class="u-url">KeyJayOnline.com</a> ' +
-      'where you can find my full portfolio, but this new NeoCities page is kind of like ' +
-      'my quieter outpost; a place that syndicates what I\'m up to and gives me room to ' +
-      'be a fan of things.' +
-      '<br><br>' +
-      'I joined the IndieWeb because places like NeoCities feel more like the ' +
-      '<strong>REAL</strong> web I grew up with. Who knows how this little corner will ' +
-      'grow, but I\'m glad you\'re here. Enjoy!',
-
-    // -----------------------------------------------------------------------
     // About page — bio paragraphs
     // -----------------------------------------------------------------------
     aboutBio: '<p class="p-note">Hey all!</p>' +
@@ -52,12 +35,11 @@
     // -----------------------------------------------------------------------
     aboutIndieWeb: '<h3>IndieWeb</h3>' +
       '<p>This page is part of the ' +
-      '<a href="https://indieweb.org" target="_blank" rel="noopener">IndieWeb</a> ' +
-      ', a movement to own your content and connect on your own terms. ' +
-      'It uses <a href="https://microformats.org/wiki/h-card" target="_blank" ' +
-      'rel="noopener">h-card</a> and ' +
-      '<a href="https://microformats.org/wiki/h-feed" target="_blank" ' +
-      'rel="noopener">h-feed</a> microformats for machine-readable identity ' +
-      'and content.</p>'
+      '<a href="https://indieweb.org" target="_blank" rel="noopener">IndieWeb</a>' +
+      ' \u2014 a growing community of people who believe the web should be a place for ' +
+      'genuine self-expression, not just another feed algorithm. I joined because places ' +
+      'like NeoCities remind me of the web I grew up with: personal, creative, and built ' +
+      'by hand. No metrics, no monetization \u2014 just people sharing what they love on ' +
+      'their own terms.</p>'
   };
 })();

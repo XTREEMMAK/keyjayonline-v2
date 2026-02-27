@@ -15,10 +15,187 @@
     { label: 'Backlog', value: 'backlog' }
   ];
 
+  var FADE_DURATION = 300;   // ms — siblings opacity transition
+  var WIDTH_DURATION = 350;  // ms — card width expand/shrink
+  var PANEL_DURATION = 450;  // ms — notes panel slide transition
+  var INFO_FADE = 200;       // ms — info section fade out/in during layout switch
+  var COVER_RESIZE = 400;    // ms — matches cover well CSS transition duration
+
+  /**
+   * Staged expand with FLIP position compensation:
+   *  1. Mark card expanded + fade siblings out (CSS opacity)
+   *  2. Hide siblings, lock card width + grid-column, compensate position with translateX
+   *  3. Animate width + transform together (card slides to left edge while expanding)
+   *  4. Open notes panel
+   */
+  function expandNotes(card) {
+    var grid = card.closest('.shelf-grid');
+    if (!grid) return;
+
+    // Close any other expanded card immediately
+    var existing = grid.querySelector('.shelf-card-expanded');
+    if (existing && existing !== card) {
+      existing.classList.remove('shelf-card-expanded', 'shelf-panel-open', 'shelf-cover-full', 'shelf-poster-layout');
+      existing.style.cssText = '';
+      var exHidden = grid.querySelectorAll('.shelf-card-hidden');
+      for (var i = 0; i < exHidden.length; i++) exHidden[i].classList.remove('shelf-card-hidden');
+      grid.classList.remove('shelf-notes-active');
+    }
+
+    // Capture card's natural width before any layout changes
+    var startWidth = card.offsetWidth;
+
+    // Step 1: mark card (excluded from fade CSS), fade siblings
+    card.classList.add('shelf-card-expanded');
+    grid.classList.add('shelf-notes-active');
+
+    // Step 2: after fade completes, hide siblings and animate width + position
+    setTimeout(function () {
+      // Capture card's position BEFORE hiding siblings (still in original column)
+      var firstLeft = card.getBoundingClientRect().left;
+
+      var siblings = grid.querySelectorAll('.shelf-card:not(.shelf-card-expanded)');
+      for (var i = 0; i < siblings.length; i++) siblings[i].classList.add('shelf-card-hidden');
+
+      // Kill base CSS transitions so setting initial FLIP state doesn't animate
+      card.style.transition = 'none';
+
+      // Lock card at pre-expansion width and span the full grid
+      card.style.width = startWidth + 'px';
+      card.style.gridColumn = '1 / -1';
+
+      // Read new position (card moved to column 1 after siblings hidden)
+      var lastLeft = card.getBoundingClientRect().left;
+      var deltaX = firstLeft - lastLeft;
+
+      // Compensate: translateX keeps card visually in its original column
+      card.style.transform = 'translateX(' + deltaX + 'px)';
+
+      // Commit initial state (width + position locked, no transitions running)
+      void card.offsetWidth;
+
+      // Step 3: enable transitions and animate to expanded state
+      var targetWidth = grid.clientWidth;
+      card.style.transition = 'width ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1), transform ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1)';
+      card.style.width = targetWidth + 'px';
+      card.style.transform = 'translateX(0)';
+
+      // Step 4: after width animation — phased cover expansion + poster layout
+      setTimeout(function () {
+        card.style.width = '';
+        card.style.transition = '';
+        card.style.transform = '';
+
+        var info = card.querySelector('.shelf-info');
+        if (info) info.classList.add('shelf-info-hidden');
+
+        setTimeout(function () {
+          // All at once: panel opens + cover grows + slides to center (all CSS-transitioned)
+          card.classList.add('shelf-panel-open');
+          card.classList.add('shelf-cover-full');
+          card.classList.add('shelf-poster-layout');
+          var noteBtn = card.querySelector('.shelf-notes-btn');
+          if (noteBtn) noteBtn.textContent = 'Close Notes';
+
+          // After cover finishes growing + centering, fade info back in
+          setTimeout(function () {
+            if (info) info.classList.remove('shelf-info-hidden');
+          }, COVER_RESIZE);
+        }, INFO_FADE);
+      }, WIDTH_DURATION);
+    }, FADE_DURATION);
+  }
+
+  /**
+   * Staged collapse with FLIP position compensation:
+   *  1. Close panel (CSS transition)
+   *  2. FLIP-measure target position, animate width + transform (card slides + shrinks)
+   *  3. Clean up grid state, show siblings, fade them in
+   */
+  function collapseNotes(card) {
+    var grid = card.closest('.shelf-grid');
+    if (!grid) return;
+
+    // Step 1: fade info out, then revert poster layout + close panel
+    var info = card.querySelector('.shelf-info');
+    if (info) info.classList.add('shelf-info-hidden');
+
+    var noteBtn = card.querySelector('.shelf-notes-btn');
+    if (noteBtn) noteBtn.textContent = 'Notes';
+
+    setTimeout(function () {
+      // All at once: revert poster + shrink cover + close panel (all CSS-transitioned)
+      card.classList.remove('shelf-poster-layout');
+      card.classList.remove('shelf-cover-full');
+      card.classList.remove('shelf-panel-open');
+
+      // After cover finishes shrinking + sliding back, fade info in
+      setTimeout(function () {
+        if (info) info.classList.remove('shelf-info-hidden');
+      }, COVER_RESIZE);
+
+      // Step 2: after panel transition, animate width + position back
+      setTimeout(function () {
+        var expandedWidth = card.offsetWidth;
+        var firstLeft = card.getBoundingClientRect().left;
+
+      // Kill base CSS transitions during FLIP measurement
+      card.style.transition = 'none';
+
+      // FLIP: temporarily snap to final layout to measure target position + width
+      // (siblings are at opacity 0 from shelf-notes-active, so no visual flash)
+      card.style.width = '';
+      card.style.gridColumn = '';
+      var hiddenSiblings = grid.querySelectorAll('.shelf-card-hidden');
+      for (var i = 0; i < hiddenSiblings.length; i++) hiddenSiblings[i].classList.remove('shelf-card-hidden');
+
+      var targetWidth = card.offsetWidth;
+      var lastLeft = card.getBoundingClientRect().left;
+      var deltaX = lastLeft - firstLeft;
+
+      // Revert to expanded state (no paint happened — all synchronous)
+      for (var i = 0; i < hiddenSiblings.length; i++) hiddenSiblings[i].classList.add('shelf-card-hidden');
+      card.style.gridColumn = '1 / -1';
+      card.style.width = expandedWidth + 'px';
+
+      // Commit starting state
+      void card.offsetWidth;
+
+      // Enable transitions and animate: shrink width + slide to target column
+      card.style.transition = 'width ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1), transform ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1)';
+      card.style.width = targetWidth + 'px';
+      card.style.transform = 'translateX(' + deltaX + 'px)';
+
+      // Step 3: after animation, restore grid and fade siblings back in
+      setTimeout(function () {
+        card.style.cssText = '';
+        card.classList.remove('shelf-card-expanded');
+
+        // Show siblings (they render at opacity 0 due to shelf-notes-active)
+        var siblings = grid.querySelectorAll('.shelf-card-hidden');
+        for (var i = 0; i < siblings.length; i++) siblings[i].classList.remove('shelf-card-hidden');
+
+        // Force reflow so siblings are painted at opacity 0 before fade-in
+        void grid.offsetHeight;
+
+        // Remove active state — siblings transition opacity 0 → 1 via base CSS
+        grid.classList.remove('shelf-notes-active');
+      }, WIDTH_DURATION);
+      }, PANEL_DURATION);
+    }, INFO_FADE);
+  }
+
   function renderGameCard(game, index) {
     var card = KJO.el('div', 'shelf-card glass-card');
     card.setAttribute('data-status', (game.game_status || '').toLowerCase());
     KJO.staggerDelay(card, index);
+
+    // Blurred cover art background
+    if (game.cover_url) {
+      var bgDiv = KJO.el('div', 'shelf-card-bg');
+      bgDiv.style.backgroundImage = 'url(' + game.cover_url + ')';
+      card.appendChild(bgDiv);
+    }
 
     var dateText = null;
     if (game.started_at) {
@@ -38,35 +215,52 @@
         href: 'https://www.igdb.com/games/' + game.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         target: '_blank',
         rel: 'noopener'
+      }) : null,
+      game.video_id ? KJO.el('a', 'shelf-trailer-btn', 'Trailer \u25b6', {
+        href: 'https://www.youtube.com/watch?v=' + game.video_id,
+        target: '_blank',
+        rel: 'noopener'
       }) : null
     ]);
 
-    card.appendChild(KJO.tree('div', 'shelf-card-inner', [
-      KJO.coverWell(game.cover_url, game.title, KJO.icon('gamepad', 32, { strokeWidth: 1.5, opacity: 0.3 })),
-      info
+    // Build notes panel (hidden until expanded)
+    var notesPanel = null;
+    if (game.notes) {
+      var panelInner = KJO.el('div', 'shelf-notes-panel-inner');
+      panelInner.innerHTML = game.notes;
+      var panelClose = KJO.el('button', 'shelf-notes-panel-close', '\u00d7');
+      notesPanel = KJO.tree('div', 'shelf-notes-panel', [panelClose, panelInner]);
+    }
+
+    // Card layout: main content + optional notes panel
+    card.appendChild(KJO.tree('div', 'shelf-card-layout', [
+      KJO.tree('div', 'shelf-card-main', [
+        KJO.tree('div', 'shelf-card-inner', [
+          KJO.coverWell(game.cover_url, game.title, KJO.icon('gamepad', 32, { strokeWidth: 1.5, opacity: 0.3 })),
+          info
+        ])
+      ]),
+      notesPanel
     ]));
 
+    // Notes expand/collapse logic (staged animation)
     if (game.notes) {
       var noteBtn = KJO.el('button', 'shelf-notes-btn', 'Notes');
-      var overlay = KJO.el('div', 'shelf-notes-overlay');
-      var overlayInner = KJO.el('div', 'shelf-notes-overlay-inner');
-      overlayInner.innerHTML = game.notes;
-      var closeBtn = KJO.el('button', 'shelf-notes-close', '\u00d7');
 
-      closeBtn.addEventListener('click', function (e) {
+      notesPanel.querySelector('.shelf-notes-panel-close').addEventListener('click', function (e) {
         e.stopPropagation();
-        overlay.classList.remove('shelf-notes-open');
+        collapseNotes(card);
       });
 
       noteBtn.addEventListener('click', function () {
-        overlay.classList.add('shelf-notes-open');
+        if (card.classList.contains('shelf-card-expanded')) {
+          collapseNotes(card);
+        } else {
+          expandNotes(card);
+        }
       });
 
-      overlay.appendChild(closeBtn);
-      overlay.appendChild(overlayInner);
-      card.style.position = 'relative';
       card.appendChild(noteBtn);
-      card.appendChild(overlay);
     }
 
     return card;
@@ -81,6 +275,9 @@
     var grid = KJO.el('div', 'shelf-grid');
 
     container.appendChild(KJO.filterPills(STATUS_FILTERS, 'all', function (value) {
+      // Close any expanded notes before filtering
+      var expanded = grid.querySelector('.shelf-card-expanded');
+      if (expanded) collapseNotes(expanded);
       KJO.filterCards(grid, { status: value });
     }));
 

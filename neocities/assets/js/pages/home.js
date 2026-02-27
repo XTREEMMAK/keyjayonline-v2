@@ -1,6 +1,6 @@
 /**
  * Home Page
- * Renders intro, video showcase, NOW entries, and CTA.
+ * Renders NOW entries and video showcase.
  * Migrated from script.js.
  */
 
@@ -24,22 +24,6 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Build intro section
-  // ---------------------------------------------------------------------------
-  function buildIntro() {
-    var iconOverlap = KJO.el('div', 'v2-intro-icon-overlap');
-    iconOverlap.innerHTML = KJO.icon('user', 36, { className: 'v2-section-icon' });
-
-    var p = KJO.el('p', 'v2-intro-text');
-    p.innerHTML = KJO.copy.intro;
-
-    return KJO.tree('section', 'v2-intro-wrap', [
-      iconOverlap,
-      KJO.tree('div', 'v2-intro glass-card', [p])
-    ]);
-  }
-
-  // ---------------------------------------------------------------------------
   // Build video showcase section
   // ---------------------------------------------------------------------------
   function buildVideoShowcase() {
@@ -57,7 +41,7 @@
     iframe.setAttribute('loading', 'lazy');
 
     KJO.appendAll(section, [
-      KJO.sectionLabel(KJO.icon('video', 28, { className: 'v2-section-icon' }), 'Featured'),
+      KJO.sectionLabel(KJO.icon('video', 28, { className: 'v2-section-icon' }), 'Featured Video'),
       KJO.tree('div', 'v2-video-card glass-card', [
         KJO.tree('div', 'v2-video-embed', [iframe])
       ])
@@ -155,18 +139,15 @@
   // Page render function
   // ---------------------------------------------------------------------------
   function render(container) {
-    // 1. Intro
-    container.appendChild(buildIntro());
+    // 1. NOW entries
+    var nowSection = buildNowSection();
+    container.appendChild(nowSection);
+    fetchNowEntries(nowSection.querySelector('#now-entries'));
 
     // 2. Video showcase
     var videoSection = buildVideoShowcase();
     container.appendChild(videoSection);
     KJO.videoShowcase.init(videoSection);
-
-    // 3. NOW entries
-    var nowSection = buildNowSection();
-    container.appendChild(nowSection);
-    fetchNowEntries(nowSection.querySelector('#now-entries'));
   }
 
   KJO.router.register('home', render);

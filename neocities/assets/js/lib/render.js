@@ -191,11 +191,21 @@
 
   /**
    * Show/hide shelf cards based on data-attribute filters.
+   * Uses smooth fade transitions and shows empty state when nothing matches.
    * @param {Element} grid - Container with .shelf-card children
    * @param {Object} filters - e.g. { status: 'playing', type: 'all' }
    */
   window.KJO.filterCards = function (grid, filters) {
     var cards = grid.querySelectorAll('.shelf-card');
+    var visibleCount = 0;
+
+    // Lock grid height to prevent scroll jump during transition
+    grid.style.minHeight = grid.offsetHeight + 'px';
+
+    // Remove any existing filter empty state
+    var existing = grid.querySelector('.shelf-filter-empty');
+    if (existing) existing.remove();
+
     for (var i = 0; i < cards.length; i++) {
       var card = cards[i];
       var show = true;
@@ -208,7 +218,55 @@
           }
         }
       }
-      card.style.display = show ? '' : 'none';
+
+      if (show) {
+        visibleCount++;
+        // Reveal: remove display:none first, then fade in
+        if (card.style.display === 'none') {
+          card.classList.add('shelf-card-filtered');
+          card.style.display = '';
+          void card.offsetWidth; // commit display change before removing class
+          card.classList.remove('shelf-card-filtered');
+        } else {
+          card.classList.remove('shelf-card-filtered');
+        }
+      } else {
+        // Hide: fade out, then set display:none after transition
+        card.classList.add('shelf-card-filtered');
+        (function (c) {
+          setTimeout(function () {
+            if (c.classList.contains('shelf-card-filtered')) {
+              c.style.display = 'none';
+            }
+          }, 250);
+        })(card);
+      }
+    }
+
+    // Show empty state after cards finish fading out
+    if (visibleCount === 0) {
+      setTimeout(function () {
+        var msg = KJO.el('div', 'shelf-filter-empty shelf-empty glass-card', 'Nothing matches this filter.');
+        msg.classList.add('shelf-card-filtered');
+        grid.appendChild(msg);
+        // Double-rAF ensures the browser has painted the initial (hidden) state
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            msg.classList.remove('shelf-card-filtered');
+          });
+        });
+        // Release grid height lock after empty state is in place
+        grid.style.transition = 'min-height 0.3s ease';
+        grid.style.minHeight = '';
+        setTimeout(function () { grid.style.transition = ''; }, 350);
+      }, 260); // slightly after the 250ms card fade-out
+    } else {
+      // Release grid height lock after cards finish transitioning
+      setTimeout(function () {
+        grid.style.transition = 'min-height 0.3s ease';
+        grid.style.minHeight = '';
+        setTimeout(function () { grid.style.transition = ''; }, 350);
+      }, 260);
     }
   };
 })();

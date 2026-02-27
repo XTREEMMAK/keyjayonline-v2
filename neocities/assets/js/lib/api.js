@@ -62,6 +62,14 @@
     return jsonp(KJO_BASE + '/watching/shelf.json', 'watch');
   };
 
+  window.KJO.fetchListening = function () {
+    return jsonp(KJO_BASE + '/listening/recent.json', 'listening');
+  };
+
+  window.KJO.fetchSocials = function () {
+    return jsonp(KJO_BASE + '/site/socials.json', 'socials');
+  };
+
   window.KJO.fetchRadioSample = function () {
     return jsonp(KJO_BASE + '/radio/sample.json');
   };

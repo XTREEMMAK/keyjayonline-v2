@@ -20,7 +20,7 @@ const IGDB_API_BASE = 'https://api.igdb.com/v4';
 
 /**
  * Batch-fetch IGDB metadata for games with igdb_id.
- * Returns a map of igdb_id -> { cover_url, genres, summary }.
+ * Returns a map of igdb_id -> { cover_url, genres, summary, video_id }.
  */
 async function fetchIGDBMetadata(igdbIds) {
 	if (!igdbIds.length) return {};
@@ -29,7 +29,7 @@ async function fetchIGDBMetadata(igdbIds) {
 		const { clientId, accessToken } = await getIGDBToken();
 
 		const idList = igdbIds.join(',');
-		const query = `fields name,cover.image_id,genres.name,summary; where id = (${idList}); limit ${igdbIds.length};`;
+		const query = `fields name,cover.image_id,genres.name,summary,videos.video_id,videos.name; where id = (${idList}); limit ${igdbIds.length};`;
 
 		const response = await fetch(`${IGDB_API_BASE}/games`, {
 			method: 'POST',
@@ -55,7 +55,9 @@ async function fetchIGDBMetadata(igdbIds) {
 					? `https://images.igdb.com/igdb/image/upload/t_cover_big/${game.cover.image_id}.jpg`
 					: null,
 				genres: (game.genres || []).map((g) => g.name),
-				summary: game.summary || null
+				summary: game.summary || null,
+				video_id:
+					game.videos && game.videos.length > 0 ? game.videos[0].video_id : null
 			};
 		}
 
@@ -111,6 +113,7 @@ export async function GET({ request, url }) {
 				cover_url: igdb.cover_url || null,
 				genres: igdb.genres || [],
 				summary: igdb.summary || null,
+				video_id: igdb.video_id || null,
 				igdb_id: game.igdb_id,
 				date_created: game.date_created
 			};

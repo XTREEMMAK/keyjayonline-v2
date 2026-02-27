@@ -1,8 +1,8 @@
 /**
- * Random Video Showcase
+ * Video Showcase
  *
- * ~50% chance of showing the Featured section on each page load.
- * When shown, picks a random YouTube video (avoids repeating the last one).
+ * Shows the Featured Video section with a randomly selected YouTube video.
+ * Picks a random YouTube video (avoids repeating the last one).
  * Tracks lastVideo in a cookie so consecutive shows cycle through the list.
  *
  * Exposes KJO.videoShowcase.init(sectionEl) for SPA page rendering.
@@ -65,13 +65,7 @@
   function init(sectionEl) {
     if (!sectionEl) return;
 
-    // ~50% chance of showing the Featured section
-    if (Math.random() >= 0.5) {
-      sectionEl.style.display = 'none';
-      return;
-    }
-
-    // Show section — pick a video that differs from last time
+    // Pick a video that differs from last time
     var data = getVisitData();
     var lastVideo = data && typeof data.lastVideo === 'number' ? data.lastVideo : -1;
     var nextVideo = pickVideo(lastVideo);

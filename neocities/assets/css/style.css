@@ -628,18 +628,42 @@ a:hover {
    ============================================================================= */
 .rss-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
   padding: 20px 24px;
   margin-bottom: 16px;
 }
 
 .rss-content {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 12px;
   min-width: 0;
+}
+
+.rss-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--neu-bg, #2a2d35);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  box-shadow:
+    inset 2px 2px 4px var(--neu-shadow-dark, rgba(0,0,0,0.5)),
+    inset -2px -2px 4px var(--neu-shadow-light, rgba(255,255,255,0.04)),
+    0 0 14px rgba(249, 115, 22, 0.3);
+  animation: rss-pulse-glow 2.5s ease-in-out infinite;
+}
+
+@keyframes rss-pulse-glow {
+  0%, 100% { box-shadow: inset 2px 2px 4px var(--neu-shadow-dark, rgba(0,0,0,0.5)), inset -2px -2px 4px var(--neu-shadow-light, rgba(255,255,255,0.04)), 0 0 14px rgba(249, 115, 22, 0.3); }
+  50% { box-shadow: inset 2px 2px 4px var(--neu-shadow-dark, rgba(0,0,0,0.5)), inset -2px -2px 4px var(--neu-shadow-light, rgba(255,255,255,0.04)), 0 0 24px rgba(249, 115, 22, 0.55), 0 0 8px rgba(249, 115, 22, 0.2); }
 }
 
 .rss-icon {
@@ -733,6 +757,41 @@ a:hover {
 .footer-home a {
   color: var(--neu-accent);
   font-weight: 500;
+}
+
+.footer-socials {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.footer-social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--neu-bg-light, #32363f);
+  box-shadow:
+    3px 3px 6px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+    -2px -2px 5px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  color: var(--neu-text-secondary, #9ca3af);
+}
+
+.footer-social-link:hover {
+  transform: translateY(-3px) scale(1.1);
+  box-shadow:
+    4px 4px 10px var(--neu-shadow-dark, rgba(18, 20, 24, 0.8)),
+    -3px -3px 8px var(--neu-shadow-light, rgba(60, 64, 72, 0.5));
+}
+
+.footer-social-link svg {
+  fill: currentColor;
 }
 
 /* Fallback state */
@@ -923,6 +982,27 @@ html {
 
 .v2-hero-tagline a:hover {
   border-color: var(--neu-accent);
+}
+
+.hero-site-tag {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: rgba(102, 126, 234, 0.12);
+  border: 1px solid rgba(102, 126, 234, 0.3) !important;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.3) !important;
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neu-accent) !important;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.hero-site-tag:hover {
+  background: rgba(102, 126, 234, 0.22);
+  border-color: var(--neu-accent) !important;
 }
 
 /* =============================================================================
@@ -1777,9 +1857,23 @@ html {
 .shelf-card {
   padding: 0;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  transition: transform 0.25s ease, box-shadow 0.2s ease, opacity 0.25s ease;
   opacity: 1;
   animation: shelf-card-in 0.4s ease-out backwards;
+}
+
+/* Blurred cover art background layer */
+.shelf-card-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(20px);
+  opacity: 0.25;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 @keyframes shelf-card-in {
@@ -1792,6 +1886,18 @@ html {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
+.shelf-card-layout {
+  display: flex;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.shelf-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .shelf-card-inner {
   display: flex;
   gap: 0.85rem;
@@ -1801,8 +1907,11 @@ html {
 /* Cover art well */
 .shelf-cover-well {
   width: 80px;
-  height: 110px;
+  min-height: 80px;
   flex-shrink: 0;
+  align-self: stretch;
+  position: relative;
+  left: 0;
   padding: 0.35rem;
   display: flex;
   align-items: center;
@@ -1813,6 +1922,32 @@ html {
   box-shadow:
     inset 2px 2px 4px var(--neu-shadow-dark, rgba(0,0,0,0.5)),
     inset -2px -2px 4px var(--neu-shadow-light, rgba(255,255,255,0.04));
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              min-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Cover expansion + centering — all transitionable properties */
+.shelf-cover-full .shelf-cover-well {
+  width: 200px;
+  min-height: 280px;
+  border-radius: 12px;
+}
+
+/* Poster layout — column stack with smooth cover centering via left+transform */
+.shelf-poster-layout .shelf-card-inner {
+  flex-direction: column;
+}
+
+.shelf-poster-layout .shelf-cover-well {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.shelf-poster-layout .shelf-info {
+  align-items: center;
+  text-align: center;
 }
 
 .shelf-cover-img {
@@ -1840,6 +1975,11 @@ html {
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
+  transition: opacity 0.2s ease;
+}
+
+.shelf-info-hidden {
+  opacity: 0;
 }
 
 .shelf-title {
@@ -1894,6 +2034,26 @@ html {
   color: var(--neu-accent-purple, #764ba2);
 }
 
+/* Trailer video button */
+.shelf-trailer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--neu-accent), var(--neu-accent-purple));
+  text-decoration: none;
+  padding: 2px 8px;
+  border-radius: 10px;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.shelf-trailer-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+  color: #fff;
+}
+
 /* Notes toggle button */
 .shelf-notes-btn {
   display: block;
@@ -1910,39 +2070,78 @@ html {
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  position: relative;
+  z-index: 1;
 }
+
 .shelf-notes-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   color: var(--neu-text-primary, #e5e7eb);
 }
 
-/* Frosted glass notes overlay */
-.shelf-notes-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(20, 20, 30, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.25rem;
+/* Notes expansion — staged animation
+   Step 1: .shelf-notes-active  — fade other cards to 0
+   Step 2: .shelf-card-hidden   — collapse other cards out of layout (JS adds after fade)
+   Step 3: .shelf-card-expanded — expanded card fills grid, notes panel slides open
+*/
+
+/* Step 1: fade non-expanded cards */
+.shelf-notes-active .shelf-card:not(.shelf-card-expanded) {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease;
-  border-radius: inherit;
-  z-index: 2;
-}
-.shelf-notes-overlay.shelf-notes-open {
-  opacity: 1;
-  pointer-events: auto;
+  transition: opacity 0.3s ease;
 }
 
-.shelf-notes-close {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.65rem;
+.shelf-notes-active .shelf-card:not(.shelf-card-expanded):hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Step 2: remove faded cards from layout */
+.shelf-card.shelf-card-hidden {
+  display: none;
+}
+
+/* Step 3: expanded card — hover disabled, grid-column set via JS for animated transition */
+.shelf-card-expanded {
+  /* grid-column handled by JS inline style for smooth width animation */
+}
+
+.shelf-card-expanded:hover {
+  transform: none;
+}
+
+/* Notes panel — collapsed state */
+.shelf-notes-panel {
+  flex: 0 0 0%;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  border-left: 0px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: flex 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.35s ease 0.1s,
+              padding 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              border-left-width 0.3s ease;
+}
+
+/* Notes panel — expanded state (triggered by .shelf-panel-open, after card is full-width) */
+.shelf-panel-open .shelf-notes-panel {
+  flex: 0 0 55%;
+  max-height: 450px;
+  opacity: 1;
+  padding: 1rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+/* Close button — pinned at top-right, outside the scroll area */
+.shelf-notes-panel-close {
+  align-self: flex-end;
+  flex-shrink: 0;
   background: none;
   border: none;
   color: var(--neu-text-secondary, #9ca3af);
@@ -1950,23 +2149,37 @@ html {
   cursor: pointer;
   line-height: 1;
   padding: 0.15rem 0.35rem;
+  margin: -0.25rem -0.25rem 0.25rem 0;
   transition: color 0.15s;
+  z-index: 2;
 }
-.shelf-notes-close:hover {
+
+.shelf-notes-panel-close:hover {
   color: #fff;
 }
 
-.shelf-notes-overlay-inner {
+/* Notes content — scrolls independently below the close button */
+.shelf-notes-panel-inner {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   font-size: 0.8rem;
-  font-style: italic;
   color: var(--neu-text-primary, #e5e7eb);
   line-height: 1.6;
-  text-align: center;
-  max-height: 100%;
-  overflow-y: auto;
 }
-.shelf-notes-overlay-inner p {
+
+.shelf-notes-panel-inner p {
   margin: 0 0 0.5rem;
+}
+
+.shelf-notes-panel-inner a {
+  color: var(--neu-accent, #667eea);
+}
+
+/* Filter fade transition */
+.shelf-card-filtered {
+  opacity: 0;
+  transform: scale(0.96);
 }
 
 /* Empty/loading states */
@@ -1975,6 +2188,11 @@ html {
   text-align: center;
   padding: 32px 24px;
   color: var(--neu-text-muted, #6b7280);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.shelf-filter-empty {
+  font-size: 0.85rem;
 }
 
 .shelf-loading {
@@ -2150,10 +2368,10 @@ html {
 }
 
 .about-avatar-img {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  padding: 12px;
+  object-fit: cover;
   background: rgba(255, 255, 255, 0.03);
   box-shadow:
     inset 2px 2px 4px var(--neu-shadow-dark, rgba(0,0,0,0.5)),
@@ -2222,12 +2440,180 @@ html {
 }
 
 /* ==========================================================================
+   LISTENING PAGE — Last.fm Scrobbles
+   ========================================================================== */
+
+.listening-card {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  animation: shelf-card-in 0.4s ease both;
+}
+
+.listening-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    6px 6px 16px var(--neu-shadow-dark),
+    -4px -4px 12px var(--neu-shadow-light);
+}
+
+.listening-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.listening-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.listening-artist {
+  font-size: 0.85rem;
+  color: var(--neu-text-secondary, #9ca3af);
+  margin-top: 0.2rem;
+}
+
+.listening-album {
+  font-size: 0.78rem;
+  color: var(--neu-text-muted, #6b7280);
+  font-style: italic;
+  margin-top: 0.15rem;
+}
+
+/* Now Playing banner */
+.listening-now-playing {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  margin-bottom: 1.2rem;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  animation: shelf-card-in 0.4s ease both;
+}
+
+.listening-now-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.listening-pulse {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  animation: listening-pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes listening-pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
+  50%      { box-shadow: 0 0 18px rgba(16, 185, 129, 0.9), 0 0 30px rgba(16, 185, 129, 0.3); }
+}
+
+.listening-now-label {
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #10b981;
+  letter-spacing: 0.06em;
+}
+
+.listening-now-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.listening-now-content .shelf-cover-well {
+  width: 100px;
+  min-height: 100px;
+  flex-shrink: 0;
+}
+
+.listening-now-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.listening-now-track {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--neu-text-primary, #ffffff);
+}
+
+.listening-now-artist {
+  font-size: 0.9rem;
+  color: var(--neu-text-secondary, #9ca3af);
+  margin-top: 0.2rem;
+}
+
+.listening-now-album {
+  font-size: 0.8rem;
+  color: var(--neu-text-muted, #6b7280);
+  font-style: italic;
+  margin-top: 0.15rem;
+}
+
+.listening-profile-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+.listening-profile-btn {
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+/* Nav accent colors for listening */
+.spa-nl-listening svg   { stroke: #ec4899; }
+.v2-ml-listening        { color: #ec4899; }
+.v2-ml-listening svg    { stroke: #ec4899; }
+
+/* ==========================================================================
    RESPONSIVE — SPA additions
    ========================================================================== */
 
 @media (max-width: 520px) {
   .shelf-grid {
     grid-template-columns: 1fr;
+  }
+
+  .shelf-card-expanded .shelf-card-layout {
+    flex-direction: column;
+  }
+
+  .shelf-cover-full .shelf-cover-well {
+    width: 140px;
+    min-height: 200px;
+  }
+
+  .shelf-panel-open .shelf-notes-panel {
+    flex: 1 1 auto;
+    max-height: 350px;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .listening-now-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .listening-now-content .shelf-cover-well {
+    width: 80px;
+    min-height: 80px;
   }
 }
 

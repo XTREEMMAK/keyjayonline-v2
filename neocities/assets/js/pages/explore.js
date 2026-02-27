@@ -25,7 +25,7 @@
     {
       title: 'Productions',
       href: 'https://keyjayonline.com/#productions',
-      desc: 'Video production, editing, and post',
+      desc: 'Comics, games, video, and creative projects',
       icon: 'video',
       color: '#f97316'
     },
@@ -36,20 +36,20 @@
       icon: 'code',
       color: '#667eea'
     },
-    {
-      title: 'Games Library',
-      href: 'https://keyjayonline.com/games',
-      desc: 'Browse the full collection',
-      icon: 'gamepad',
-      color: '#10b981'
-    },
-    {
-      title: 'Key Jay Radio',
-      href: 'https://keyjayonline.com/radio',
-      desc: 'Stream original music',
-      icon: 'rss',
-      color: '#3b82f6'
-    },
+    // {
+    //   title: 'Games Library',
+    //   href: 'https://keyjayonline.com/games',
+    //   desc: 'Browse the full collection',
+    //   icon: 'gamepad',
+    //   color: '#10b981'
+    // },
+    // {
+    //   title: 'Key Jay Radio',
+    //   href: 'https://keyjayonline.com/radio',
+    //   desc: 'Stream original music',
+    //   icon: 'rss',
+    //   color: '#3b82f6'
+    // },
     {
       title: '/now Updates',
       href: 'https://keyjayonline.com/now',
