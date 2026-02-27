@@ -34,6 +34,31 @@
       }
     },
     {
+      "collection": "Entertainment",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": null,
+        "archive_value": null,
+        "collapse": "open",
+        "collection": "Entertainment",
+        "color": "#9CE515",
+        "display_template": null,
+        "group": null,
+        "hidden": false,
+        "icon": "emoji_symbols",
+        "item_duplication_fields": null,
+        "note": null,
+        "preview_url": null,
+        "singleton": false,
+        "sort": 10,
+        "sort_field": null,
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      }
+    },
+    {
       "collection": "Galleries",
       "meta": {
         "accountability": "all",
@@ -52,6 +77,31 @@
         "preview_url": null,
         "singleton": false,
         "sort": 7,
+        "sort_field": null,
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      }
+    },
+    {
+      "collection": "Games",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": null,
+        "archive_value": null,
+        "collapse": "open",
+        "collection": "Games",
+        "color": "#2BAB74",
+        "display_template": null,
+        "group": null,
+        "hidden": false,
+        "icon": "stadia_controller",
+        "item_duplication_fields": null,
+        "note": null,
+        "preview_url": null,
+        "singleton": false,
+        "sort": 8,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -151,7 +201,7 @@
         "note": "Radio Folder",
         "preview_url": null,
         "singleton": false,
-        "sort": 8,
+        "sort": 9,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -226,7 +276,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 11,
+        "sort": 13,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -353,7 +403,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 9,
+        "sort": 11,
         "sort_field": null,
         "translations": [
           {
@@ -386,7 +436,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 18,
+        "sort": 20,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -414,7 +464,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 19,
+        "sort": 21,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -541,7 +591,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 10,
+        "sort": 12,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -549,6 +599,39 @@
       },
       "schema": {
         "name": "kjov2_game_content"
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": "status",
+        "archive_value": "archived",
+        "collapse": "open",
+        "collection": "kjov2_games_playing",
+        "color": null,
+        "display_template": null,
+        "group": "Games",
+        "hidden": false,
+        "icon": "stadia_controller",
+        "item_duplication_fields": null,
+        "note": null,
+        "preview_url": null,
+        "singleton": false,
+        "sort": 1,
+        "sort_field": "sort",
+        "translations": [
+          {
+            "language": "en-US",
+            "translation": "Games Playing"
+          }
+        ],
+        "unarchive_value": "draft",
+        "versioning": false
+      },
+      "schema": {
+        "name": "kjov2_games_playing"
       }
     },
     {
@@ -734,7 +817,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 15,
+        "sort": 17,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -762,7 +845,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 23,
+        "sort": 25,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -889,7 +972,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 13,
+        "sort": 15,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -917,7 +1000,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 16,
+        "sort": 18,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -945,7 +1028,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 21,
+        "sort": 23,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -1039,7 +1122,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 12,
+        "sort": 14,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -1265,7 +1348,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 24,
+        "sort": 26,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -1326,7 +1409,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 14,
+        "sort": 16,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -1387,7 +1470,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 22,
+        "sort": 24,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -1679,7 +1762,7 @@
         "note": "Junction: tech projects ↔ tech stack (M2M)",
         "preview_url": null,
         "singleton": false,
-        "sort": 20,
+        "sort": 22,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -1786,6 +1869,39 @@
       },
       "schema": {
         "name": "kjov2_testimonials"
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": "status",
+        "archive_value": "archived",
+        "collapse": "open",
+        "collection": "kjov2_vidtv_watching",
+        "color": null,
+        "display_template": null,
+        "group": "Entertainment",
+        "hidden": false,
+        "icon": "tv",
+        "item_duplication_fields": null,
+        "note": null,
+        "preview_url": null,
+        "singleton": false,
+        "sort": 1,
+        "sort_field": "sort",
+        "translations": [
+          {
+            "language": "en-US",
+            "translation": "Movies and TV Watching"
+          }
+        ],
+        "unarchive_value": "draft",
+        "versioning": false
+      },
+      "schema": {
+        "name": "kjov2_vidtv_watching"
       }
     },
     {
@@ -1938,7 +2054,7 @@
         "note": null,
         "preview_url": null,
         "singleton": false,
-        "sort": 17,
+        "sort": 19,
         "sort_field": null,
         "translations": null,
         "unarchive_value": null,
@@ -5584,6 +5700,516 @@
         "has_auto_increment": false,
         "foreign_key_table": "directus_files",
         "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "id",
+      "type": "integer",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "id",
+        "group": null,
+        "hidden": true,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 1,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "id",
+        "table": "kjov2_games_playing",
+        "data_type": "integer",
+        "default_value": "nextval('kjov2_games_playing_id_seq'::regclass)",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": false,
+        "is_unique": true,
+        "is_indexed": false,
+        "is_primary_key": true,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": true,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "status",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": "labels",
+        "display_options": {
+          "choices": [
+            {
+              "background": "var(--theme--primary-background)",
+              "color": "var(--theme--primary)",
+              "foreground": "var(--theme--primary)",
+              "text": "$t:published",
+              "value": "published"
+            },
+            {
+              "background": "var(--theme--background-normal)",
+              "color": "var(--theme--foreground)",
+              "foreground": "var(--theme--foreground)",
+              "text": "$t:draft",
+              "value": "draft"
+            },
+            {
+              "background": "var(--theme--warning-background)",
+              "color": "var(--theme--warning)",
+              "foreground": "var(--theme--warning)",
+              "text": "$t:archived",
+              "value": "archived"
+            }
+          ],
+          "showAsDot": true
+        },
+        "field": "status",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "color": "var(--theme--primary)",
+              "text": "$t:published",
+              "value": "published"
+            },
+            {
+              "color": "var(--theme--foreground)",
+              "text": "$t:draft",
+              "value": "draft"
+            },
+            {
+              "color": "var(--theme--warning)",
+              "text": "$t:archived",
+              "value": "archived"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 2,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "status",
+        "table": "kjov2_games_playing",
+        "data_type": "character varying",
+        "default_value": "draft",
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "sort",
+      "type": "integer",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "sort",
+        "group": null,
+        "hidden": true,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 3,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "sort",
+        "table": "kjov2_games_playing",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "date_created",
+      "type": "timestamp",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        },
+        "field": "date_created",
+        "group": null,
+        "hidden": true,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 4,
+        "special": [
+          "date-created"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "date_created",
+        "table": "kjov2_games_playing",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "date_updated",
+      "type": "timestamp",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        },
+        "field": "date_updated",
+        "group": null,
+        "hidden": true,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 5,
+        "special": [
+          "date-updated"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "date_updated",
+        "table": "kjov2_games_playing",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "title",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "title",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": "Game Title",
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 6,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "title",
+        "table": "kjov2_games_playing",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "igdb_id",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "igdb_id",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 7,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "igdb_id",
+        "table": "kjov2_games_playing",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "game_status",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "game_status",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Playing",
+              "value": "Playing"
+            },
+            {
+              "text": "Completed",
+              "value": "Completed"
+            },
+            {
+              "text": "Dropped",
+              "value": "Dropped"
+            },
+            {
+              "text": "Backlog",
+              "value": "Backlog"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": true,
+        "searchable": true,
+        "sort": 8,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "game_status",
+        "table": "kjov2_games_playing",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "platform",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "platform",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 9,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "platform",
+        "table": "kjov2_games_playing",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_games_playing",
+      "field": "notes",
+      "type": "text",
+      "meta": {
+        "collection": "kjov2_games_playing",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "notes",
+        "group": null,
+        "hidden": false,
+        "interface": "input-rich-text-html",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 10,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "notes",
+        "table": "kjov2_games_playing",
+        "data_type": "text",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -12557,9 +13183,37 @@
         "field": "content",
         "group": null,
         "hidden": false,
-        "interface": "input-rich-text-md",
+        "interface": "input-rich-text-html",
         "note": null,
-        "options": null,
+        "options": {
+          "toolbar": [
+            "undo",
+            "redo",
+            "bold",
+            "italic",
+            "underline",
+            "h1",
+            "h2",
+            "h3",
+            "alignleft",
+            "aligncenter",
+            "alignright",
+            "numlist",
+            "bullist",
+            "removeformat",
+            "cut",
+            "copy",
+            "paste",
+            "blockquote",
+            "customInlineCode",
+            "customLink",
+            "customImage",
+            "customMedia",
+            "hr",
+            "fullscreen",
+            "code"
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -12591,81 +13245,35 @@
     },
     {
       "collection": "kjov2_now_entries",
-      "field": "pinned",
-      "type": "boolean",
+      "field": "summary",
+      "type": "text",
       "meta": {
         "collection": "kjov2_now_entries",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "pinned",
+        "field": "summary",
         "group": null,
         "hidden": false,
-        "interface": "boolean",
-        "note": null,
-        "options": null,
+        "interface": "input-multiline",
+        "note": "Only used for RSS feed and is completely optional. Think of it as \"So in Summary\" after you've written the Content above it.",
+        "options": {
+          "softLength": 150
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
         "sort": 9,
-        "special": [
-          "cast-boolean"
-        ],
+        "special": null,
         "translations": null,
         "validation": null,
         "validation_message": null,
         "width": "full"
       },
       "schema": {
-        "name": "pinned",
+        "name": "summary",
         "table": "kjov2_now_entries",
-        "data_type": "boolean",
-        "default_value": false,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "kjov2_now_entries",
-      "field": "tags",
-      "type": "json",
-      "meta": {
-        "collection": "kjov2_now_entries",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "tags",
-        "group": null,
-        "hidden": false,
-        "interface": "tags",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 10,
-        "special": [
-          "cast-json"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "tags",
-        "table": "kjov2_now_entries",
-        "data_type": "json",
+        "data_type": "text",
         "default_value": null,
         "max_length": null,
         "numeric_precision": null,
@@ -22162,6 +22770,574 @@
         "has_auto_increment": false,
         "foreign_key_table": "directus_files",
         "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "id",
+      "type": "integer",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "id",
+        "group": null,
+        "hidden": true,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 1,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "id",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "integer",
+        "default_value": "nextval('kjov2_vidtv_watching_id_seq'::regclass)",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": false,
+        "is_unique": true,
+        "is_indexed": false,
+        "is_primary_key": true,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": true,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "status",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": "labels",
+        "display_options": {
+          "choices": [
+            {
+              "background": "var(--theme--primary-background)",
+              "color": "var(--theme--primary)",
+              "foreground": "var(--theme--primary)",
+              "text": "$t:published",
+              "value": "published"
+            },
+            {
+              "background": "var(--theme--background-normal)",
+              "color": "var(--theme--foreground)",
+              "foreground": "var(--theme--foreground)",
+              "text": "$t:draft",
+              "value": "draft"
+            },
+            {
+              "background": "var(--theme--warning-background)",
+              "color": "var(--theme--warning)",
+              "foreground": "var(--theme--warning)",
+              "text": "$t:archived",
+              "value": "archived"
+            }
+          ],
+          "showAsDot": true
+        },
+        "field": "status",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "color": "var(--theme--primary)",
+              "text": "$t:published",
+              "value": "published"
+            },
+            {
+              "color": "var(--theme--foreground)",
+              "text": "$t:draft",
+              "value": "draft"
+            },
+            {
+              "color": "var(--theme--warning)",
+              "text": "$t:archived",
+              "value": "archived"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 2,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "status",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "character varying",
+        "default_value": "draft",
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "sort",
+      "type": "integer",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "sort",
+        "group": null,
+        "hidden": true,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 3,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "sort",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "date_created",
+      "type": "timestamp",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        },
+        "field": "date_created",
+        "group": null,
+        "hidden": true,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 4,
+        "special": [
+          "date-created"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "date_created",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "date_updated",
+      "type": "timestamp",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        },
+        "field": "date_updated",
+        "group": null,
+        "hidden": true,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 5,
+        "special": [
+          "date-updated"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "date_updated",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "title",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "title",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 6,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "title",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "imdb_id",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "imdb_id",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 7,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "imdb_id",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "media_type",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "media_type",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Movies",
+              "value": "Movies"
+            },
+            {
+              "text": "Shows",
+              "value": "Shows"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 8,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "media_type",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "watch_status",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "watch_status",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Watching",
+              "value": "Watching"
+            },
+            {
+              "text": "Completed",
+              "value": "Completed"
+            },
+            {
+              "text": "Shelved",
+              "value": "Shelved"
+            },
+            {
+              "text": "Backlog",
+              "value": "Backlog"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 9,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "watch_status",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "notes",
+      "type": "text",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "notes",
+        "group": null,
+        "hidden": false,
+        "interface": "input-rich-text-html",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 10,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "notes",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "text",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_vidtv_watching",
+      "field": "rating",
+      "type": "integer",
+      "meta": {
+        "collection": "kjov2_vidtv_watching",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "rating",
+        "group": null,
+        "hidden": false,
+        "interface": "slider",
+        "note": null,
+        "options": {
+          "maxValue": 5,
+          "minValue": 1
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 11,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "rating",
+        "table": "kjov2_vidtv_watching",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {

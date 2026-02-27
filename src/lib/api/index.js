@@ -103,3 +103,9 @@ export {
   getNowEntries,
   getLatestNowEntryDate
 } from './content/now.js';
+
+// Games Playing API
+export { getGamesPlaying } from './content/gamesPlaying.js';
+
+// Video/TV Watching API
+export { getVidtvWatching } from './content/vidtvWatching.js';
