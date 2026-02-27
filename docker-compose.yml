@@ -193,6 +193,10 @@ services:
       # IGDB (Twitch OAuth for game metadata)
       IGDB_CLIENT_ID: ${IGDB_CLIENT_ID:-}
       IGDB_CLIENT_SECRET: ${IGDB_CLIENT_SECRET:-}
+
+      # Last.fm (scrobble feed for NeoCities outpost)
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      LASTFM_USERNAME: ${LASTFM_USERNAME:-}
     networks:
       - kjo2_network
     ports:
