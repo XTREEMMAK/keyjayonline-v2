@@ -1060,6 +1060,9 @@ html {
 }
 
 .v2-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-family: 'Michroma', sans-serif;
   font-size: 0.6rem;
   color: var(--neu-text-muted);
@@ -1068,6 +1071,25 @@ html {
   padding: 0 24px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   margin-bottom: 8px;
+}
+
+/* Close button — hidden on desktop (hamburger X visible), shown on mobile */
+.v2-menu-close {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--neu-text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.v2-menu-close:hover {
+  color: var(--neu-text-primary);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .v2-menu-links {
@@ -1169,7 +1191,7 @@ html {
   background: rgba(102, 126, 234, 0.15);
 }
 
-/* Menu music link + divider — hidden on desktop, shown on mobile */
+/* Menu music pill + divider — hidden on desktop, shown on mobile */
 #menu-music-btn,
 #menu-music-divider {
   display: none;
@@ -1181,8 +1203,33 @@ html {
   margin: 4px 24px;
 }
 
-.v2-ml-music svg {
-  stroke: var(--neu-accent);
+.v2-menu-music-pill {
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 24px 0;
+  padding: 10px 16px;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(135deg, var(--neu-accent), var(--neu-accent-purple));
+  color: white;
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
+}
+
+.v2-menu-music-pill:hover {
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
+}
+
+.v2-menu-music-pill svg {
+  stroke: white;
+  flex-shrink: 0;
 }
 
 /* =============================================================================
@@ -1550,10 +1597,14 @@ html {
     display: none;
   }
 
-  /* Show music link in menu on mobile */
+  /* Show music pill and close button in menu on mobile */
   #menu-music-btn,
   #menu-music-divider {
     display: flex;
+  }
+
+  .v2-menu-close {
+    display: block;
   }
 
   /* Slide-out from bottom on mobile — glassmorphic sheet */
@@ -1579,7 +1630,8 @@ html {
 
   .v2-menu-header {
     padding: 0 24px 10px;
-    text-align: center;
+    justify-content: center;
+    gap: 12px;
   }
 
   /* Player popup centered on mobile */

@@ -154,7 +154,10 @@
   }
 
   function onEnded() {
-    nextTrack();
+    // Always auto-play next track (onPause fires before onEnded, resetting isPlaying)
+    var next = (currentIndex + 1) % tracks.length;
+    loadTrack(next);
+    play();
   }
 
   // ---------------------------------------------------------------------------
