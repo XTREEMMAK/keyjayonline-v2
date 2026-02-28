@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 — Key Jay Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <style>
+    :root {
+      --neu-bg: #2a2d35;
+      --neu-bg-light: #32363f;
+      --neu-bg-dark: #22252b;
+      --neu-shadow-light: rgba(60, 64, 72, 0.5);
+      --neu-shadow-dark: rgba(18, 20, 24, 0.8);
+      --neu-accent: #667eea;
+      --neu-accent-purple: #764ba2;
+      --neu-text-primary: #ffffff;
+      --neu-text-secondary: #9ca3af;
+      --neu-border: rgba(255, 255, 255, 0.05);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--neu-bg-dark);
+      color: var(--neu-text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #wave-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+      display: block;
+    }
+
+    .not-found {
+      text-align: center;
+      padding: 2.5rem 2rem;
+      max-width: 420px;
+      width: 90%;
+      background: rgba(42, 45, 53, 0.55);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--neu-border);
+      border-radius: 20px;
+      box-shadow:
+        6px 6px 14px var(--neu-shadow-dark),
+        -4px -4px 10px var(--neu-shadow-light);
+      animation: fadeUp 0.6s ease-out both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .not-found-logo {
+      width: 80px;
+      height: auto;
+      margin-bottom: 1.2rem;
+      opacity: 0.9;
+    }
+
+    .not-found-code {
+      font-family: 'Michroma', sans-serif;
+      font-size: 4.5rem;
+      font-weight: 700;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--neu-accent), var(--neu-accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.4rem;
+    }
+
+    .not-found-title {
+      font-family: 'Michroma', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      color: var(--neu-text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .not-found-msg {
+      color: var(--neu-text-secondary);
+      font-size: 0.92rem;
+      margin-bottom: 1.6rem;
+    }
+
+    .not-found-link {
+      display: inline-block;
+      padding: 0.65rem 1.8rem;
+      border-radius: 999px;
+      background: var(--neu-bg);
+      color: var(--neu-text-primary);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      border: 1px solid var(--neu-border);
+      box-shadow:
+        4px 4px 10px var(--neu-shadow-dark),
+        -3px -3px 8px var(--neu-shadow-light);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .not-found-link:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        6px 6px 16px var(--neu-shadow-dark),
+        -4px -4px 12px var(--neu-shadow-light);
+    }
+
+    .not-found-link:active {
+      transform: translateY(0);
+    }
+
+    .not-found-home {
+      display: block;
+      margin-top: 1rem;
+      color: var(--neu-text-secondary);
+      font-size: 0.8rem;
+      text-decoration: none;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .not-found-home:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <canvas id="wave-bg"></canvas>
+
+  <div class="not-found">
+    <img src="assets/images/KJ_Logo_Medium_W.svg" alt="Key Jay" class="not-found-logo">
+    <div class="not-found-code">404</div>
+    <h1 class="not-found-title">Page Not Found</h1>
+    <p class="not-found-msg">This page doesn't exist on the outpost. It may have been moved or you followed a broken link.</p>
+    <a href="/" class="not-found-link">Back to Outpost</a>
+    <a href="https://keyjayonline.com" class="not-found-home">keyjayonline.com &rarr;</a>
+  </div>
+
+  <script src="assets/js/wave-bg.js"></script>
+</body>
+</html>
