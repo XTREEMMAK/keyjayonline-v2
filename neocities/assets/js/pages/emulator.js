@@ -142,8 +142,8 @@
       var rom = romObjectUrl || urlInput.value.trim();
       if (!rom) return;
 
-      // Build iframe URL
-      var src = 'assets/js/pages/emulator.html?core=' + encodeURIComponent(selectedCore);
+      // Build iframe URL — hosted on KJO server to bypass NeoCities CSP
+      var src = 'https://keyjayonline.com/emulator/player?core=' + encodeURIComponent(selectedCore);
       if (!romObjectUrl) {
         // URL-based ROM — pass as query param
         src += '&rom=' + encodeURIComponent(rom);
@@ -152,10 +152,20 @@
       iframe.src = src;
       frameWrap.style.display = '';
 
-      // If file-based ROM, send blob URL via postMessage after iframe loads
-      if (romObjectUrl) {
+      // If file-based ROM, read as ArrayBuffer and send via postMessage
+      // (blob URLs are origin-specific and can't cross origins)
+      if (romObjectUrl && fileInput.files && fileInput.files[0]) {
+        var file = fileInput.files[0];
         iframe.onload = function () {
-          iframe.contentWindow.postMessage({ type: 'load-rom', url: romObjectUrl }, '*');
+          var reader = new FileReader();
+          reader.onload = function () {
+            iframe.contentWindow.postMessage(
+              { type: 'load-rom', buffer: reader.result },
+              'https://keyjayonline.com',
+              [reader.result]
+            );
+          };
+          reader.readAsArrayBuffer(file);
         };
       }
 
