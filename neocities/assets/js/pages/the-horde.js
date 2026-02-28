@@ -1,6 +1,7 @@
 /**
- * The Horde Page — Webrings, Stamps, Cool Links
+ * The Horde Page — Stamps & Cool Links
  * A collection of IndieWeb culture artifacts.
+ * (Webrings live in the persistent carousel at the bottom of every page.)
  */
 
 (function () {
@@ -23,47 +24,11 @@
     // }
   ];
 
-  // Webring HTML templates (injected into cards)
-  var WEBRINGS = [
-    {
-      name: 'Musicians Ring',
-      id: 'musicians-ring',
-      html: '<script type="text/javascript" src="https://lydels.neocities.org/musicianswebring/onionring-variables.js"><\/script>' +
-            '<script type="text/javascript" src="https://lydels.neocities.org/musicianswebring/onionring-widget.js"><\/script>'
-    },
-    {
-      name: 'Webmaster Ring',
-      id: 'webmaster-ring',
-      html: '<a target="_blank" href="https://webmasterwebring.netlify.app"><img src="https://file.garden/ZrZSgsrYfQXsO7QH/ww/btn.png" width="88" height="31"></a>'
-    }
-  ];
-
   function renderSubsectionLabel(iconName, text) {
     var label = KJO.el('div', 'horde-section-label');
     label.innerHTML = KJO.icon(iconName, 20);
     label.appendChild(document.createTextNode(' ' + text));
     return label;
-  }
-
-  function renderWebrings() {
-    var section = KJO.el('div', 'horde-section');
-    section.appendChild(renderSubsectionLabel('globe', 'Webrings'));
-
-    var grid = KJO.el('div', 'horde-rings-grid');
-
-    for (var i = 0; i < WEBRINGS.length; i++) {
-      var ring = WEBRINGS[i];
-      var card = KJO.el('div', 'horde-ring-card glass-card');
-      card.appendChild(KJO.el('div', 'horde-ring-name', ring.name));
-      var content = KJO.el('div', 'horde-ring-content');
-      content.setAttribute('id', 'horde-' + ring.id);
-      content.innerHTML = ring.html;
-      card.appendChild(content);
-      grid.appendChild(card);
-    }
-
-    section.appendChild(grid);
-    return section;
   }
 
   function renderStamps() {
@@ -142,7 +107,6 @@
       'The Horde'
     ));
 
-    container.appendChild(renderWebrings());
     container.appendChild(renderStamps());
     container.appendChild(renderCoolLinks());
   }

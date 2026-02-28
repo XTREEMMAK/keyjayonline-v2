@@ -6,6 +6,7 @@
 	import { contentViewerOpen } from '$lib/stores/contentViewer.js';
 	import { mobileMenuOpen, closeMobileMenu, toggleMobileMenu } from '$lib/stores/mobileNav.js';
 	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
 	import { mouseGlow } from '$lib/actions/mouseGlow.js';
 	import { prefetchSection } from '$lib/stores/sectionData.js';
 	import NewContentIndicator from '$lib/components/ui/NewContentIndicator.svelte';
@@ -130,6 +131,12 @@
 	}
 
 	function goHome() {
+		// Desktop: if new content indicator is active, go to /now instead of home
+		if (!isMobile && $hasNewContent) {
+			clearNewContent();
+			goto('/now');
+			return;
+		}
 		navigateTo('home');
 		closeMobileMenu();
 	}

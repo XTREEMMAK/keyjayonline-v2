@@ -242,10 +242,12 @@
             <script type="text/javascript" src="https://lydels.neocities.org/musicianswebring/onionring-variables.js"></script>
             <script type="text/javascript" src="https://lydels.neocities.org/musicianswebring/onionring-widget.js"></script>
           </div>
-        </div>
-        <div class="webring-slide" data-ring="another-ring">
           <a target="_blank" href="https://webmasterwebring.netlify.app"><img src="https://file.garden/ZrZSgsrYfQXsO7QH/ww/btn.png" width="88" height="31"></a>
         </div>
+
+        <!-- <div class="webring-slide" data-ring="another-ring"> 
+        </div> -->
+
         <!-- Add more webring slides here:
         <div class="webring-slide" data-ring="another-ring">
           <div id="another-ring">...</div>
@@ -377,7 +379,8 @@
           a.className = 'footer-social-link';
           a.title = link.name;
           a.setAttribute('aria-label', link.name);
-          if (link.color) a.style.color = link.color;
+          var brandColor = KJO.socialColors && KJO.socialColors[link.platform];
+          if (brandColor) a.style.color = brandColor;
           a.innerHTML = KJO.socialIcon(link.platform, 20);
           container.appendChild(a);
         }
