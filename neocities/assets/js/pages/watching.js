@@ -17,8 +17,8 @@
 
   var TYPE_FILTERS = [
     { label: 'All', value: 'all' },
-    { label: 'Movies', value: 'movie' },
-    { label: 'Shows', value: 'series' }
+    { label: 'Movies', value: 'movies' },
+    { label: 'Shows', value: 'shows' }
   ];
 
   // Active filter state
