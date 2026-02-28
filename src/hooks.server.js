@@ -6,7 +6,10 @@ export async function handle({ event, resolve }) {
 	const isAsset = path.startsWith('/_app/') || path.startsWith('/img/');
 
 	if (!isAsset) {
-		response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+		// Allow the emulator player to be embedded in NeoCities iframe
+		if (!path.startsWith('/emulator/player')) {
+			response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+		}
 		response.headers.set('X-Content-Type-Options', 'nosniff');
 		response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 		response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
