@@ -81,7 +81,7 @@
       title: item.title,
       status: item.watch_status,
       meta: metaText,
-      rating: item.rating ? '\u2605 ' + item.rating + '/10' : null,
+      rating: item.rating ? 'My Rating: \u2605 ' + item.rating + '/10' : null,
       notes: item.notes,
       icon: 'tv',
       links: links
@@ -102,7 +102,7 @@
     var info = KJO.tree('div', 'shelf-info', [
       KJO.el('h3', 'shelf-title', item.title),
       badges,
-      item.rating ? KJO.el('div', 'shelf-rating', '\u2605 ' + item.rating + '/10') : null,
+      item.rating ? KJO.el('div', 'shelf-rating', 'My Rating: \u2605 ' + item.rating + '/10') : null,
       item.imdb_id ? KJO.el('a', 'shelf-external-link', 'IMDb \u2197', {
         href: 'https://www.imdb.com/title/' + item.imdb_id + '/',
         target: '_blank',

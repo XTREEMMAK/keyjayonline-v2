@@ -177,15 +177,21 @@
       overlay.classList.add('v2-video-overlay-visible');
       modal.classList.add('v2-video-modal-open');
       isOpen = true;
+      history.pushState({ modal: 'video' }, '');
     }
 
-    function close() {
+    function close(fromPopstate) {
       if (!isOpen) return;
       overlay.classList.remove('v2-video-overlay-visible');
       modal.classList.remove('v2-video-modal-open');
       setTimeout(function () { iframe.src = ''; }, 300);
       isOpen = false;
+      if (!fromPopstate) history.back();
     }
+
+    window.addEventListener('popstate', function (e) {
+      if (isOpen) close(true);
+    });
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && isOpen) close();
@@ -258,25 +264,8 @@
         bgLayer.classList.remove('detail-sheet-bg-active');
       }
 
-      // Cover art
-      var coverWrap = KJO.el('div', 'detail-sheet-cover');
-      if (opts.coverUrl) {
-        var img = KJO.el('img', '', null, { src: opts.coverUrl, alt: opts.title || '' });
-        img.onload = function () { img.classList.add('loaded'); };
-        coverWrap.appendChild(img);
-      } else if (opts.icon) {
-        coverWrap.innerHTML = KJO.icon(opts.icon, 48, { strokeWidth: 1.5, opacity: 0.4 });
-        coverWrap.classList.add('detail-sheet-cover-placeholder');
-      }
-      body.appendChild(coverWrap);
-
-      // Info section
-      var infoParts = [KJO.el('h3', 'detail-sheet-title', opts.title)];
-      if (opts.status) infoParts.push(KJO.statusPill(opts.status));
-      if (opts.meta) infoParts.push(KJO.el('span', 'detail-sheet-meta', opts.meta));
-      if (opts.genres) infoParts.push(KJO.el('div', 'detail-sheet-genres', opts.genres));
-      if (opts.rating) infoParts.push(KJO.el('div', 'detail-sheet-rating', opts.rating));
-      body.appendChild(KJO.tree('div', 'detail-sheet-info', infoParts));
+      // Title only — cover and meta already visible on the card
+      body.appendChild(KJO.el('h3', 'detail-sheet-title', opts.title));
 
       // Build tabs if we have notes or trailer
       var hasNotes = !!opts.notes;
@@ -302,9 +291,14 @@
         activeIframe = iframe;
         responsive.appendChild(iframe);
         trailerPanel.appendChild(responsive);
-        tabs.push({ label: 'Trailer', panel: trailerPanel, onActivate: function () {
-          iframe.src = 'https://www.youtube-nocookie.com/embed/' + opts.videoId + '?rel=0&modestbranding=1&autoplay=1';
-        }});
+        tabs.push({ label: 'Trailer', panel: trailerPanel,
+          onActivate: function () {
+            iframe.src = 'https://www.youtube-nocookie.com/embed/' + opts.videoId + '?rel=0&modestbranding=1&autoplay=1';
+          },
+          onDeactivate: function () {
+            iframe.src = '';
+          }
+        });
       }
 
       if (tabs.length > 0) {
@@ -323,9 +317,14 @@
                   t.classList.remove('detail-sheet-tab-active');
                 });
                 btn.classList.add('detail-sheet-tab-active');
-                // Show matching panel
+                // Fade transition between panels
                 for (var j = 0; j < tabs.length; j++) {
-                  tabs[j].panel.style.display = j === idx ? '' : 'none';
+                  if (j === idx) {
+                    tabs[j].panel.classList.add('tab-panel-active');
+                  } else {
+                    tabs[j].panel.classList.remove('tab-panel-active');
+                    if (tabs[j].onDeactivate) tabs[j].onDeactivate();
+                  }
                 }
                 if (tab.onActivate) tab.onActivate();
               });
@@ -335,9 +334,10 @@
           body.appendChild(tabBar);
         }
 
-        // Append panels (first visible, rest hidden)
+        // Append panels (first visible, rest hidden via fade)
         for (var i = 0; i < tabs.length; i++) {
-          if (i > 0) tabs[i].panel.style.display = 'none';
+          tabs[i].panel.classList.add('detail-sheet-tab-panel');
+          if (i === 0) tabs[i].panel.classList.add('tab-panel-active');
           body.appendChild(tabs[i].panel);
         }
       }
@@ -358,9 +358,10 @@
       sheet.classList.add('sheet-open');
       document.body.style.overflow = 'hidden';
       isOpen = true;
+      history.pushState({ modal: 'detail' }, '');
     }
 
-    function close() {
+    function close(fromPopstate) {
       if (!isOpen) return;
       overlay.classList.remove('sheet-open');
       sheet.classList.remove('sheet-open');
@@ -371,7 +372,12 @@
         activeIframe = null;
       }
       isOpen = false;
+      if (!fromPopstate) history.back();
     }
+
+    window.addEventListener('popstate', function (e) {
+      if (isOpen) close(true);
+    });
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && isOpen) close();

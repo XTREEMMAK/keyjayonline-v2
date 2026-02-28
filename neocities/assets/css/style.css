@@ -1524,12 +1524,17 @@ html {
   background: none;
   border: none;
   color: var(--neu-text-muted);
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   cursor: pointer;
-  padding: 4px 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
   border-radius: 6px;
   transition: all 0.2s ease;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .v2-video-close:hover {
@@ -1607,7 +1612,7 @@ html {
   inset: 0;
   background-size: cover;
   background-position: center;
-  filter: blur(40px) saturate(1.2);
+  filter: blur(20px) saturate(1.2);
   opacity: 0;
   z-index: 0;
   pointer-events: none;
@@ -1616,14 +1621,13 @@ html {
 }
 
 .detail-sheet-bg.detail-sheet-bg-active {
-  opacity: 0.2;
+  opacity: 0.35;
 }
 
 .detail-sheet-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 12px 16px 0;
+  padding: 8px 8px 0;
   position: relative;
   z-index: 1;
 }
@@ -1642,18 +1646,20 @@ html {
 }
 
 .detail-sheet-close {
-  position: absolute;
-  right: 12px;
-  top: 8px;
   background: none;
   border: none;
   color: var(--neu-text-secondary, #9ca3af);
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   cursor: pointer;
   line-height: 1;
-  padding: 4px 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
   transition: color 0.15s;
-  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .detail-sheet-close:hover {
@@ -1798,10 +1804,20 @@ html {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Tab panels */
+/* Tab panels — fade transition */
 .detail-sheet-tab-panel {
   width: 100%;
   max-width: 480px;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.25s ease;
+}
+
+.detail-sheet-tab-panel.tab-panel-active {
+  opacity: 1;
+  max-height: none;
+  overflow: visible;
 }
 
 /* Notes content with styled scroll */
@@ -1892,7 +1908,7 @@ html {
     left: 50%;
     right: auto;
     width: 90%;
-    max-width: 480px;
+    max-width: 600px;
     max-height: 80vh;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
