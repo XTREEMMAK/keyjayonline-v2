@@ -143,7 +143,7 @@
       if (!rom) return;
 
       // Build iframe URL
-      var src = 'emulator.html?core=' + encodeURIComponent(selectedCore);
+      var src = 'assets/js/pages/emulator.html?core=' + encodeURIComponent(selectedCore);
       if (!romObjectUrl) {
         // URL-based ROM — pass as query param
         src += '&rom=' + encodeURIComponent(rom);

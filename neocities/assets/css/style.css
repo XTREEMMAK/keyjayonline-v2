@@ -1558,6 +1558,364 @@ html {
 }
 
 /* =============================================================================
+   Detail Bottom Sheet
+   ============================================================================= */
+
+.detail-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.detail-sheet-overlay.sheet-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.detail-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1001;
+  max-height: 85vh;
+  overflow: hidden;
+  background: rgba(30, 32, 40, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.detail-sheet.sheet-open {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Blurred cover art background */
+.detail-sheet-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(40px) saturate(1.2);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  transition: opacity 0.3s ease;
+}
+
+.detail-sheet-bg.detail-sheet-bg-active {
+  opacity: 0.2;
+}
+
+.detail-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.detail-sheet-handle {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+.detail-sheet-handle-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.detail-sheet-close {
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  background: none;
+  border: none;
+  color: var(--neu-text-secondary, #9ca3af);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+  transition: color 0.15s;
+  z-index: 2;
+}
+
+.detail-sheet-close:hover {
+  color: #fff;
+}
+
+.detail-sheet-body {
+  padding: 1rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 1;
+  overflow-y: auto;
+  max-height: calc(85vh - 40px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+.detail-sheet-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.detail-sheet-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.detail-sheet-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.detail-sheet-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.detail-sheet-cover {
+  width: 200px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow:
+    inset 2px 2px 4px var(--neu-shadow-dark, rgba(0,0,0,0.5)),
+    inset -2px -2px 4px var(--neu-shadow-light, rgba(255,255,255,0.04));
+}
+
+.detail-sheet-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.detail-sheet-cover img.loaded {
+  opacity: 1;
+}
+
+.detail-sheet-cover-placeholder {
+  min-height: 120px;
+  color: var(--neu-text-muted, #6b7280);
+}
+
+.detail-sheet-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.detail-sheet-title {
+  font-family: 'Michroma', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--neu-text-primary, #e5e7eb);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.detail-sheet-meta {
+  font-size: 0.85rem;
+  color: var(--neu-text-muted, #6b7280);
+}
+
+.detail-sheet-genres {
+  font-size: 0.8rem;
+  color: var(--neu-text-muted, #6b7280);
+}
+
+.detail-sheet-rating {
+  font-size: 0.9rem;
+  color: #f59e0b;
+}
+
+.detail-sheet-divider {
+  width: 60%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0.25rem 0;
+}
+
+/* Tabs */
+.detail-sheet-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 3px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.detail-sheet-tab {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--neu-text-muted, #6b7280);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.detail-sheet-tab:hover {
+  color: var(--neu-text-secondary, #9ca3af);
+}
+
+.detail-sheet-tab-active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Tab panels */
+.detail-sheet-tab-panel {
+  width: 100%;
+  max-width: 480px;
+}
+
+/* Notes content with styled scroll */
+.detail-sheet-notes {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--neu-text-primary, #e5e7eb);
+  line-height: 1.6;
+  text-align: center;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+.detail-sheet-notes::-webkit-scrollbar {
+  width: 4px;
+}
+
+.detail-sheet-notes::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.detail-sheet-notes::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.detail-sheet-notes p {
+  margin: 0 0 0.5rem;
+}
+
+/* Embedded video (trailer tab) */
+.detail-sheet-video {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.detail-sheet-video iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* External links row */
+.detail-sheet-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+
+.detail-sheet-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.detail-sheet-action:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* Desktop: center as a modal instead of bottom sheet */
+@media (min-width: 600px) {
+  .detail-sheet {
+    bottom: auto;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    width: 90%;
+    max-width: 480px;
+    max-height: 80vh;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  }
+
+  .detail-sheet.sheet-open {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  .detail-sheet-handle {
+    display: none;
+  }
+
+  .detail-sheet-body {
+    max-height: calc(80vh - 40px);
+  }
+}
+
+/* =============================================================================
    Section Icons — 15° tilt, no transparency
    ============================================================================= */
 .v2-section-icon {
@@ -1982,7 +2340,7 @@ html {
 
 .shelf-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -1996,19 +2354,6 @@ html {
   animation: shelf-card-in 0.4s ease-out backwards;
 }
 
-/* Blurred cover art background layer */
-.shelf-card-bg {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  filter: blur(20px);
-  opacity: 0.25;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
 @keyframes shelf-card-in {
   from { opacity: 0; transform: translateY(12px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -2017,18 +2362,6 @@ html {
 .shelf-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-}
-
-.shelf-card-layout {
-  display: flex;
-  width: 100%;
-  position: relative;
-  z-index: 1;
-}
-
-.shelf-card-main {
-  flex: 1;
-  min-width: 0;
 }
 
 .shelf-card-inner {
@@ -2055,32 +2388,6 @@ html {
   box-shadow:
     inset 2px 2px 4px var(--neu-shadow-dark, rgba(0,0,0,0.5)),
     inset -2px -2px 4px var(--neu-shadow-light, rgba(255,255,255,0.04));
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              min-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Cover expansion + centering — all transitionable properties */
-.shelf-cover-full .shelf-cover-well {
-  width: 200px;
-  min-height: 280px;
-  border-radius: 12px;
-}
-
-/* Poster layout — column stack with smooth cover centering via left+transform */
-.shelf-poster-layout .shelf-card-inner {
-  flex-direction: column;
-}
-
-.shelf-poster-layout .shelf-cover-well {
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.shelf-poster-layout .shelf-info {
-  align-items: center;
-  text-align: center;
 }
 
 .shelf-cover-img {
@@ -2102,17 +2409,12 @@ html {
 
 /* Card info */
 .shelf-info {
-  flex: 1;
+  flex: 1 1 200px;
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
-  transition: opacity 0.2s ease;
-}
-
-.shelf-info-hidden {
-  opacity: 0;
 }
 
 .shelf-title {
@@ -2213,104 +2515,6 @@ html {
 .shelf-notes-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   color: var(--neu-text-primary, #e5e7eb);
-}
-
-/* Notes expansion — staged animation
-   Step 1: .shelf-notes-active  — fade other cards to 0
-   Step 2: .shelf-card-hidden   — collapse other cards out of layout (JS adds after fade)
-   Step 3: .shelf-card-expanded — expanded card fills grid, notes panel slides open
-*/
-
-/* Step 1: fade non-expanded cards */
-.shelf-notes-active .shelf-card:not(.shelf-card-expanded) {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.shelf-notes-active .shelf-card:not(.shelf-card-expanded):hover {
-  transform: none;
-  box-shadow: none;
-}
-
-/* Step 2: remove faded cards from layout */
-.shelf-card.shelf-card-hidden {
-  display: none;
-}
-
-/* Step 3: expanded card — cancel entrance animation so fill-mode doesn't override FLIP transform */
-.shelf-card-expanded {
-  animation: none;
-  /* grid-column handled by JS inline style for smooth width animation */
-}
-
-.shelf-card-expanded:hover {
-  transform: none;
-}
-
-/* Notes panel — collapsed state */
-.shelf-notes-panel {
-  flex: 0 0 0%;
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  padding: 0;
-  border-left: 0px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  transition: flex 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-              max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.35s ease 0.1s,
-              padding 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-              border-left-width 0.3s ease;
-}
-
-/* Notes panel — expanded state (triggered by .shelf-panel-open, after card is full-width) */
-.shelf-panel-open .shelf-notes-panel {
-  flex: 0 0 55%;
-  max-height: 450px;
-  opacity: 1;
-  padding: 1rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  position: relative;
-}
-
-/* Close button — pinned at top-right, outside the scroll area */
-.shelf-notes-panel-close {
-  align-self: flex-end;
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  color: var(--neu-text-secondary, #9ca3af);
-  font-size: 1.25rem;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0.15rem 0.35rem;
-  margin: -0.25rem -0.25rem 0.25rem 0;
-  transition: color 0.15s;
-  z-index: 2;
-}
-
-.shelf-notes-panel-close:hover {
-  color: #fff;
-}
-
-/* Notes content — scrolls independently below the close button */
-.shelf-notes-panel-inner {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  font-size: 0.95rem;
-  color: var(--neu-text-primary, #e5e7eb);
-  line-height: 1.6;
-}
-
-.shelf-notes-panel-inner p {
-  margin: 0 0 0.5rem;
-}
-
-.shelf-notes-panel-inner a {
-  color: var(--neu-accent, #667eea);
 }
 
 /* Filter fade transition */
@@ -2684,7 +2888,7 @@ html {
 }
 
 .listening-now-info {
-  flex: 1;
+  flex: 1 1 200px;
   min-width: 0;
 }
 
@@ -2762,7 +2966,7 @@ html {
 }
 
 .indie-card-info {
-  flex: 1;
+  flex: 1 1 200px;
   min-width: 0;
 }
 
@@ -3096,13 +3300,17 @@ html {
    RESPONSIVE — SPA additions
    ========================================================================== */
 
+@media (max-width: 999px) {
+  .shelf-card-inner,
+  .indie-card-inner,
+  .listening-now-content {
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 520px) {
   .shelf-grid {
     grid-template-columns: 1fr;
-  }
-
-  .shelf-card-expanded .shelf-card-layout {
-    flex-direction: column;
   }
 
   .shelf-cover-well {
@@ -3110,34 +3318,9 @@ html {
     min-height: 140px;
   }
 
-  .shelf-cover-full .shelf-cover-well {
-    width: 140px;
-    min-height: 200px;
-  }
-
-  .shelf-panel-open .shelf-notes-panel {
-    flex: 1 1 auto;
-    max-height: none;
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .shelf-panel-open .shelf-notes-panel-inner {
-    overflow-y: visible;
-  }
-
-  .listening-now-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .listening-now-content .shelf-cover-well {
     width: 140px;
     min-height: 140px;
-  }
-
-  .indie-card-inner {
-    flex-direction: column;
   }
 
   .horde-stamps-grid {

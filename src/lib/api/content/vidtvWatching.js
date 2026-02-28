@@ -26,7 +26,6 @@ export async function getVidtvWatching() {
 					'media_type',
 					'watch_status',
 					'notes',
-					'cover_url',
 					'rating',
 					'date_created'
 				],
@@ -41,7 +40,6 @@ export async function getVidtvWatching() {
 			media_type: item.media_type,
 			watch_status: item.watch_status,
 			notes: item.notes,
-			cover_url: item.cover_url,
 			rating: item.rating,
 			date_created: item.date_created
 		}));

@@ -25,12 +25,15 @@
   var activeStatus = 'all';
   var activeType = 'all';
 
+  // Store enriched cover URLs by imdb_id for use in detail sheet
+  var enrichedCovers = {};
+
   /**
    * Enrich a card with OMDb data (poster + IMDb rating).
    * Called asynchronously per item — progressive rendering.
    */
-  function enrichWithOMDb(card, imdbId) {
-    KJO.omdbLookup(imdbId).then(function (omdb) {
+  function enrichWithOMDb(card, item) {
+    KJO.omdbLookup(item.imdb_id).then(function (omdb) {
       if (!omdb || omdb.Response === 'False') return;
 
       // Update poster if no manual cover
@@ -45,6 +48,8 @@
         });
         img.onload = function () { img.classList.add('loaded'); };
         coverWell.appendChild(img);
+        // Store for detail sheet
+        enrichedCovers[item.imdb_id] = omdb.Poster;
       }
 
       // Add IMDb rating
@@ -57,160 +62,30 @@
     });
   }
 
-  var FADE_DURATION = 300;   // ms — siblings opacity transition
-  var WIDTH_DURATION = 350;  // ms — card width expand/shrink
-  var PANEL_DURATION = 450;  // ms — notes panel slide transition
-  var INFO_FADE = 200;       // ms — info section fade out/in during layout switch
-  var COVER_RESIZE = 400;    // ms — matches cover well CSS transition duration
-
-  /** Smooth-scroll element to top of viewport, accounting for sticky nav. */
-  function scrollToEl(el) {
-    var nav = document.querySelector('.spa-nav');
-    var offset = nav ? nav.offsetHeight + 12 : 12;
-    var top = el.getBoundingClientRect().top + window.pageYOffset - offset;
-    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-  }
-
-  function expandNotes(card) {
-    var grid = card.closest('.shelf-grid');
-    if (!grid) return;
-
-    var existing = grid.querySelector('.shelf-card-expanded');
-    if (existing && existing !== card) {
-      existing.classList.remove('shelf-card-expanded', 'shelf-panel-open', 'shelf-cover-full', 'shelf-poster-layout');
-      existing.style.cssText = '';
-      var exHidden = grid.querySelectorAll('.shelf-card-hidden');
-      for (var i = 0; i < exHidden.length; i++) exHidden[i].classList.remove('shelf-card-hidden');
-      grid.classList.remove('shelf-notes-active');
+  function openMediaDetail(item) {
+    var coverUrl = item.cover_url || enrichedCovers[item.imdb_id] || null;
+    var links = [];
+    if (item.imdb_id) {
+      links.push({
+        label: 'IMDb \u2197',
+        href: 'https://www.imdb.com/title/' + item.imdb_id + '/'
+      });
     }
 
-    var startWidth = card.offsetWidth;
+    var meta = [];
+    if (item.media_type) meta.push(KJO.capitalize(item.media_type));
+    var metaText = meta.length ? meta.join(' \u00b7 ') : null;
 
-    card.classList.add('shelf-card-expanded');
-    grid.classList.add('shelf-notes-active');
-
-    setTimeout(function () {
-      // Capture position before hiding siblings (card still in original column)
-      var firstRect = card.getBoundingClientRect();
-
-      var siblings = grid.querySelectorAll('.shelf-card:not(.shelf-card-expanded)');
-      for (var i = 0; i < siblings.length; i++) siblings[i].classList.add('shelf-card-hidden');
-
-      // Kill base CSS transitions so setting initial FLIP state doesn't animate
-      card.style.transition = 'none';
-      card.style.width = startWidth + 'px';
-      card.style.gridColumn = '1 / -1';
-
-      // Read new position and compensate with translate (X + Y)
-      var lastRect = card.getBoundingClientRect();
-      var deltaX = firstRect.left - lastRect.left;
-      var deltaY = firstRect.top - lastRect.top;
-      card.style.transform = 'translate(' + deltaX + 'px, ' + deltaY + 'px)';
-
-      // Commit initial state
-      void card.offsetWidth;
-
-      // Scroll viewport to grid top while card animates into place
-      scrollToEl(grid);
-
-      // Enable transitions and animate to expanded state
-      var targetWidth = grid.clientWidth;
-      card.style.transition = 'width ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1), transform ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1)';
-      card.style.width = targetWidth + 'px';
-      card.style.transform = 'translate(0, 0)';
-
-      // After width animation — phased cover expansion + poster layout
-      setTimeout(function () {
-        card.style.width = '';
-        card.style.transition = '';
-        card.style.transform = '';
-
-        var info = card.querySelector('.shelf-info');
-        if (info) info.classList.add('shelf-info-hidden');
-
-        setTimeout(function () {
-          // All at once: panel opens + cover grows + slides to center (all CSS-transitioned)
-          card.classList.add('shelf-panel-open');
-          card.classList.add('shelf-cover-full');
-          card.classList.add('shelf-poster-layout');
-          var noteBtn = card.querySelector('.shelf-notes-btn');
-          if (noteBtn) noteBtn.textContent = 'Close Notes';
-
-          // After cover finishes growing + centering, fade info back in
-          setTimeout(function () {
-            if (info) info.classList.remove('shelf-info-hidden');
-          }, COVER_RESIZE);
-        }, INFO_FADE);
-      }, WIDTH_DURATION);
-    }, FADE_DURATION);
-  }
-
-  function collapseNotes(card) {
-    var grid = card.closest('.shelf-grid');
-    if (!grid) return;
-
-    var info = card.querySelector('.shelf-info');
-    if (info) info.classList.add('shelf-info-hidden');
-
-    var noteBtn = card.querySelector('.shelf-notes-btn');
-    if (noteBtn) noteBtn.textContent = 'Notes';
-
-    setTimeout(function () {
-      // All at once: revert poster + shrink cover + close panel (all CSS-transitioned)
-      card.classList.remove('shelf-poster-layout');
-      card.classList.remove('shelf-cover-full');
-      card.classList.remove('shelf-panel-open');
-
-      // After cover finishes shrinking + sliding back, fade info in
-      setTimeout(function () {
-        if (info) info.classList.remove('shelf-info-hidden');
-      }, COVER_RESIZE);
-
-      setTimeout(function () {
-        var expandedWidth = card.offsetWidth;
-        var firstRect = card.getBoundingClientRect();
-
-      // Kill base CSS transitions during FLIP measurement
-      card.style.transition = 'none';
-
-      // FLIP: snap to final layout to measure target position + width
-      card.style.width = '';
-      card.style.gridColumn = '';
-      var hiddenSiblings = grid.querySelectorAll('.shelf-card-hidden');
-      for (var i = 0; i < hiddenSiblings.length; i++) hiddenSiblings[i].classList.remove('shelf-card-hidden');
-
-      var targetWidth = card.offsetWidth;
-      var lastRect = card.getBoundingClientRect();
-      var deltaX = lastRect.left - firstRect.left;
-      var deltaY = lastRect.top - firstRect.top;
-
-      // Revert to expanded state (synchronous — no paint)
-      for (var i = 0; i < hiddenSiblings.length; i++) hiddenSiblings[i].classList.add('shelf-card-hidden');
-      card.style.gridColumn = '1 / -1';
-      card.style.width = expandedWidth + 'px';
-
-      // Commit starting state
-      void card.offsetWidth;
-
-      // Enable transitions and animate shrink + slide
-      card.style.transition = 'width ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1), transform ' + WIDTH_DURATION + 'ms cubic-bezier(0.4, 0, 0.2, 1)';
-      card.style.width = targetWidth + 'px';
-      card.style.transform = 'translate(' + deltaX + 'px, ' + deltaY + 'px)';
-
-      setTimeout(function () {
-        card.style.cssText = '';
-        card.style.animation = 'none'; // prevent entrance animation replay
-        card.classList.remove('shelf-card-expanded');
-
-        var siblings = grid.querySelectorAll('.shelf-card-hidden');
-        for (var i = 0; i < siblings.length; i++) siblings[i].classList.remove('shelf-card-hidden');
-
-        void grid.offsetHeight;
-        grid.classList.remove('shelf-notes-active');
-        scrollToEl(card);
-      }, WIDTH_DURATION);
-      }, PANEL_DURATION);
-    }, INFO_FADE);
+    KJO.detailSheet.open({
+      coverUrl: coverUrl,
+      title: item.title,
+      status: item.watch_status,
+      meta: metaText,
+      rating: item.rating ? '\u2605 ' + item.rating + '/10' : null,
+      notes: item.notes,
+      icon: 'tv',
+      links: links
+    });
   }
 
   function renderMediaCard(item, index) {
@@ -218,13 +93,6 @@
     card.setAttribute('data-status', (item.watch_status || '').toLowerCase());
     card.setAttribute('data-type', (item.media_type || '').toLowerCase());
     KJO.staggerDelay(card, index);
-
-    // Blurred cover art background
-    if (item.cover_url) {
-      var bgDiv = KJO.el('div', 'shelf-card-bg');
-      bgDiv.style.backgroundImage = 'url(' + item.cover_url + ')';
-      card.appendChild(bgDiv);
-    }
 
     var badges = KJO.tree('div', 'shelf-badges', [
       item.media_type ? KJO.el('span', 'media-badge', KJO.capitalize(item.media_type)) : null,
@@ -242,48 +110,21 @@
       }) : null
     ]);
 
-    // Build notes panel (hidden until expanded)
-    var notesPanel = null;
-    if (item.notes) {
-      var panelInner = KJO.el('div', 'shelf-notes-panel-inner');
-      panelInner.innerHTML = item.notes;
-      var panelClose = KJO.el('button', 'shelf-notes-panel-close', '\u00d7');
-      notesPanel = KJO.tree('div', 'shelf-notes-panel', [panelClose, panelInner]);
-    }
-
-    // Card layout: main content + optional notes panel
-    card.appendChild(KJO.tree('div', 'shelf-card-layout', [
-      KJO.tree('div', 'shelf-card-main', [
-        KJO.tree('div', 'shelf-card-inner', [
-          KJO.coverWell(item.cover_url, item.title, KJO.icon('tv', 32, { strokeWidth: 1.5, opacity: 0.3 })),
-          info
-        ])
-      ]),
-      notesPanel
+    card.appendChild(KJO.tree('div', 'shelf-card-inner', [
+      KJO.coverWell(item.cover_url, item.title, KJO.icon('tv', 32, { strokeWidth: 1.5, opacity: 0.3 })),
+      info
     ]));
 
-    // Notes expand/collapse logic (staged animation)
     if (item.notes) {
       var noteBtn = KJO.el('button', 'shelf-notes-btn', 'Notes');
-
-      notesPanel.querySelector('.shelf-notes-panel-close').addEventListener('click', function (e) {
-        e.stopPropagation();
-        collapseNotes(card);
-      });
-
       noteBtn.addEventListener('click', function () {
-        if (card.classList.contains('shelf-card-expanded')) {
-          collapseNotes(card);
-        } else {
-          expandNotes(card);
-        }
+        openMediaDetail(item);
       });
-
       card.appendChild(noteBtn);
     }
 
     if (item.imdb_id && !item.cover_url) {
-      enrichWithOMDb(card, item.imdb_id);
+      enrichWithOMDb(card, item);
     }
 
     return card;
@@ -304,16 +145,12 @@
     // Status filter pills
     container.appendChild(KJO.filterPills(STATUS_FILTERS, 'all', function (value) {
       activeStatus = value;
-      var expanded = grid.querySelector('.shelf-card-expanded');
-      if (expanded) collapseNotes(expanded);
       KJO.filterCards(grid, { status: activeStatus, type: activeType });
     }));
 
     // Type filter pills
     container.appendChild(KJO.filterPills(TYPE_FILTERS, 'all', function (value) {
       activeType = value;
-      var expanded = grid.querySelector('.shelf-card-expanded');
-      if (expanded) collapseNotes(expanded);
       KJO.filterCards(grid, { status: activeStatus, type: activeType });
     }));
 

@@ -195,6 +195,192 @@
   })();
 
   // ---------------------------------------------------------------------------
+  // Detail Bottom Sheet (game/media detail view with notes)
+  // ---------------------------------------------------------------------------
+
+  window.KJO.detailSheet = (function () {
+    var overlay, sheet, body, bgLayer, activeIframe;
+    var isOpen = false;
+
+    function ensureDOM() {
+      if (sheet) return;
+
+      overlay = KJO.el('div', 'detail-sheet-overlay');
+      overlay.addEventListener('click', close);
+
+      sheet = KJO.el('div', 'detail-sheet');
+      sheet.addEventListener('click', function (e) { e.stopPropagation(); });
+
+      // Blurred cover background
+      bgLayer = KJO.el('div', 'detail-sheet-bg');
+      sheet.appendChild(bgLayer);
+
+      // Header with drag handle and close button
+      var handle = KJO.el('div', 'detail-sheet-handle');
+      handle.appendChild(KJO.el('span', 'detail-sheet-handle-bar'));
+      var closeBtn = KJO.el('button', 'detail-sheet-close', '\u00d7');
+      closeBtn.addEventListener('click', close);
+      var header = KJO.tree('div', 'detail-sheet-header', [handle, closeBtn]);
+
+      body = KJO.el('div', 'detail-sheet-body');
+      sheet.appendChild(header);
+      sheet.appendChild(body);
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(sheet);
+    }
+
+    /**
+     * Open the detail sheet with tabbed content.
+     * @param {Object} opts
+     * @param {string} [opts.coverUrl] - Cover image URL
+     * @param {string} [opts.title] - Title text
+     * @param {string} [opts.status] - Status label
+     * @param {string} [opts.meta] - Meta text (platform, media type)
+     * @param {string} [opts.genres] - Genres text
+     * @param {string} [opts.notes] - HTML notes content
+     * @param {string} [opts.rating] - Rating text
+     * @param {string} [opts.icon] - Fallback icon name
+     * @param {string} [opts.videoId] - YouTube video ID for trailer tab
+     * @param {Array}  [opts.links] - Array of {label, href} for external links
+     */
+    function open(opts) {
+      ensureDOM();
+      body.innerHTML = '';
+      activeIframe = null;
+
+      // Blurred cover background
+      if (opts.coverUrl) {
+        bgLayer.style.backgroundImage = 'url(' + opts.coverUrl + ')';
+        bgLayer.classList.add('detail-sheet-bg-active');
+      } else {
+        bgLayer.style.backgroundImage = '';
+        bgLayer.classList.remove('detail-sheet-bg-active');
+      }
+
+      // Cover art
+      var coverWrap = KJO.el('div', 'detail-sheet-cover');
+      if (opts.coverUrl) {
+        var img = KJO.el('img', '', null, { src: opts.coverUrl, alt: opts.title || '' });
+        img.onload = function () { img.classList.add('loaded'); };
+        coverWrap.appendChild(img);
+      } else if (opts.icon) {
+        coverWrap.innerHTML = KJO.icon(opts.icon, 48, { strokeWidth: 1.5, opacity: 0.4 });
+        coverWrap.classList.add('detail-sheet-cover-placeholder');
+      }
+      body.appendChild(coverWrap);
+
+      // Info section
+      var infoParts = [KJO.el('h3', 'detail-sheet-title', opts.title)];
+      if (opts.status) infoParts.push(KJO.statusPill(opts.status));
+      if (opts.meta) infoParts.push(KJO.el('span', 'detail-sheet-meta', opts.meta));
+      if (opts.genres) infoParts.push(KJO.el('div', 'detail-sheet-genres', opts.genres));
+      if (opts.rating) infoParts.push(KJO.el('div', 'detail-sheet-rating', opts.rating));
+      body.appendChild(KJO.tree('div', 'detail-sheet-info', infoParts));
+
+      // Build tabs if we have notes or trailer
+      var hasNotes = !!opts.notes;
+      var hasTrailer = !!opts.videoId;
+      var tabs = [];
+
+      if (hasNotes) {
+        var notesPanel = KJO.el('div', 'detail-sheet-tab-panel');
+        var notesContent = KJO.el('div', 'detail-sheet-notes');
+        notesContent.innerHTML = opts.notes;
+        notesPanel.appendChild(notesContent);
+        tabs.push({ label: 'Notes', panel: notesPanel });
+      }
+
+      if (hasTrailer) {
+        var trailerPanel = KJO.el('div', 'detail-sheet-tab-panel');
+        var responsive = KJO.el('div', 'detail-sheet-video');
+        var iframe = KJO.el('iframe', '', null, {
+          allowfullscreen: '',
+          allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+          frameborder: '0'
+        });
+        activeIframe = iframe;
+        responsive.appendChild(iframe);
+        trailerPanel.appendChild(responsive);
+        tabs.push({ label: 'Trailer', panel: trailerPanel, onActivate: function () {
+          iframe.src = 'https://www.youtube-nocookie.com/embed/' + opts.videoId + '?rel=0&modestbranding=1&autoplay=1';
+        }});
+      }
+
+      if (tabs.length > 0) {
+        body.appendChild(KJO.el('div', 'detail-sheet-divider'));
+
+        // Tab bar (only show if multiple tabs)
+        if (tabs.length > 1) {
+          var tabBar = KJO.el('div', 'detail-sheet-tabs');
+          for (var i = 0; i < tabs.length; i++) {
+            (function (idx) {
+              var tab = tabs[idx];
+              var btn = KJO.el('button', 'detail-sheet-tab' + (idx === 0 ? ' detail-sheet-tab-active' : ''), tab.label);
+              btn.addEventListener('click', function () {
+                // Swap active tab
+                tabBar.querySelectorAll('.detail-sheet-tab').forEach(function (t) {
+                  t.classList.remove('detail-sheet-tab-active');
+                });
+                btn.classList.add('detail-sheet-tab-active');
+                // Show matching panel
+                for (var j = 0; j < tabs.length; j++) {
+                  tabs[j].panel.style.display = j === idx ? '' : 'none';
+                }
+                if (tab.onActivate) tab.onActivate();
+              });
+              tabBar.appendChild(btn);
+            })(i);
+          }
+          body.appendChild(tabBar);
+        }
+
+        // Append panels (first visible, rest hidden)
+        for (var i = 0; i < tabs.length; i++) {
+          if (i > 0) tabs[i].panel.style.display = 'none';
+          body.appendChild(tabs[i].panel);
+        }
+      }
+
+      // External links row
+      if (opts.links && opts.links.length) {
+        var linksRow = KJO.el('div', 'detail-sheet-actions');
+        for (var i = 0; i < opts.links.length; i++) {
+          linksRow.appendChild(KJO.el('a', 'detail-sheet-action', opts.links[i].label, {
+            href: opts.links[i].href, target: '_blank', rel: 'noopener'
+          }));
+        }
+        body.appendChild(linksRow);
+      }
+
+      // Show
+      overlay.classList.add('sheet-open');
+      sheet.classList.add('sheet-open');
+      document.body.style.overflow = 'hidden';
+      isOpen = true;
+    }
+
+    function close() {
+      if (!isOpen) return;
+      overlay.classList.remove('sheet-open');
+      sheet.classList.remove('sheet-open');
+      document.body.style.overflow = '';
+      // Stop any playing video
+      if (activeIframe) {
+        activeIframe.src = '';
+        activeIframe = null;
+      }
+      isOpen = false;
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && isOpen) close();
+    });
+
+    return { open: open, close: close };
+  })();
+
+  // ---------------------------------------------------------------------------
   // Shared shelf utilities (extracted from playing.js / watching.js)
   // ---------------------------------------------------------------------------
 
