@@ -57,6 +57,11 @@
 
     updateActiveNav(hash);
 
+    var nav = document.querySelector('.spa-nav');
+    if (nav) {
+      nav.scrollIntoView({ behavior: 'smooth' });
+    }
+
     KJO.renderPage(PAGE_CONTAINER_ID, function (container) {
       var result = renderFn(container);
       if (typeof result === 'function') {
