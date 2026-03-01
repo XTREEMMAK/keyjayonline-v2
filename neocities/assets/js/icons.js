@@ -24,7 +24,9 @@
     search:  '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
     headphones: '<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',
     chest:      '<rect x="2" y="7" width="20" height="13" rx="2"/><path d="M2 12h20"/><path d="M12 7v5"/><circle cx="12" cy="12" r="1.5"/><path d="M6 7V5a6 6 0 0 1 12 0v2"/>',
-    joystick:   '<circle cx="12" cy="6" r="3"/><line x1="12" y1="9" x2="12" y2="17"/><path d="M6 17a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2"/><line x1="6" y1="17" x2="18" y2="17"/>'
+    joystick:   '<circle cx="12" cy="6" r="3"/><line x1="12" y1="9" x2="12" y2="17"/><path d="M6 17a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2"/><line x1="6" y1="17" x2="18" y2="17"/>',
+    link:       '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    smile:      '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>'
   };
 
   // Social platform icons (filled SVG paths, viewBox 0 0 24 24)

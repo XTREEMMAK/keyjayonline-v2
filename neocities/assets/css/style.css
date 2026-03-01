@@ -2943,9 +2943,9 @@ html {
 .v2-ml-listening        { color: #ec4899; }
 .v2-ml-listening svg    { stroke: #ec4899; }
 
-/* Nav accent colors for the horde */
-.v2-ml-the-horde.spa-nav-active { color: #ef4444; }
-.v2-ml-the-horde.spa-nav-active svg { stroke: #ef4444; }
+/* Nav accent colors for the hoard */
+.v2-ml-the-hoard.spa-nav-active { color: #ef4444; }
+.v2-ml-the-hoard.spa-nav-active svg { stroke: #ef4444; }
 
 /* Nav accent colors for emulator */
 .v2-ml-emulator.spa-nav-active { color: #818cf8; }
@@ -3059,7 +3059,7 @@ html {
 }
 
 /* ==========================================================================
-   THE HORDE — webrings, stamps, cool links
+   THE HOARD — stamps, buttons, cool links
    ========================================================================== */
 
 .horde-section {
@@ -3140,6 +3140,90 @@ html {
   padding: 1.5rem;
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.5);
+}
+
+/* Buttons section */
+.horde-buttons-card {
+  padding: 1.25rem;
+}
+
+.horde-buttons-card .horde-stamps-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.horde-buttons-hint {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+  margin: 0 0 0.75rem;
+}
+
+.horde-buttons-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.horde-button-item {
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+  line-height: 0;
+}
+
+.horde-button-item:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.horde-button-item:active {
+  transform: scale(0.97);
+}
+
+.horde-button-item img {
+  display: block;
+  width: 88px;
+  height: 31px;
+  border-radius: 4px;
+}
+
+.horde-hotlink-box {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.25s ease;
+  margin-top: 0;
+}
+
+.horde-hotlink-box.hotlink-box-open {
+  max-height: 120px;
+  opacity: 1;
+  margin-top: 1rem;
+}
+
+.horde-hotlink-code {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--neu-text-primary, #e5e7eb);
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  resize: none;
+  line-height: 1.4;
+}
+
+.horde-hotlink-code:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .horde-links-grid {
