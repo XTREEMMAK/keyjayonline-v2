@@ -19,8 +19,7 @@
 		"docker:logs": "docker compose --profile local-db logs -f",
 		"docker:build": "set -a && . ./.env.docker.local && set +a && docker compose --profile local-db build --no-cache",
 		"schema:snapshot": "set -a && . ./.env.local && set +a && node scripts/schema-snapshot.js",
-		"icons:generate": "node scripts/generate-icons.js",
-		"neocities:deploy": "node neocities/deploy.js"
+		"icons:generate": "node scripts/generate-icons.js"
 	},
 	"devDependencies": {
 		"@aws-sdk/client-s3": "^3.983.0",
