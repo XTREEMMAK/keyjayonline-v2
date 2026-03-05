@@ -31,7 +31,7 @@ export async function handle({ event, resolve }) {
 				"style-src 'self' 'unsafe-inline'",
 				"img-src 'self' data: blob: https://kjo.nyc3.cdn.digitaloceanspaces.com https://kjo.nyc3.digitaloceanspaces.com https://img.youtube.com https://i.ytimg.com",
 				"media-src 'self' blob: https://kjo.nyc3.cdn.digitaloceanspaces.com",
-				"connect-src 'self' https://kjo.nyc3.cdn.digitaloceanspaces.com https://api.iconify.design https://www.google-analytics.com https://www.googletagmanager.com",
+				"connect-src 'self' https://kjo.nyc3.cdn.digitaloceanspaces.com https://api.iconify.design https://www.google-analytics.com https://www.googletagmanager.com https://www.google.com",
 				"frame-src https://www.youtube.com https://player.vimeo.com",
 				"font-src 'self' data:",
 				"object-src 'none'",
