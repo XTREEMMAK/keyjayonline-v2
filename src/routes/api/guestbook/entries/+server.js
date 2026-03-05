@@ -196,8 +196,7 @@ export async function POST({ request }) {
 					submitted_at: new Date().toISOString()
 				}),
 				signal: AbortSignal.timeout(5000)
-			}).then((res) => console.log('Guestbook webhook response:', res.status))
-			  .catch((err) => console.error('Guestbook webhook error:', err));
+			}).catch((err) => console.error('Guestbook webhook error:', err));
 		}
 
 		return json(
