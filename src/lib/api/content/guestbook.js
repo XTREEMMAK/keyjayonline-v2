@@ -28,6 +28,21 @@ export function setCache(result) {
 	cacheTimestamp = Date.now();
 }
 
+function transformEntry(entry) {
+	const cleanMessage = sanitizeHtml(entry.message || '');
+	let website = entry.website || '';
+	if (website && !/^https?:\/\//i.test(website)) {
+		website = '';
+	}
+	return {
+		id: entry.id,
+		name: entry.name,
+		website,
+		message: cleanMessage,
+		created_at: entry.date_created
+	};
+}
+
 export async function getGuestbookEntries() {
 	const directus = getDirectusInstance();
 
@@ -41,21 +56,45 @@ export async function getGuestbookEntries() {
 	);
 
 	return {
-		entries: entries.map((entry) => {
-			const cleanMessage = sanitizeHtml(entry.message || '');
-			let website = entry.website || '';
-			if (website && !/^https?:\/\//i.test(website)) {
-				website = '';
-			}
-			return {
-				id: entry.id,
-				name: entry.name,
-				website,
-				message: cleanMessage,
-				date_created: entry.date_created
-			};
-		}),
+		entries: entries.map(transformEntry),
 		total: entries.length
+	};
+}
+
+export async function getGuestbookEntriesPaginated(page = 1, limit = 25) {
+	const directus = getDirectusInstance();
+	const safeLimit = Math.min(Math.max(limit, 1), 50);
+	const safePage = Math.max(page, 1);
+	const offset = (safePage - 1) * safeLimit;
+
+	const filter = { status: { _eq: 'published' } };
+
+	const [entries, countResult] = await Promise.all([
+		directus.request(
+			readItems('kjov2_guestbook', {
+				filter,
+				fields: ['id', 'name', 'website', 'message', 'date_created'],
+				sort: ['-date_created'],
+				limit: safeLimit,
+				offset
+			})
+		),
+		directus.request(
+			readItems('kjov2_guestbook', {
+				filter,
+				aggregate: { count: ['id'] }
+			})
+		)
+	]);
+
+	const total = Number(countResult?.[0]?.count?.id ?? 0);
+	const pages = Math.ceil(total / safeLimit) || 1;
+
+	return {
+		entries: entries.map(transformEntry),
+		total,
+		page: safePage,
+		pages
 	};
 }
 

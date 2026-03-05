@@ -1,24 +1,25 @@
 /**
- * Guestbook Submission Endpoint
+ * Guestbook Entries Endpoint
  *
- * Accepts new guestbook entries via POST with reCAPTCHA verification.
- * Entries are created as draft (moderation queue) in Directus.
- * Rate-limited to 5 submissions per 15 minutes per IP.
+ * GET  — Returns paginated published entries (same-origin for /guestbook page)
+ * POST — Accepts new entries with reCAPTCHA Enterprise verification.
+ *        Entries are created as draft (moderation queue) in Directus.
+ *        Rate-limited to 5 submissions per 15 minutes per IP.
  */
 
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import * as publicEnv from '$env/static/public';
+import { env as publicEnv } from '$env/dynamic/public';
 import { checkRateLimit, getRateLimitHeaders } from '$lib/utils/rateLimit.js';
 import { getAllowedOrigins } from '$lib/utils/cors.js';
-import { bustCache, createGuestbookEntry } from '$lib/api/content/guestbook.js';
+import { bustCache, createGuestbookEntry, getGuestbookEntriesPaginated } from '$lib/api/content/guestbook.js';
 
 function getPostCorsHeaders(requestOrigin) {
 	const allowed = getAllowedOrigins();
 	if (requestOrigin && allowed.includes(requestOrigin)) {
 		return {
 			'Access-Control-Allow-Origin': requestOrigin,
-			'Access-Control-Allow-Methods': 'POST, OPTIONS',
+			'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 			'Access-Control-Allow-Headers': 'Content-Type',
 			'Access-Control-Max-Age': '86400',
 			Vary: 'Origin'
@@ -33,6 +34,19 @@ export async function OPTIONS({ request }) {
 		status: 204,
 		headers: getPostCorsHeaders(origin)
 	});
+}
+
+export async function GET({ url }) {
+	const page = parseInt(url.searchParams.get('page') || '1', 10) || 1;
+	const limit = parseInt(url.searchParams.get('limit') || '25', 10) || 25;
+
+	try {
+		const result = await getGuestbookEntriesPaginated(page, limit);
+		return json(result);
+	} catch (error) {
+		console.error('Error fetching guestbook entries:', error);
+		return json({ error: 'Guestbook unavailable' }, { status: 503 });
+	}
 }
 
 export async function POST({ request }) {
@@ -109,7 +123,7 @@ export async function POST({ request }) {
 					event: {
 						token: recaptcha_token,
 						siteKey: recaptchaSiteKey,
-						expectedAction: 'guestbook_submit'
+						expectedAction: 'guestbook'
 					}
 				}),
 				signal: AbortSignal.timeout(5000)
@@ -129,7 +143,7 @@ export async function POST({ request }) {
 					);
 				}
 
-				if (assessment.tokenProperties.action !== 'guestbook_submit') {
+				if (assessment.tokenProperties.action !== 'guestbook') {
 					console.warn('reCAPTCHA action mismatch:', assessment.tokenProperties.action);
 					return json(
 						{ error: 'reCAPTCHA verification failed. Please try again.' },
