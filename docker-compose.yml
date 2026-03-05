@@ -188,6 +188,7 @@ services:
 
       # Guestbook
       GUESTBOOK_WEBHOOK_URL: ${GUESTBOOK_WEBHOOK_URL:-}
+      GUESTBOOK_WEBHOOK_SECRET: ${GUESTBOOK_WEBHOOK_SECRET:-}
 
       # Maintenance Mode Admin Bypass
       MAINTENANCE_BYPASS_PIN: ${MAINTENANCE_BYPASS_PIN:-}

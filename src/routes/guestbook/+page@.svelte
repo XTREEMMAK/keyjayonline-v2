@@ -263,11 +263,12 @@
 			{#each entries as entry (entry.id)}
 				<div class="gb-entry glass-card">
 					<div class="gb-entry-header">
-						{#if entry.website}
-							<a class="gb-entry-name" href={entry.website} target="_blank" rel="noopener nofollow">{entry.name}</a>
-						{:else}
+						<div class="gb-entry-info">
 							<span class="gb-entry-name">{entry.name}</span>
-						{/if}
+							{#if entry.website}
+								<a class="gb-entry-website" href={entry.website} target="_blank" rel="noopener nofollow">{entry.website.replace(/^https?:\/\/(www\.)?/, '')}</a>
+							{/if}
+						</div>
 						<span class="gb-entry-date">{formatDate(entry.created_at)}</span>
 					</div>
 					<div class="gb-entry-body">{entry.message}</div>
@@ -458,7 +459,8 @@
 	/* Entries */
 	.gb-entries { display: flex; flex-direction: column; gap: 12px; margin-bottom: 1.5rem; }
 	.gb-entry { padding: 1rem 1.25rem; }
-	.gb-entry-header { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; }
+	.gb-entry-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 0.5rem; }
+	.gb-entry-info { display: flex; flex-direction: column; gap: 2px; }
 	.gb-entry-name {
 		font-family: 'Michroma', sans-serif;
 		font-size: 0.8rem;
@@ -467,7 +469,18 @@
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
 	}
-	.gb-entry-date { margin-left: auto; font-size: 0.72rem; color: var(--neu-text-muted); }
+	.gb-entry-website {
+		font-size: 0.7rem;
+		color: var(--neu-accent);
+		text-decoration: none;
+		opacity: 0.8;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 250px;
+	}
+	.gb-entry-website:hover { opacity: 1; text-decoration: underline; }
+	.gb-entry-date { margin-left: auto; font-size: 0.72rem; color: var(--neu-text-muted); flex-shrink: 0; }
 	.gb-entry-body { font-size: 0.9rem; color: var(--neu-text-secondary); line-height: 1.5; word-break: break-word; }
 
 	/* Pagination */
