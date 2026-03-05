@@ -181,6 +181,7 @@ export async function POST({ request }) {
 
 		// 7. Fire-and-forget webhook notification
 		const webhookUrl = env.GUESTBOOK_WEBHOOK_URL;
+		console.log('Guestbook webhook URL configured:', !!webhookUrl);
 		if (webhookUrl) {
 			const webhookHeaders = { 'Content-Type': 'application/json' };
 			if (env.GUESTBOOK_WEBHOOK_SECRET) {
@@ -196,7 +197,8 @@ export async function POST({ request }) {
 					submitted_at: new Date().toISOString()
 				}),
 				signal: AbortSignal.timeout(5000)
-			}).catch((err) => console.error('Guestbook webhook error:', err));
+			}).then((res) => console.log('Guestbook webhook response:', res.status))
+			  .catch((err) => console.error('Guestbook webhook error:', err));
 		}
 
 		return json(

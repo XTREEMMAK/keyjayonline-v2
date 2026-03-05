@@ -7319,7 +7319,7 @@
         "name": "status",
         "table": "kjov2_guestbook",
         "data_type": "character varying",
-        "default_value": "draft",
+        "default_value": "published",
         "max_length": 255,
         "numeric_precision": null,
         "numeric_scale": null,
@@ -13596,6 +13596,7 @@
         "interface": "input-rich-text-html",
         "note": null,
         "options": {
+          "softLength": 700,
           "toolbar": [
             "undo",
             "redo",
