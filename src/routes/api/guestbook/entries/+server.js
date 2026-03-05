@@ -182,11 +182,14 @@ export async function POST({ request }) {
 		// 7. Fire-and-forget webhook notification
 		const webhookUrl = env.GUESTBOOK_WEBHOOK_URL;
 		console.log('Guestbook webhook URL configured:', !!webhookUrl);
+		console.log('Guestbook webhook secret configured:', !!env.GUESTBOOK_WEBHOOK_SECRET);
+		console.log('Guestbook webhook secret length:', env.GUESTBOOK_WEBHOOK_SECRET?.length);
 		if (webhookUrl) {
 			const webhookHeaders = { 'Content-Type': 'application/json' };
 			if (env.GUESTBOOK_WEBHOOK_SECRET) {
 				webhookHeaders['KJOv2-Guestbook-Auth'] = `Bearer ${env.GUESTBOOK_WEBHOOK_SECRET}`;
 			}
+			console.log('Guestbook webhook headers:', JSON.stringify(Object.keys(webhookHeaders)));
 			fetch(webhookUrl, {
 				method: 'POST',
 				headers: webhookHeaders,
