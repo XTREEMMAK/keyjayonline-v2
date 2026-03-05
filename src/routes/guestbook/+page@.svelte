@@ -24,8 +24,39 @@
 	let emojiBtn;
 	let messageEl;
 
+	const COOLDOWN_MS = 5 * 60 * 1000;
+	const COOLDOWN_KEY = 'kjo_gb_cooldown';
+	let cooldownRemaining = $state(0);
+	let cooldownInterval;
+	const onCooldown = $derived(cooldownRemaining > 0);
+
 	const charCount = $derived(messageValue.length);
 	const charWarn = $derived(charCount > 450);
+
+	function formatCooldown(seconds) {
+		const m = Math.floor(seconds / 60);
+		const s = seconds % 60;
+		return m + ':' + String(s).padStart(2, '0');
+	}
+
+	function startCooldown() {
+		localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
+		cooldownRemaining = Math.ceil(COOLDOWN_MS / 1000);
+		clearInterval(cooldownInterval);
+		cooldownInterval = setInterval(tickCooldown, 1000);
+	}
+
+	function tickCooldown() {
+		const stored = parseInt(localStorage.getItem(COOLDOWN_KEY) || '0', 10);
+		const elapsed = Date.now() - stored;
+		if (elapsed >= COOLDOWN_MS) {
+			cooldownRemaining = 0;
+			clearInterval(cooldownInterval);
+			localStorage.removeItem(COOLDOWN_KEY);
+		} else {
+			cooldownRemaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+		}
+	}
 
 	function formatDate(dateStr) {
 		if (!dateStr) return '';
@@ -129,7 +160,7 @@
 				statusMessage = 'Thanks for signing the guestbook!';
 				statusIsError = false;
 				loadEntries(1);
-				setTimeout(() => { statusMessage = ''; }, 4000);
+				startCooldown();
 			}
 		} catch {
 			statusMessage = 'Something went wrong. Please try again.';
@@ -150,9 +181,17 @@
 			}
 		});
 
+		// Resume cooldown if active
+		const stored = parseInt(localStorage.getItem(COOLDOWN_KEY) || '0', 10);
+		if (stored && Date.now() - stored < COOLDOWN_MS) {
+			tickCooldown();
+			cooldownInterval = setInterval(tickCooldown, 1000);
+		}
+
 		loadEntries(1);
 
 		return () => {
+			clearInterval(cooldownInterval);
 			const picker = emojiPickerWrap?.querySelector('emoji-picker');
 			if (picker) {
 				picker.removeEventListener('emoji-click', handleEmojiClick);
@@ -182,28 +221,32 @@
 
 	<!-- Submission Form -->
 	<form class="gb-form glass-card" autocomplete="off" onsubmit={handleSubmit}>
-		<div class="gb-form-row">
-			<input type="text" class="gb-input" placeholder="Your name" maxlength="50" required bind:value={nameValue}>
-		</div>
-		<input type="url" class="gb-input gb-website-input" placeholder="Website (optional)" maxlength="200" bind:value={websiteValue}>
-		<div class="gb-textarea-wrap">
-			<textarea class="gb-textarea" placeholder="Your message..." maxlength="500" required
-				bind:value={messageValue} bind:this={messageEl}></textarea>
-			<button type="button" class="gb-emoji-trigger-inline" bind:this={emojiBtn} title="Pick an emoji"
-				onclick={() => pickerOpen = !pickerOpen}>😊</button>
-		</div>
-		<div class="gb-emoji-wrap" bind:this={emojiPickerWrap}>
-			<div class="gb-emoji-picker-wrap" class:gb-picker-open={pickerOpen}>
-				<emoji-picker></emoji-picker>
+		<fieldset disabled={onCooldown || submitting} class="gb-fieldset">
+			<div class="gb-form-row">
+				<input type="text" class="gb-input" placeholder="Your name" maxlength="50" required bind:value={nameValue}>
 			</div>
-		</div>
-		<div class="gb-form-footer">
-			<span class="gb-char-count" class:gb-char-warn={charWarn}>{charCount} / 500</span>
-			<button type="submit" class="neu-button neu-button-round" disabled={submitting}>
-				{submitting ? 'Sending...' : 'Sign Guestbook'}
-			</button>
-		</div>
-		{#if statusMessage}
+			<input type="url" class="gb-input gb-website-input" placeholder="Website (optional)" maxlength="200" bind:value={websiteValue}>
+			<div class="gb-textarea-wrap">
+				<textarea class="gb-textarea" placeholder="Your message..." maxlength="500" required
+					bind:value={messageValue} bind:this={messageEl}></textarea>
+				<button type="button" class="gb-emoji-trigger-inline" bind:this={emojiBtn} title="Pick an emoji"
+					onclick={() => pickerOpen = !pickerOpen}>😊</button>
+			</div>
+			<div class="gb-emoji-wrap" bind:this={emojiPickerWrap}>
+				<div class="gb-emoji-picker-wrap" class:gb-picker-open={pickerOpen}>
+					<emoji-picker></emoji-picker>
+				</div>
+			</div>
+			<div class="gb-form-footer">
+				<span class="gb-char-count" class:gb-char-warn={charWarn}>{charCount} / 500</span>
+				<button type="submit" class="neu-button neu-button-round">
+					{submitting ? 'Sending...' : 'Sign Guestbook'}
+				</button>
+			</div>
+		</fieldset>
+		{#if onCooldown}
+			<div class="gb-cooldown">You can sign again in {formatCooldown(cooldownRemaining)}</div>
+		{:else if statusMessage}
 			<div class={statusIsError ? 'gb-form-error' : 'gb-success'}>{statusMessage}</div>
 		{/if}
 	</form>
@@ -431,12 +474,22 @@
 	.gb-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; }
 	.gb-page-info { font-size: 0.78rem; color: var(--neu-text-muted); font-family: 'Michroma', sans-serif; letter-spacing: 0.03em; }
 
+	/* Fieldset */
+	.gb-fieldset { border: none; margin: 0; padding: 0; }
+	.gb-fieldset:disabled { opacity: 0.5; pointer-events: none; }
+
 	/* States */
 	.gb-loading, .gb-empty { text-align: center; padding: 2rem 1rem; color: var(--neu-text-muted); font-size: 0.9rem; }
 	.gb-success {
 		text-align: center; padding: 0.75rem; margin-top: 12px;
 		background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);
 		border-radius: 10px; color: #6ee7b7; font-size: 0.85rem;
+	}
+	.gb-cooldown {
+		text-align: center; padding: 0.75rem; margin-top: 12px;
+		background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2);
+		border-radius: 10px; color: #fbbf24; font-size: 0.85rem;
+		font-family: 'Michroma', sans-serif; letter-spacing: 0.03em;
 	}
 	.gb-form-error { color: #f87171; font-size: 0.8rem; margin-top: 4px; }
 

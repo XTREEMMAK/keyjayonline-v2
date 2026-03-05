@@ -179,6 +179,22 @@ export async function POST({ request }) {
 		// 6. Bust GET endpoint cache
 		bustCache();
 
+		// 7. Fire-and-forget webhook notification
+		const webhookUrl = env.GUESTBOOK_WEBHOOK_URL;
+		if (webhookUrl) {
+			fetch(webhookUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					name: name.trim(),
+					website: cleanWebsite,
+					message: message.trim(),
+					submitted_at: new Date().toISOString()
+				}),
+				signal: AbortSignal.timeout(5000)
+			}).catch((err) => console.error('Guestbook webhook error:', err));
+		}
+
 		return json(
 			{ success: true, message: 'Your message has been submitted for review!' },
 			{ status: 201, headers: corsHeaders }
