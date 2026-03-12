@@ -6131,18 +6131,32 @@
         "options": {
           "choices": [
             {
+              "icon": "queue_play_next",
+              "text": "Active Queue",
+              "value": "Active Queue"
+            },
+            {
+              "icon": "play_circle",
               "text": "Playing",
               "value": "Playing"
             },
             {
+              "icon": "check_circle",
               "text": "Completed",
               "value": "Completed"
             },
             {
+              "icon": "pause",
+              "text": "On Hold",
+              "value": "On Hold"
+            },
+            {
+              "icon": "stop_circle",
               "text": "Dropped",
               "value": "Dropped"
             },
             {
+              "icon": "view_list",
               "text": "Backlog",
               "value": "Backlog"
             }
