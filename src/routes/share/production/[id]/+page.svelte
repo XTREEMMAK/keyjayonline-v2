@@ -7,6 +7,7 @@
 	import * as THREE from 'three';
 	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
 	import VideoPlayerModal from '$lib/components/ui/VideoPlayerModal.svelte';
+	import ActionPickerModal from '$lib/components/ui/ActionPickerModal.svelte';
 	import { loadPlaylist, showPlayer, expandPlayer } from '$lib/stores/musicPlayer.js';
 
 	let { data } = $props();
@@ -95,6 +96,30 @@
 	// Split actions into primary (audio, viewer, video) and additional (external links)
 	const primaryActions = $derived((production.actions || []).filter(a => a.isPrimary));
 	const additionalLinks = $derived((production.actions || []).filter(a => !a.isPrimary));
+
+	// Group primary actions by type for button grouping
+	const viewerActions = $derived(primaryActions.filter(a => a.actionType === 'viewer'));
+	const audioActions = $derived(primaryActions.filter(a => a.actionType === 'audio_player'));
+	const videoActions = $derived(primaryActions.filter(a => a.actionType === 'video_player'));
+
+	// Action picker modal state
+	let actionPickerOpen = $state(false);
+	let actionPickerTitle = $state('');
+	let actionPickerActions = $state([]);
+	let actionPickerColor = $state('orange');
+	let actionPickerCallback = $state(null);
+
+	function openActionPicker(title, actions, color, callback) {
+		actionPickerTitle = title;
+		actionPickerActions = actions;
+		actionPickerColor = color;
+		actionPickerCallback = () => callback;
+		actionPickerOpen = true;
+	}
+
+	function closeActionPicker() {
+		actionPickerOpen = false;
+	}
 
 	// Share functionality
 	let shareSuccess = $state(false);
@@ -380,20 +405,61 @@
 				{/if}
 			</div>
 
-			<!-- Primary Actions (audio, viewer, video) -->
+			<!-- Primary Actions (audio, viewer, video) — grouped by type -->
 			{#if primaryActions.length > 0}
 				<div class="primary-actions">
 					<div class="actions-row">
-						{#each primaryActions as action}
+						<!-- Audio actions: single button or picker -->
+						{#if audioActions.length === 1}
 							<button
-								onclick={() => handleAction(action)}
-								class="action-button action-button--{action.actionType}"
-								title={action.label}
+								onclick={() => handleAction(audioActions[0])}
+								class="action-button action-button--audio_player"
+								title={audioActions[0].label}
 							>
-								<Icon icon={action.icon} width={22} height={22} />
-								<span>{action.label}</span>
+								<Icon icon={audioActions[0].icon} width={22} height={22} />
+								<span>{audioActions[0].label}</span>
 							</button>
-						{/each}
+						{:else if audioActions.length > 1}
+							<button
+								onclick={() => openActionPicker('Listen', audioActions, 'green', handleAction)}
+								class="action-button action-button--audio_player"
+								title="Listen"
+							>
+								<Icon icon="mdi:headphones" width={22} height={22} />
+								<span>Listen</span>
+							</button>
+						{/if}
+						<!-- Viewer actions: single button or picker -->
+						{#if viewerActions.length === 1}
+							<button
+								onclick={() => handleAction(viewerActions[0])}
+								class="action-button action-button--viewer"
+								title={viewerActions[0].label}
+							>
+								<Icon icon={viewerActions[0].icon} width={22} height={22} />
+								<span>{viewerActions[0].label}</span>
+							</button>
+						{:else if viewerActions.length > 1}
+							<button
+								onclick={() => openActionPicker('View', viewerActions, 'orange', handleAction)}
+								class="action-button action-button--viewer"
+								title="View"
+							>
+								<Icon icon="mdi:image-multiple" width={22} height={22} />
+								<span>View</span>
+							</button>
+						{/if}
+						<!-- Video actions: show first only -->
+						{#if videoActions.length >= 1}
+							<button
+								onclick={() => handleAction(videoActions[0])}
+								class="action-button action-button--video_player"
+								title={videoActions[0].label}
+							>
+								<Icon icon={videoActions[0].icon} width={22} height={22} />
+								<span>{videoActions[0].label}</span>
+							</button>
+						{/if}
 					</div>
 				</div>
 			{/if}
@@ -514,6 +580,16 @@
 	videoUrl={videoPlayerUrl}
 	title={videoPlayerTitle}
 	onClose={closeVideoPlayer}
+/>
+
+<!-- Action Picker Modal (for grouped audio/viewer actions) -->
+<ActionPickerModal
+	isOpen={actionPickerOpen}
+	title={actionPickerTitle}
+	actions={actionPickerActions}
+	accentColor={actionPickerColor}
+	onSelect={(action) => actionPickerCallback?.()(action)}
+	onClose={closeActionPicker}
 />
 
 <style>

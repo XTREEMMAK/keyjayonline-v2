@@ -53,7 +53,7 @@ export async function GET() {
 				.request(
 					readItems('kjov2_now_entries', {
 						filter: { status: { _eq: 'published' } },
-						fields: ['id', 'content', 'summary', 'date_created'],
+						fields: ['id', 'slug', 'content', 'summary', 'date_created'],
 						sort: ['-date_created'],
 						limit: 20
 					})
@@ -98,13 +98,16 @@ export async function GET() {
 			// Description is always the full WYSIWYG content (CDATA-wrapped)
 			const description = sanitizeHtml(entry.content || '');
 
+			const entryLink = entry.slug
+				? `${baseUrl}/now?entry=${entry.slug}`
+				: `${baseUrl}/now#entry-${entry.id}`;
 			items.push({
 				title,
-				link: `${baseUrl}/now`,
+				link: entryLink,
 				description,
 				htmlDescription: true,
 				pubDate: date,
-				guid: `${baseUrl}/now#${entry.id}`,
+				guid: entryLink,
 				category: 'Updates'
 			});
 		}

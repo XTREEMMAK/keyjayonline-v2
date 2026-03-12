@@ -1,18 +1,106 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { fly, fade } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
+	import { page } from '$app/stores';
 	import { sanitizeHtml } from '$lib/utils/markdown.js';
 	import { relativeDate } from '$lib/utils/relativeDate.js';
 	import WaveBackground from '$lib/components/radio/WaveBackground.svelte';
+	import ContentViewerModal from '$lib/components/ui/ContentViewerModal.svelte';
 
 	let { data } = $props();
 	const socialLinks = $derived(data.socialLinks || []);
 	const supportPlatforms = $derived(data.siteSettings?.supportPlatforms || []);
 
+	// Image modal state
+	let imageModalOpen = $state(false);
+	let imageModalPages = $state([]);
+	let imageModalInitialPage = $state(0);
+
+	function closeImageModal() {
+		imageModalOpen = false;
+		imageModalPages = [];
+	}
+
+	// Attach click handlers to images inside now-prose after render
+	function attachImageClickHandlers() {
+		const proseContainers = document.querySelectorAll('.now-prose');
+		proseContainers.forEach((container) => {
+			const images = container.querySelectorAll('img');
+			images.forEach((img) => {
+				if (img.dataset.modalBound) return;
+				img.dataset.modalBound = 'true';
+				img.style.cursor = 'pointer';
+				img.addEventListener('click', () => {
+					// Collect all images in this entry for gallery navigation
+					const entryImages = Array.from(container.querySelectorAll('img'));
+					imageModalPages = entryImages.map((el) => ({
+						imageUrl: el.src,
+						title: el.alt || ''
+					}));
+					imageModalInitialPage = entryImages.indexOf(img);
+					imageModalOpen = true;
+				});
+			});
+		});
+	}
+
+	/**
+	 * Resolve a URL hash to a DOM element.
+	 * Accepts both #entry-slug and #slug (auto-prefixes entry- if needed).
+	 */
+	function scrollToHash() {
+		const raw = window.location.hash.slice(1); // strip leading #
+		if (!raw) return;
+
+		// Try exact match first, then with entry- prefix
+		let el = document.getElementById(raw);
+		if (!el && !raw.startsWith('entry-')) {
+			el = document.getElementById(`entry-${raw}`);
+		}
+
+		if (el) {
+			el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			// Brief highlight to confirm which entry was linked
+			el.classList.add('now-entry-highlight');
+			setTimeout(() => el.classList.remove('now-entry-highlight'), 2000);
+		}
+	}
+
 	onMount(() => {
 		document.body.classList.add('hide-global-footer');
+		attachImageClickHandlers();
+
+		// Delay scroll to allow fly transitions to render the entry elements.
+		// Max fly delay = i * 50ms for up to 15 entries = 750ms + 300ms duration.
+		const hashTarget = window.location.hash?.slice(1);
+		const queryTarget = data.scrollToEntry;
+		if (hashTarget || queryTarget) {
+			setTimeout(() => {
+				if (hashTarget) {
+					scrollToHash();
+				} else if (queryTarget) {
+					// Scroll to entry resolved via ?entry= query param
+					const el =
+						document.getElementById(`entry-${queryTarget}`) ||
+						document.getElementById(queryTarget);
+					if (el) {
+						el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+						el.classList.add('now-entry-highlight');
+						setTimeout(() => el.classList.remove('now-entry-highlight'), 2000);
+					}
+				}
+			}, 400);
+		}
+
 		return () => document.body.classList.remove('hide-global-footer');
+	});
+
+	// Re-attach image handlers when entries change (e.g., pagination)
+	$effect(() => {
+		// Track data.entries to re-run when page changes
+		data.entries;
+		tick().then(attachImageClickHandlers);
 	});
 </script>
 
@@ -68,13 +156,14 @@
 				<div class="space-y-6">
 					{#each data.entries as entry, i (entry.id)}
 						<article
+							id={entry.slug ? `entry-${entry.slug}` : `entry-${entry.id}`}
 							class="now-entry-card"
 							in:fly={{ y: 20, duration: 300, delay: i * 50 }}
 							out:fade={{ duration: 150 }}
 							animate:flip={{ duration: 250 }}
 						>
-							<!-- Date -->
-							<div class="mb-3">
+							<!-- Date + slug permalink -->
+							<div class="mb-3 flex items-center gap-2 flex-wrap">
 								<time
 									class="text-sm text-gray-500"
 									datetime={entry.publishedAt}
@@ -87,6 +176,24 @@
 								>
 									{relativeDate(entry.publishedAt)}
 								</time>
+								{#if entry.slug}
+									<a
+										href="/now?entry={entry.slug}"
+										class="now-permalink"
+										title="Permalink to this entry"
+									>
+										<iconify-icon icon="mdi:link-variant" class="text-xs"></iconify-icon>
+										{entry.slug}
+									</a>
+								{:else}
+									<a
+										href="/now#{`entry-${entry.id}`}"
+										class="text-gray-600 hover:text-gray-400 transition-colors"
+										title="Link to this entry"
+									>
+										<iconify-icon icon="mdi:link-variant" class="text-sm"></iconify-icon>
+									</a>
+								{/if}
 							</div>
 
 							<!-- Content -->
@@ -96,6 +203,39 @@
 						</article>
 					{/each}
 				</div>
+
+				<!-- Pagination -->
+				{#if data.totalPages > 1}
+					<nav class="now-pagination" aria-label="Now entries pagination">
+						{#if data.page > 1}
+							<a href="/now?page={data.page - 1}" class="now-page-btn">
+								<iconify-icon icon="mdi:chevron-left" class="text-lg"></iconify-icon>
+								Newer
+							</a>
+						{:else}
+							<span class="now-page-btn now-page-btn--disabled">
+								<iconify-icon icon="mdi:chevron-left" class="text-lg"></iconify-icon>
+								Newer
+							</span>
+						{/if}
+
+						<span class="text-sm text-gray-400">
+							Page {data.page} of {data.totalPages}
+						</span>
+
+						{#if data.page < data.totalPages}
+							<a href="/now?page={data.page + 1}" class="now-page-btn">
+								Older
+								<iconify-icon icon="mdi:chevron-right" class="text-lg"></iconify-icon>
+							</a>
+						{:else}
+							<span class="now-page-btn now-page-btn--disabled">
+								Older
+								<iconify-icon icon="mdi:chevron-right" class="text-lg"></iconify-icon>
+							</span>
+						{/if}
+					</nav>
+				{/if}
 			{/if}
 		</div>
 	</div>
@@ -146,6 +286,15 @@
 	</footer>
 	</div>
 </div>
+
+<!-- Image Modal -->
+<ContentViewerModal
+	isOpen={imageModalOpen}
+	pages={imageModalPages}
+	initialPage={imageModalInitialPage}
+	title="Image"
+	onClose={closeImageModal}
+/>
 
 <style>
 	/* Sliding gradient layers — oversized hard-edge splits, GPU-composited translateX */
@@ -253,7 +402,6 @@
 		margin-top: auto;
 		padding: 3rem 2rem;
 		text-align: center;
-		border-top: 1px solid rgba(255, 255, 255, 0.05);
 	}
 
 	.now-footer-content {
@@ -374,6 +522,93 @@
 
 	.now-prose :global(strong) {
 		color: #f3f4f6;
+	}
+
+	/* Pagination */
+	.now-pagination {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1.5rem;
+		margin-top: 2rem;
+		padding: 1rem 0;
+	}
+
+	.now-page-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.5rem 1rem;
+		background: var(--neu-bg);
+		border: 1px solid var(--neu-border);
+		border-radius: 50px;
+		color: var(--neu-text-secondary);
+		font-size: 0.85rem;
+		font-weight: 500;
+		text-decoration: none;
+		transition: all 0.2s ease;
+		box-shadow:
+			3px 3px 6px var(--neu-shadow-dark),
+			-3px -3px 6px var(--neu-shadow-light);
+	}
+
+	.now-page-btn:hover {
+		color: var(--neu-text-primary);
+		box-shadow:
+			1px 1px 3px var(--neu-shadow-dark),
+			-1px -1px 3px var(--neu-shadow-light);
+	}
+
+	.now-page-btn--disabled {
+		opacity: 0.35;
+		pointer-events: none;
+	}
+
+	/* Entry highlight flash when navigated via anchor */
+	.now-entry-card :global(.now-entry-highlight) {
+		/* handled below at article level */
+	}
+
+	:global(.now-entry-highlight) {
+		animation: entry-flash 2s ease-out;
+	}
+
+	@keyframes entry-flash {
+		0% { border-left-color: rgba(102, 126, 234, 0.9); box-shadow: 0 0 15px rgba(102, 126, 234, 0.3), 4px 4px 12px var(--neu-shadow-dark), -4px -4px 12px var(--neu-shadow-light); }
+		100% { border-left-color: rgba(102, 126, 234, 0.4); box-shadow: 4px 4px 12px var(--neu-shadow-dark), -4px -4px 12px var(--neu-shadow-light); }
+	}
+
+	/* Slug permalink badge */
+	.now-permalink {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.1rem 0.5rem;
+		background: rgba(102, 126, 234, 0.1);
+		border: 1px solid rgba(102, 126, 234, 0.2);
+		border-radius: 50px;
+		color: rgba(102, 126, 234, 0.6);
+		font-size: 0.7rem;
+		font-family: monospace;
+		text-decoration: none;
+		transition: all 0.2s ease;
+	}
+
+	.now-permalink:hover {
+		color: rgba(102, 126, 234, 0.9);
+		background: rgba(102, 126, 234, 0.15);
+		border-color: rgba(102, 126, 234, 0.4);
+	}
+
+	/* Clickable images in now-prose */
+	.now-prose :global(img) {
+		cursor: pointer;
+		transition: opacity 0.2s;
+		border-radius: 0.5rem;
+	}
+
+	.now-prose :global(img:hover) {
+		opacity: 0.85;
 	}
 
 	/* Hide global footer when this page is active */

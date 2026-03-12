@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import '../app.css';
 	import { page } from '$app/stores';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, onNavigate } from '$app/navigation';
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import FloatingButtonContainer from '$lib/components/ui/FloatingButtonContainer.svelte';
 	import PersistentMusicPlayer from '$lib/components/music/PersistentMusicPlayer.svelte';
@@ -53,6 +53,17 @@
 		checkForNewContent();
 
 		return () => clearTimeout(timer);
+	});
+
+	// View Transitions API — smooth crossfade between pages (progressive enhancement)
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
 	});
 
 	// Scroll to top after navigation (except for hash links) + GA4 page view tracking

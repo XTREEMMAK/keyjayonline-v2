@@ -42,7 +42,7 @@ export async function GET({ request, url }) {
 		const entries = await directus.request(
 			readItems('kjov2_now_entries', {
 				filter: { status: { _eq: 'published' } },
-				fields: ['id', 'content', 'date_created'],
+				fields: ['id', 'slug', 'content', 'date_created'],
 				sort: ['-date_created'],
 				limit: 5
 			})
@@ -54,6 +54,7 @@ export async function GET({ request, url }) {
 				const plainText = stripHtml(entry.content || '');
 				return {
 					id: entry.id,
+					slug: entry.slug || null,
 					content: cleanHtml,
 					excerpt: plainText.length > 120 ? plainText.substring(0, 120) + '...' : plainText,
 					published_at: entry.date_created

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "directus": "11.16.0",
+  "directus": "11.16.1",
   "vendor": "postgres",
   "collections": [
     {
@@ -13409,7 +13409,7 @@
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 4,
+        "sort": 5,
         "special": [
           "user-created"
         ],
@@ -13457,7 +13457,7 @@
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 5,
+        "sort": 6,
         "special": [
           "date-created"
         ],
@@ -13505,7 +13505,7 @@
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 6,
+        "sort": 7,
         "special": [
           "user-updated"
         ],
@@ -13553,7 +13553,7 @@
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 7,
+        "sort": 8,
         "special": [
           "date-updated"
         ],
@@ -13628,7 +13628,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 8,
+        "sort": 9,
         "special": null,
         "translations": null,
         "validation": null,
@@ -13674,7 +13674,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 9,
+        "sort": 10,
         "special": null,
         "translations": null,
         "validation": null,
@@ -13687,6 +13687,52 @@
         "data_type": "text",
         "default_value": null,
         "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "kjov2_now_entries",
+      "field": "slug",
+      "type": "string",
+      "meta": {
+        "collection": "kjov2_now_entries",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "slug",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": {
+          "slug": true
+        },
+        "readonly": false,
+        "required": true,
+        "searchable": true,
+        "sort": 4,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "slug",
+        "table": "kjov2_now_entries",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_nullable": true,

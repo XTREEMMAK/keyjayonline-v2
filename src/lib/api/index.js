@@ -101,6 +101,7 @@ export {
 // Now / Updates APIs
 export {
   getNowEntries,
+  getNowEntryPosition,
   getLatestNowEntryDate
 } from './content/now.js';
 

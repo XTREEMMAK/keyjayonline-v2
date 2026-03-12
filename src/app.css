@@ -132,3 +132,17 @@ iconify-icon {
     z-index: 10 !important;
   }
 }
+
+/* View Transitions API — crossfade between pages */
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+::view-transition-old(root) {
+  animation: 200ms ease-out both fade-out;
+}
+::view-transition-new(root) {
+  animation: 200ms ease-in both fade-in;
+}
