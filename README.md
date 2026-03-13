@@ -29,8 +29,11 @@
 - **Voice** - Voice acting projects with audio clips and category filtering
 - **Tech** - Technical projects and showcases
 - **Productions** - Films, comics, games, and creative productions with embeds, credits, galleries, and audio playlists
+- **Now** - Status updates with markdown rendering, tag filtering, pagination, and slug permalinks
+- **Guestbook** - Visitor messages with reCAPTCHA, moderation queue, and N8N webhook
 - **Contact** - Contact form with reCAPTCHA Enterprise, honeypot, rate limiting, and N8N webhook
 - **Maintenance** - CMS-controlled maintenance mode with PIN-based admin bypass
+- **RSS Feed** - `/feed.xml` merging /now updates, new music, and productions
 
 ## Quick Start
 
@@ -70,6 +73,8 @@ This project uses Vite's auto-loading for environment files:
 - `MAINTENANCE_BYPASS_SECRET` - HMAC secret for bypass cookie signing
 - `CONTACT_FORM_WEBHOOK_URL` - N8N webhook URL for contact form
 - `CONTACT_FORM_WEBHOOK_SECRET` - Shared secret for webhook auth header
+- `GUESTBOOK_WEBHOOK_URL` - N8N webhook URL for guestbook submissions
+- `GUESTBOOK_WEBHOOK_SECRET` - Shared secret for guestbook webhook auth
 - `PUBLIC_RECAPTCHA_SITE_KEY` - reCAPTCHA Enterprise site key (public)
 - `RECAPTCHA_API_KEY` - reCAPTCHA Enterprise API key (server-side)
 - `RECAPTCHA_PROJECT_ID` - Google Cloud project ID for reCAPTCHA
@@ -140,6 +145,10 @@ src/
 │   └── data/            # Static data files
 ├── routes/
 │   ├── share/           # Shareable links (album, sample, voice, production)
+│   ├── now/             # /now status updates page
+│   ├── guestbook/       # Guestbook page
+│   ├── feed.xml/        # RSS 2.0 feed
+│   ├── api/             # API endpoints (guestbook, now feed, latest-update, webhooks)
 │   └── +page.svelte     # Main single-page app
 ├── static/              # Static assets (img/, videos/, audio/)
 docker/

@@ -185,57 +185,26 @@ The sync script (`scripts/sync-cdn-assets.js`):
 
 ## Directus Schema Migrations
 
-Schema changes (new collections, fields, relations) made on the dev Directus instance are automatically applied to production on deploy.
-
-### How It Works
-
-The `docker-compose.yml` mounts `docker/directus/schema.json` into the Directus container and overrides the startup command to run `docker/scripts/first-run.sh` before `npx directus start`. This script runs `npx directus schema apply` on every container startup — it's idempotent, so when the schema already matches, it's a no-op.
+Schema changes made on the dev Directus instance are automatically applied to production on deploy. The `docker-compose.yml` mounts `docker/directus/schema.json` and runs `docker/scripts/first-run.sh` before starting — this applies `npx directus schema apply` (idempotent, no-op when schema matches).
 
 ### Developer Workflow
 
 ```bash
-# 1. Make schema changes in dev Directus (http://192.168.10.24:8057)
+# 1. Make schema changes in dev Directus
 
 # 2. Export the schema snapshot
 DEV_ADMIN_PASSWORD='your-password' npm run schema:snapshot
-# → Saves to docker/directus/schema.json
 
 # 3. Commit and push
 git add docker/directus/schema.json
 git commit -m "Update Directus schema"
 git push
-
-# 4. Deploy (push to main triggers CI/CD)
 # Container restarts → first-run.sh applies schema → server starts
 ```
 
-### What `schema:snapshot` Does
-
-The `scripts/schema-snapshot.js` script:
-1. Logs into dev Directus via `POST /auth/login` (admin JWT required for schema endpoints)
-2. Calls `GET /schema/snapshot` to get the full schema
-3. Extracts the `data` property (not the API response wrapper)
-4. Saves to `docker/directus/schema.json`
-
-### Initial Environment Sync
-
-For a fresh production setup or when dev and production have diverged significantly, use a full database dump instead of schema migration:
-
-```bash
-# On dev (native Postgres)
-pg_dump -U xtreemmak -d directus_kjo_v2 --clean --if-exists --no-owner --no-privileges > dump.sql
-
-# On production
-docker compose exec kjo2_postgres psql -U kjo_user -d kjo_v2_db < dump.sql
-```
-
-### Troubleshooting
-
-- **KnexTimeoutError** when running schema commands: Don't use `docker exec` — it shares the running server's connection pool. Use `docker compose run --rm kjo2_directus npx directus schema apply ...` instead (separate container, own pool).
-- **"Collection already exists"**: An orphaned PostgreSQL table exists without Directus metadata. Drop the table first: `DROP TABLE IF EXISTS <table> CASCADE;`
-- **Schema file missing**: If `docker/directus/schema.json` doesn't exist, `first-run.sh` gracefully skips schema apply and the server starts normally.
-
 **Caution:** Schema changes that remove or rename fields are destructive. Back up the database before deploying destructive schema changes.
+
+For full details on schema management, Flows setup, seed data, and troubleshooting, see [DIRECTUS.md](./DIRECTUS.md).
 
 ---
 

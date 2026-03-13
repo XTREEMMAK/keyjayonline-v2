@@ -6,6 +6,13 @@
 - npm 10+
 - Access to Directus instance
 
+## Notable Dependencies
+
+- **marked** — Markdown parser for `/now` entries
+- **isomorphic-dompurify** — HTML sanitization (server + client)
+- **wavesurfer.js** — Audio waveform visualization
+- **mixitup** — Animated filtering and sorting
+
 ## Quick Start
 
 ```bash
@@ -147,131 +154,14 @@ source .env.docker.local && docker compose --profile local-db up -d
 - **Local dev**: Uses local filesystem (default)
 - **Production**: Set `STORAGE_LOCATIONS=s3` with S3 credentials
 
-### Schema Management
+### Schema Management, Seed Data & Flows
 
-**What's included in schema export:**
-- Collections, fields, relations (data model)
-
-**Key collections:**
-- `kjov2_music_releases`, `kjov2_music_new_releases` - Music content
-- `kjov2_productions`, `kjov2_productions_actions`, `kjov2_productions_credits`, `kjov2_productions_embeds` - Productions
-- `kjov2_tech_projects`, `kjov2_tech_showcases` - Tech projects
-- `kjov2_music_studio`, `kjov2_studio_categories` - Studio gear
-- `kjov2_category_config` - Production category metadata
-- `kjov2_gallery_albums`, `kjov2_audio_playlist`, `kjov2_audio_playlist_tracks` - Media
-- `kjov2_general`, `kjov2_socials` - Site settings
-
-**What's NOT included (must be manually recreated or seeded):**
-- Flows (automations)
-- Roles/Permissions
-- Settings
-- Actual data/content
-
-**Export schema** (from dev Directus):
-```bash
-npm run schema:snapshot
-# → Exports via Directus API to docker/directus/schema.json
-# Requires DEV_ADMIN_PASSWORD in .env.local
-```
-
-**Automatic apply on container startup:**
-
-Schema is automatically applied when the Directus container starts via `docker/scripts/first-run.sh`. The script runs `npx directus schema apply` before `npx directus start` — it's idempotent (no-op when schema already matches).
-
-**Manual apply** (CLI alternative — use `run --rm` to avoid KnexTimeoutError):
-```bash
-docker compose run --rm kjo2_directus npx directus schema apply /directus/config/schema.json --yes
-```
-
-**Note:** Do NOT use `docker exec` for schema commands — it shares the running server's connection pool and causes KnexTimeoutError. Always use `docker compose run --rm` instead.
-
-### Seed Data & Flows
-
-#### From Local Docker Postgres
-
-**Export Flows, settings, and seed data** (via SQL):
-```bash
-# Export Directus system tables (flows, operations, settings, roles, permissions)
-docker exec kjo2_postgres pg_dump -U kjo_user -d kjo_v2_db \
-  --data-only \
-  --table=directus_flows \
-  --table=directus_operations \
-  --table=directus_settings \
-  --table=directus_roles \
-  --table=directus_permissions \
-  > ./docker/directus/system-seed.sql
-
-# Export your app's seed data (e.g., testimonials, general settings)
-docker exec kjo2_postgres pg_dump -U kjo_user -d kjo_v2_db \
-  --data-only \
-  --table=kjov2_general \
-  --table=kjov2_socials \
-  --table=kjov2_testimonials \
-  > ./docker/directus/content-seed.sql
-```
-
-**Import seed data** (to fresh container):
-```bash
-# Copy seed files into postgres container
-docker cp ./docker/directus/system-seed.sql kjo2_postgres:/tmp/
-docker cp ./docker/directus/content-seed.sql kjo2_postgres:/tmp/
-
-# Apply seeds (run AFTER schema is applied)
-docker exec kjo2_postgres psql -U kjo_user -d kjo_v2_db -f /tmp/system-seed.sql
-docker exec kjo2_postgres psql -U kjo_user -d kjo_v2_db -f /tmp/content-seed.sql
-```
-
-#### From External/Remote Postgres
-
-For databases hosted externally (managed databases, remote servers, etc.), use `pg_dump` directly with connection parameters instead of `docker exec`.
-
-**Export from external database:**
-```bash
-# Export Directus system tables
-pg_dump -h your-db-host.com -p 5432 -U your_db_user -d your_db_name \
-  --data-only \
-  --table=directus_flows \
-  --table=directus_operations \
-  --table=directus_settings \
-  --table=directus_roles \
-  --table=directus_permissions \
-  > ./docker/directus/system-seed.sql
-
-# Export app content/seed data
-pg_dump -h your-db-host.com -p 5432 -U your_db_user -d your_db_name \
-  --data-only \
-  --table=kjov2_general \
-  --table=kjov2_socials \
-  --table=kjov2_testimonials \
-  > ./docker/directus/content-seed.sql
-```
-
-**Import to external database:**
-```bash
-# Apply seeds (run AFTER schema is applied)
-psql -h your-db-host.com -p 5432 -U your_db_user -d your_db_name -f ./docker/directus/system-seed.sql
-psql -h your-db-host.com -p 5432 -U your_db_user -d your_db_name -f ./docker/directus/content-seed.sql
-```
-
-**Tips for external databases:**
-- You'll be prompted for the password, or set `PGPASSWORD` env var
-- For SSL connections, add `?sslmode=require` or use `--set=sslmode=require`
-- Use `.pgpass` file for automation (see [PostgreSQL docs](https://www.postgresql.org/docs/current/libpq-pgpass.html))
-- For managed databases (DigitalOcean, AWS RDS, etc.), check if you need to allowlist your IP
-
-**Example with environment variables:**
-```bash
-export PGHOST=your-db-host.com
-export PGPORT=5432
-export PGUSER=your_db_user
-export PGDATABASE=your_db_name
-export PGPASSWORD=your_db_password  # Or use .pgpass for security
-
-# Now pg_dump/psql will use these automatically
-pg_dump --data-only --table=directus_flows > ./docker/directus/system-seed.sql
-```
-
-**Note:** Import order matters - apply schema first, then seed data.
+See [DIRECTUS.md](./DIRECTUS.md) for the complete guide covering:
+- Schema export, auto-apply on startup, and manual apply
+- Collections reference (all `kjov2_*` collections)
+- Directus Flows setup (content update notifications → N8N)
+- Seed data export/import (Docker and external Postgres)
+- Troubleshooting (KnexTimeoutError, orphaned tables, field query gotchas)
 
 ## Uploading Media to CDN
 
