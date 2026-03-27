@@ -27,7 +27,7 @@
 </script>
 
 <!-- Persistent Video Background - Fixed position, always visible -->
-<div class="video-hero-fixed">
+<div class="video-hero-fixed" class:video-hero-hidden={!isHome}>
 	<video
 		bind:this={videoElement}
 		autoplay
@@ -105,6 +105,10 @@
 
 <style>
 	/* Fixed video background - always visible behind everything */
+	.video-hero-hidden {
+		display: none;
+	}
+
 	.video-hero-fixed {
 		position: fixed;
 		inset: 0;
